@@ -1,4 +1,4 @@
-%error-verbose
+%define parse.error verbose
 
 %{
 #include <fstream>
@@ -391,8 +391,114 @@ int main(int argc, char** argv)
     return 0;
 }
 
+int countAstDepth(AstNode* node) {
+    if (!node) return 0;
+    
+    int max_depth = 0;
+    
+    // For different node types
+    if (node->type == AST_ROOT) {
+        RootNode* root_node = (RootNode*)node;
+        for (std::list<AstNode*>::iterator it = root_node->children.begin(); 
+             it != root_node->children.end(); ++it) {
+            int depth = countAstDepth(*it);
+            if (depth > max_depth) max_depth = depth;
+        }
+    }
+    else if (node->type == AST_LABEL) {
+        // Fix: LabelNode doesn't have a 'code' member
+        // Access the label's children in a way that matches your actual structure
+        // This is a placeholder - adjust based on how LabelNode actually stores its children
+        LabelNode* label_node = (LabelNode*)node;
+        if (label_node->value.node) {
+            int depth = countAstDepth(label_node->value.node);
+            if (depth > max_depth) max_depth = depth;
+        }
+    }
+    else if (node->type == AST_LIST) {
+        ListNode* list_node = (ListNode*)node;
+        if (list_node->value.node) {
+            int depth = countAstDepth(list_node->value.node);
+            if (depth > max_depth) max_depth = depth;
+        }
+        
+        if (list_node->next) {
+            int depth = countAstDepth(list_node->next);
+            if (depth > max_depth) max_depth = depth;
+        }
+    }
+    
+    return max_depth + 1;
+}
+
 void yyerror(const char* s)
 {
-    printf("Parse error: %s\n", s);
+    extern char* yytext; // Add this declaration to access yytext in this scope
+    
+    fprintf(stderr, "\033[1;31mParse error at line %d:\033[0m %s\n", yylineno, s);
+    
+    // Print code context around the error
+    if (yyin) {
+        char buffer[256];
+        long current_pos = ftell(yyin);
+        
+        // Go back to beginning of the file
+        fseek(yyin, 0, SEEK_SET);
+        
+        // Read file line by line to get error context
+        int line_count = 0;
+        while (fgets(buffer, sizeof(buffer), yyin) && line_count <= yylineno) {
+            line_count++;
+            
+            // Print lines around the error
+            if (line_count >= yylineno - 2 && line_count <= yylineno + 2) {
+                fprintf(stderr, "%s%4d: %s%s", 
+                        (line_count == yylineno) ? "\033[1;33m> " : "  ", 
+                        line_count, 
+                        buffer,
+                        (line_count == yylineno) ? "\033[0m" : "");
+                
+                // If this is the error line and doesn't end with newline, add one
+                if (line_count == yylineno && buffer[strlen(buffer)-1] != '\n') {
+                    fprintf(stderr, "\n");
+                }
+            }
+        }
+        
+        // Restore file position
+        fseek(yyin, current_pos, SEEK_SET);
+    }
+    
+    // Print parser state information
+    fprintf(stderr, "\nParser state dump:\n");
+    fprintf(stderr, "- Current token: %s\n", yytext ? yytext : "<unknown>");
+    
+    // Print information about the parsed AST so far
+    if (root && !root->children.empty()) {
+        AstNode* lastNode = root->children.back();
+        fprintf(stderr, "- Last node type: %d\n", lastNode->type);
+        
+        // Since we don't know the exact structure, let's just print the node type
+        // without trying to access specific members
+        fprintf(stderr, "- Last node line number: %d\n", lastNode->lineNumber);
+    } else {
+        fprintf(stderr, "- No nodes parsed yet\n");
+    }
+    
+    // Print AST depth if available
+    fprintf(stderr, "- AST nodes: %lu\n", root ? root->children.size() : 0);
+    
+    // Add suggestion based on error message
+    if (strstr(s, "syntax error")) {
+        fprintf(stderr, "\nPossible causes:\n");
+        fprintf(stderr, "- Missing operand or incorrect addressing mode\n");
+        fprintf(stderr, "- Unrecognized instruction or directive\n");
+        fprintf(stderr, "- Mismatched parentheses or incorrect expression syntax\n");
+    } else if (strstr(s, "expected")) {
+        fprintf(stderr, "\nSyntax error details:\n");
+        fprintf(stderr, "- Expected a specific token or production rule\n");
+        fprintf(stderr, "- Check the grammar definition for the correct syntax\n");
+    }
+    
     exit(-1);
 }
