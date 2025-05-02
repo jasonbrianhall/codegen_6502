@@ -32,6 +32,7 @@ void yyerror(const char* s);
     InstructionNode* instruction;
 }
 
+%token<str> STRING
 %token<str> DIRECTIVE 
 %token<str> NAME 
 %token<str> LABEL 
@@ -123,6 +124,11 @@ plist: dir
             root->children.push_back($1);
             $1->parent = root;
         }
+     | data       // Add this rule to allow top-level data directives
+        {
+            root->children.push_back($1);
+            $1->parent = root;
+        }
      | plist dir
      | plist decl 
         {
@@ -130,6 +136,11 @@ plist: dir
             $2->parent = root;
         }
      | plist section
+        {
+            root->children.push_back($2);
+            $2->parent = root;
+        }
+     | plist data  // Add this rule to allow multiple top-level data directives
         {
             root->children.push_back($2);
             $2->parent = root;
@@ -289,6 +300,10 @@ const: HEXCONST
             $$ = $1;
         }
      | DECCONST
+        {
+            $$ = $1;
+        }
+     | STRING
         {
             $$ = $1;
         }

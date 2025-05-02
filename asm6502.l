@@ -29,6 +29,11 @@ void yyerror(const char *);
     return DATAWORDS;
 }
 
+\"[^\"]*\" {
+    yylval.str = DUP_YYTEXT;
+    return STRING;
+}
+
 \.[a-z]+ {
     yylval.str = DUP_YYTEXT;
     return DIRECTIVE;
