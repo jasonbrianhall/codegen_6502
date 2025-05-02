@@ -39,6 +39,24 @@ void yyerror(const char *);
     return DIRECTIVE;
 }
 
+_var_[a-zA-Z0-9_]+ {
+    // Strip the _var_ prefix
+    char* varName = strdup(yytext + 5); // Skip past "_var_"
+    yylval.str = varName;
+    return NAME;
+}
+
+_label_[a-zA-Z0-9_]*: {
+    // Strip the _label_ prefix and the trailing colon
+    char* originalText = strdup(yytext);
+    int len = strlen(originalText);
+    originalText[len-1] = '\0';  // Remove colon
+    char* labelName = originalText + 7;  // Skip past "_label_"
+    yylval.str = strdup(labelName);
+    free(originalText);  // Free the temporary string
+    return LABEL;
+}
+
 [a-zA-Z]+[a-zA-Z0-9_]*: {
     yylval.str = DUP_YYTEXT;
     return LABEL;
