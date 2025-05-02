@@ -307,6 +307,10 @@ const: HEXCONST
         {
             $$ = $1;
         }
+     | NAME      // Add this rule to accept NAMEs as constants
+        {
+            $$ = $1;
+        }
      ;
 
 expr: NAME

@@ -39,22 +39,61 @@ void yyerror(const char *);
     return DIRECTIVE;
 }
 
+a:_var_[a-zA-Z0-9_]+ {
+    /* Strip the a:_var_ prefix */
+    char* varRef = strdup(yytext + 7); /* Skip past "a:_var_" */
+    yylval.str = varRef;
+    return NAME;
+}
+
 _var_[a-zA-Z0-9_]+ {
-    // Strip the _var_ prefix
-    char* varName = strdup(yytext + 5); // Skip past "_var_"
+    /* Strip the _var_ prefix */
+    char* varName = strdup(yytext + 5); /* Skip past "_var_" */
     yylval.str = varName;
     return NAME;
 }
 
-_label_[a-zA-Z0-9_]*: {
-    // Strip the _label_ prefix and the trailing colon
+_label_[a-zA-Z0-9_]+: {
+    /* Strip the _label_ prefix and the trailing colon */
     char* originalText = strdup(yytext);
     int len = strlen(originalText);
-    originalText[len-1] = '\0';  // Remove colon
-    char* labelName = originalText + 7;  // Skip past "_label_"
+    originalText[len-1] = '\0';  /* Remove colon */
+    char* labelName = originalText + 7;  /* Skip past "_label_" */
     yylval.str = strdup(labelName);
-    free(originalText);  // Free the temporary string
+    free(originalText);  /* Free the temporary string */
     return LABEL;
+}
+
+_label_[a-zA-Z0-9_]+ {
+    /* Strip the _label_ prefix for label references (no colon) */
+    char* labelRef = strdup(yytext + 7); /* Skip past "_label_" */
+    yylval.str = labelRef;
+    return NAME;
+}
+
+_func_[a-zA-Z0-9_]+ {
+    /* Strip the _func_ prefix for function references */
+    char* funcRef = strdup(yytext + 6); /* Skip past "_func_" */
+    yylval.str = funcRef;
+    return NAME;
+}
+
+_func_[a-zA-Z0-9_]+: {
+    /* Strip the _func_ prefix and the trailing colon */
+    char* originalText = strdup(yytext);
+    int len = strlen(originalText);
+    originalText[len-1] = '\0';  /* Remove colon */
+    char* funcName = originalText + 6;  /* Skip past "_func_" */
+    yylval.str = strdup(funcName);
+    free(originalText);  /* Free the temporary string */
+    return LABEL;
+}
+
+_jump_[a-zA-Z0-9_]+ {
+    /* Strip the _jump_ prefix */
+    char* jumpRef = strdup(yytext + 6); /* Skip past "_jump_" */
+    yylval.str = jumpRef;
+    return NAME;
 }
 
 [a-zA-Z]+[a-zA-Z0-9_]*: {
@@ -62,12 +101,12 @@ _label_[a-zA-Z0-9_]*: {
     return LABEL;
 }
 
-x {
-    return *yytext;
+[xX] {
+    return 'x'; // Always return lowercase for consistency
 }
 
-y {
-    return *yytext;
+[yY] {
+    return 'y'; // Always return lowercase for consistency
 }
 
 lda {
