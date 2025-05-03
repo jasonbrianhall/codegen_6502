@@ -25,6 +25,10 @@ void yyerror(const char *);
     return DATABYTES;
 }
 
+\.byte {
+    return DATABYTES; // Map .byte to the same token as .db
+}
+
 \.dw {
     return DATAWORDS;
 }
@@ -39,59 +43,182 @@ void yyerror(const char *);
     return DIRECTIVE;
 }
 
+\(_var_[a-zA-Z0-9_]+,X\) {
+    // Extract variable name without parentheses and register
+    char* originalText = strdup(yytext + 1); // Skip the opening parenthesis
+    char* commaPos = strchr(originalText, ',');
+    *commaPos = '\0';  // Terminate at the comma
+    
+    // Skip past "_var_"
+    char* varName = originalText + 5;
+    
+    char* result = strdup(varName);
+    free(originalText);
+    
+    // Create a node with the indirect-indexed addressing mode
+    yylval.str = result;
+    return NAME;
+}
+
+\(_var_[a-zA-Z0-9_]+,Y\) {
+    // Extract variable name without parentheses and register
+    char* originalText = strdup(yytext + 1); // Skip the opening parenthesis
+    char* commaPos = strchr(originalText, ',');
+    *commaPos = '\0';  // Terminate at the comma
+    
+    // Skip past "_var_"
+    char* varName = originalText + 5;
+    
+    char* result = strdup(varName);
+    free(originalText);
+    
+    // Create a node with the indirect-indexed addressing mode
+    yylval.str = result;
+    return NAME;
+}
+
+a:\$[0-9A-Fa-f]+ {
+    // Strip the "a:" prefix and keep the hex constant
+    char* hexRef = strdup(yytext + 2); // Skip past "a:"
+    yylval.str = hexRef;
+    return HEXCONST;
+}
+
+z:\$[0-9A-Fa-f]+ {
+    // Strip the "z:" prefix and keep the hex constant
+    char* hexRef = strdup(yytext + 2); // Skip past "z:"
+    yylval.str = hexRef;
+    return HEXCONST;
+}
+
+z:_var_[a-zA-Z0-9_]+ {
+    // Strip the z:_var_ prefix
+    char* varRef = strdup(yytext + 7); // Skip past "z:_var_"
+    yylval.str = varRef;
+    return NAME;
+}
+
+_data_[a-zA-Z0-9_]+: {
+    // Strip the _data_ prefix and the trailing colon
+    char* originalText = strdup(yytext);
+    int len = strlen(originalText);
+    originalText[len-1] = '\0';  // Remove colon
+    char* dataName = originalText + 6;  // Skip past "_data_"
+    yylval.str = strdup(dataName);
+    free(originalText);  // Free the temporary string
+    return LABEL;
+}
+
+_jump_[a-zA-Z0-9_]+: {
+    // Strip the _jump_ prefix and the trailing colon
+    char* originalText = strdup(yytext);
+    int len = strlen(originalText);
+    originalText[len-1] = '\0';  // Remove colon
+    char* jumpName = originalText + 6;  // Skip past "_jump_"
+    yylval.str = strdup(jumpName);
+    free(originalText);  // Free the temporary string
+    return LABEL;
+}
+
+a:[a-zA-Z][a-zA-Z0-9_]* {
+    // Strip the "a:" prefix and keep the name
+    char* nameRef = strdup(yytext + 2); // Skip past "a:"
+    yylval.str = nameRef;
+    return NAME;
+}
+
+a:_data_[a-zA-Z0-9_]+,X {
+    // Extract just the data name (without prefix and indexing)
+    char* originalText = strdup(yytext);
+    char* commaPos = strchr(originalText, ',');
+    *commaPos = '\0';  // Terminate string at the comma
+    
+    // Skip past "a:_data_"
+    char* dataName = originalText + 8;
+    
+    char* result = strdup(dataName);
+    free(originalText);
+    
+    yylval.str = result;
+    return NAME;
+}
+
+a:_data_[a-zA-Z0-9_]+,Y {
+    // Extract just the data name (without prefix and indexing)
+    char* originalText = strdup(yytext);
+    char* commaPos = strchr(originalText, ',');
+    *commaPos = '\0';  // Terminate string at the comma
+    
+    // Skip past "a:_data_"
+    char* dataName = originalText + 8;
+    
+    char* result = strdup(dataName);
+    free(originalText);
+    
+    yylval.str = result;
+    return NAME;
+}
+
+a:_data_[a-zA-Z0-9_]+ {
+    // Skip past "a:_data_"
+    char* dataName = strdup(yytext + 8);
+    yylval.str = dataName;
+    return NAME;
+}
+
 a:_var_[a-zA-Z0-9_]+ {
-    /* Strip the a:_var_ prefix */
-    char* varRef = strdup(yytext + 7); /* Skip past "a:_var_" */
+    // Strip the a:_var_ prefix
+    char* varRef = strdup(yytext + 7); // Skip past "a:_var_"
     yylval.str = varRef;
     return NAME;
 }
 
 _var_[a-zA-Z0-9_]+ {
-    /* Strip the _var_ prefix */
-    char* varName = strdup(yytext + 5); /* Skip past "_var_" */
+    // Strip the _var_ prefix
+    char* varName = strdup(yytext + 5); // Skip past "_var_"
     yylval.str = varName;
     return NAME;
 }
 
 _label_[a-zA-Z0-9_]+: {
-    /* Strip the _label_ prefix and the trailing colon */
+    // Strip the _label_ prefix and the trailing colon
     char* originalText = strdup(yytext);
     int len = strlen(originalText);
-    originalText[len-1] = '\0';  /* Remove colon */
-    char* labelName = originalText + 7;  /* Skip past "_label_" */
+    originalText[len-1] = '\0';  // Remove colon
+    char* labelName = originalText + 7;  // Skip past "_label_"
     yylval.str = strdup(labelName);
-    free(originalText);  /* Free the temporary string */
+    free(originalText);  // Free the temporary string
     return LABEL;
 }
 
 _label_[a-zA-Z0-9_]+ {
-    /* Strip the _label_ prefix for label references (no colon) */
-    char* labelRef = strdup(yytext + 7); /* Skip past "_label_" */
+    // Strip the _label_ prefix for label references (no colon)
+    char* labelRef = strdup(yytext + 7); // Skip past "_label_"
     yylval.str = labelRef;
     return NAME;
 }
 
 _func_[a-zA-Z0-9_]+ {
-    /* Strip the _func_ prefix for function references */
-    char* funcRef = strdup(yytext + 6); /* Skip past "_func_" */
+    // Strip the _func_ prefix for function references
+    char* funcRef = strdup(yytext + 6); // Skip past "_func_"
     yylval.str = funcRef;
     return NAME;
 }
 
 _func_[a-zA-Z0-9_]+: {
-    /* Strip the _func_ prefix and the trailing colon */
+    // Strip the _func_ prefix and the trailing colon
     char* originalText = strdup(yytext);
     int len = strlen(originalText);
-    originalText[len-1] = '\0';  /* Remove colon */
-    char* funcName = originalText + 6;  /* Skip past "_func_" */
+    originalText[len-1] = '\0';  // Remove colon
+    char* funcName = originalText + 6;  // Skip past "_func_"
     yylval.str = strdup(funcName);
-    free(originalText);  /* Free the temporary string */
+    free(originalText);  // Free the temporary string
     return LABEL;
 }
 
 _jump_[a-zA-Z0-9_]+ {
-    /* Strip the _jump_ prefix */
-    char* jumpRef = strdup(yytext + 6); /* Skip past "_jump_" */
+    // Strip the _jump_ prefix
+    char* jumpRef = strdup(yytext + 6); // Skip past "_jump_"
     yylval.str = jumpRef;
     return NAME;
 }
@@ -331,6 +458,11 @@ nop {
 
 rti {
     return RTI;
+}
+
+sax {
+    // Custom instruction, handle it like STA
+    return STA;
 }
 
 [a-zA-Z]+[a-zA-Z0-9_]* {
