@@ -26,6 +26,7 @@ make
 - Genericicize this so it can compile any NES 6502 ROM into a native application (targeting the ASM6 format); currently the SMB asm file is not compatible with ASM6 so lots of changes would have to be made (https://github.com/retroenv/nesgodisasm).  
 - Compile with MINGW for Windows Native Code
 - Add github actions pipeline
+- Optionally use fluidsynth as a backend for MIDI playing; giving much better sound quality
 
 
 ## Original README Below
