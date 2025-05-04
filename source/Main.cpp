@@ -221,6 +221,12 @@ static void mainLoop()
         controller1.setButtonState(BUTTON_DOWN, keys[SDL_SCANCODE_DOWN]);
         controller1.setButtonState(BUTTON_LEFT, keys[SDL_SCANCODE_LEFT]);
         controller1.setButtonState(BUTTON_RIGHT, keys[SDL_SCANCODE_RIGHT]);
+        
+        // Debug key to print controller state (press D key)
+        if (keys[SDL_SCANCODE_D])
+        {
+            controller1.printButtonStates();
+        }
 
         // Update joystick state (optional, if you want to poll the joystick state directly)
         if (joystickInitialized)

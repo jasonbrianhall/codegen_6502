@@ -9,6 +9,17 @@ Controller::Controller() : joystick(nullptr), gameController(nullptr), joystickI
     }
     buttonIndex = 0;
     strobe = 1;
+    
+    // Load SDL_GameControllerDB database if it exists
+    FILE* dbFile = fopen("gamecontrollerdb.txt", "r");
+    if (dbFile)
+    {
+        fclose(dbFile);
+        if (SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt") > 0)
+        {
+            std::cout << "Loaded controller mappings from gamecontrollerdb.txt" << std::endl;
+        }
+    }
 }
 
 Controller::~Controller()
@@ -38,6 +49,9 @@ bool Controller::initJoystick()
     // Enable joystick events
     SDL_JoystickEventState(SDL_ENABLE);
     SDL_GameControllerEventState(SDL_ENABLE);
+    
+    // Set up Retrolink SNES Controller mapping
+    setupRetrolinkMapping();
 
     // Check for available joysticks
     int numJoysticks = SDL_NumJoysticks();
@@ -45,6 +59,18 @@ bool Controller::initJoystick()
     {
         std::cout << "No joysticks connected." << std::endl;
         return false;
+    }
+    
+    // List all connected joysticks for debugging
+    std::cout << "Found " << numJoysticks << " joystick(s):" << std::endl;
+    for (int i = 0; i < numJoysticks; i++)
+    {
+        std::cout << i << ": " << SDL_JoystickNameForIndex(i);
+        if (SDL_IsGameController(i))
+        {
+            std::cout << " (GameController compatible)";
+        }
+        std::cout << std::endl;
     }
 
     // Try to open the first available joystick
@@ -60,6 +86,12 @@ bool Controller::initJoystick()
                 joystick = SDL_GameControllerGetJoystick(gameController);
                 joystickID = SDL_JoystickInstanceID(joystick);
                 joystickInitialized = true;
+                
+                // Debug: Print controller info
+                std::cout << "Connected as game controller with "
+                          << SDL_JoystickNumAxes(joystick) << " axes and "
+                          << SDL_JoystickNumButtons(joystick) << " buttons." << std::endl;
+                
                 return true;
             }
         }
@@ -74,6 +106,12 @@ bool Controller::initJoystick()
             std::cout << "Found joystick: " << SDL_JoystickName(joystick) << std::endl;
             joystickID = SDL_JoystickInstanceID(joystick);
             joystickInitialized = true;
+            
+            // Debug: Print number of buttons, axes, etc.
+            std::cout << "Joystick has " << SDL_JoystickNumButtons(joystick) 
+                      << " buttons and " << SDL_JoystickNumAxes(joystick) 
+                      << " axes." << std::endl;
+            
             return true;
         }
         else
@@ -169,9 +207,26 @@ void Controller::processJoystickEvent(const SDL_Event& event)
             }
             break;
 
+        case SDL_JOYHATMOTION:
+            if (event.jhat.which == joystickID)
+            {
+                // Handle hat movement (D-pad on many controllers)
+                Uint8 hatValue = event.jhat.value;
+                
+                setButtonState(BUTTON_UP, (hatValue & SDL_HAT_UP) != 0);
+                setButtonState(BUTTON_DOWN, (hatValue & SDL_HAT_DOWN) != 0);
+                setButtonState(BUTTON_LEFT, (hatValue & SDL_HAT_LEFT) != 0);
+                setButtonState(BUTTON_RIGHT, (hatValue & SDL_HAT_RIGHT) != 0);
+            }
+            break;
+
         case SDL_JOYBUTTONDOWN:
             if (event.jbutton.which == joystickID)
             {
+                // Debug output
+                std::cout << "Button pressed: " << (int)event.jbutton.button << std::endl;
+                
+                // Call our mapping function
                 mapJoystickButtonToController(event.jbutton.button, BUTTON_A);
             }
             break;
@@ -179,13 +234,19 @@ void Controller::processJoystickEvent(const SDL_Event& event)
         case SDL_JOYBUTTONUP:
             if (event.jbutton.which == joystickID)
             {
-                // Default mapping for generic joysticks
+                // Mapping for Retrolink SNES Controller
                 switch (event.jbutton.button)
                 {
-                    case 0: setButtonState(BUTTON_A, false); break;
-                    case 1: setButtonState(BUTTON_B, false); break;
-                    case 8: setButtonState(BUTTON_SELECT, false); break;
-                    case 9: setButtonState(BUTTON_START, false); break;
+                    case 0: setButtonState(BUTTON_B, false); break;  // SNES B -> NES B
+                    case 1: setButtonState(BUTTON_A, false); break;  // SNES Y -> NES A
+                    case 2: setButtonState(BUTTON_SELECT, false); break;  // SNES Select -> NES Select
+                    case 3: setButtonState(BUTTON_START, false); break;  // SNES Start -> NES Start
+                    case 4: setButtonState(BUTTON_A, false); break;  // SNES A -> NES A (alternate)
+                    case 5: setButtonState(BUTTON_B, false); break;  // SNES X -> NES B (alternate)
+                    case 6: setButtonState(BUTTON_SELECT, false); break; // SNES L -> NES Select (alternate)
+                    case 7: setButtonState(BUTTON_START, false); break;  // SNES R -> NES Start (alternate)
+                    case 8: setButtonState(BUTTON_SELECT, false); break; // Another possible Select
+                    case 9: setButtonState(BUTTON_START, false); break;  // Another possible Start
                     default: break;
                 }
             }
@@ -310,39 +371,116 @@ void Controller::updateJoystickState()
     if (!joystickInitialized)
         return;
 
-    // This function can be used to poll joystick state directly
-    // instead of relying on events, if needed
-    
-    // For instance, if you're using GameController and want to check button states:
-    if (gameController)
+    // Poll joystick state directly - this is often more reliable than events
+    if (joystick)
     {
-        // Example of polling controller buttons directly
-        // Uncomment if you need to poll buttons separately from events
-        /*
-        setButtonState(BUTTON_A, SDL_GameControllerGetButton(gameController, SDL_CONTROLLER_BUTTON_A));
-        setButtonState(BUTTON_B, SDL_GameControllerGetButton(gameController, SDL_CONTROLLER_BUTTON_B));
-        setButtonState(BUTTON_SELECT, SDL_GameControllerGetButton(gameController, SDL_CONTROLLER_BUTTON_BACK));
-        setButtonState(BUTTON_START, SDL_GameControllerGetButton(gameController, SDL_CONTROLLER_BUTTON_START));
+        // For Retrolink SNES Controller, we'll poll every button directly
         
-        // D-pad
-        setButtonState(BUTTON_UP, SDL_GameControllerGetButton(gameController, SDL_CONTROLLER_BUTTON_DPAD_UP));
-        setButtonState(BUTTON_DOWN, SDL_GameControllerGetButton(gameController, SDL_CONTROLLER_BUTTON_DPAD_DOWN));
-        setButtonState(BUTTON_LEFT, SDL_GameControllerGetButton(gameController, SDL_CONTROLLER_BUTTON_DPAD_LEFT));
-        setButtonState(BUTTON_RIGHT, SDL_GameControllerGetButton(gameController, SDL_CONTROLLER_BUTTON_DPAD_RIGHT));
-        */
+        // Standard SNES button layout mapping to NES
+        // Button 0 (B) -> NES B
+        // Button 1 (Y) -> NES A or alternate button
+        // Button 2 (Select) -> NES Select
+        // Button 3 (Start) -> NES Start
+        // Button 4 (A) -> NES A 
+        // Button 5 (X) -> NES B alternate
+        
+        if (SDL_JoystickNumButtons(joystick) >= 6) 
+        {
+            setButtonState(BUTTON_B, SDL_JoystickGetButton(joystick, 0));
+            setButtonState(BUTTON_A, SDL_JoystickGetButton(joystick, 1) || SDL_JoystickGetButton(joystick, 4));
+            setButtonState(BUTTON_SELECT, SDL_JoystickGetButton(joystick, 2));
+            setButtonState(BUTTON_START, SDL_JoystickGetButton(joystick, 3));
+            
+            // These are alternatives that might be useful for some SNES controllers
+            if (!SDL_JoystickGetButton(joystick, 0)) // Don't override if already set
+                setButtonState(BUTTON_B, SDL_JoystickGetButton(joystick, 5));
+        }
+        
+        // Handle D-pad via hat (common for SNES controllers)
+        if (SDL_JoystickNumHats(joystick) > 0)
+        {
+            Uint8 hatState = SDL_JoystickGetHat(joystick, 0);
+            
+            setButtonState(BUTTON_UP, (hatState & SDL_HAT_UP) != 0);
+            setButtonState(BUTTON_DOWN, (hatState & SDL_HAT_DOWN) != 0);
+            setButtonState(BUTTON_LEFT, (hatState & SDL_HAT_LEFT) != 0);
+            setButtonState(BUTTON_RIGHT, (hatState & SDL_HAT_RIGHT) != 0);
+        }
+        // As fallback, also try axes for controllers without hat
+        else if (SDL_JoystickNumAxes(joystick) >= 2)
+        {
+            // X-axis
+            Sint16 xAxis = SDL_JoystickGetAxis(joystick, 0);
+            if (xAxis < -JOYSTICK_DEADZONE) {
+                setButtonState(BUTTON_LEFT, true);
+                setButtonState(BUTTON_RIGHT, false);
+            }
+            else if (xAxis > JOYSTICK_DEADZONE) {
+                setButtonState(BUTTON_RIGHT, true);
+                setButtonState(BUTTON_LEFT, false);
+            }
+            else {
+                setButtonState(BUTTON_LEFT, false);
+                setButtonState(BUTTON_RIGHT, false);
+            }
+            
+            // Y-axis
+            Sint16 yAxis = SDL_JoystickGetAxis(joystick, 1);
+            if (yAxis < -JOYSTICK_DEADZONE) {
+                setButtonState(BUTTON_UP, true);
+                setButtonState(BUTTON_DOWN, false);
+            }
+            else if (yAxis > JOYSTICK_DEADZONE) {
+                setButtonState(BUTTON_DOWN, true);
+                setButtonState(BUTTON_UP, false);
+            }
+            else {
+                setButtonState(BUTTON_UP, false);
+                setButtonState(BUTTON_DOWN, false);
+            }
+        }
     }
+}
+
+void Controller::printButtonStates() const
+{
+    printf("Button States: A:%d B:%d Select:%d Start:%d Up:%d Down:%d Left:%d Right:%d\n",
+           buttonStates[BUTTON_A], buttonStates[BUTTON_B], 
+           buttonStates[BUTTON_SELECT], buttonStates[BUTTON_START],
+           buttonStates[BUTTON_UP], buttonStates[BUTTON_DOWN], 
+           buttonStates[BUTTON_LEFT], buttonStates[BUTTON_RIGHT]);
+}
+
+void Controller::setupRetrolinkMapping()
+{
+    // Simple debug message about controller mapping
+    std::cout << "Setting up Retrolink SNES Controller mapping..." << std::endl;
+    
+    // We'll handle mappings in the event handlers and updateJoystickState instead
+    // of using SDL's mapping system, for better compatibility
 }
 
 void Controller::mapJoystickButtonToController(int button, ControllerButton nesButton)
 {
-    // Default mapping for generic joysticks
-    // This can be customized or loaded from a configuration file
+    // Mapping specifically for Retrolink SNES Controller and similar controllers
+    // SNES layout: B, Y, Select, Start, Up, Down, Left, Right, A, X, L, R
+    
+    // Log button presses for debugging
+    std::cout << "Button pressed: " << button << std::endl;
+    
     switch (button)
     {
-        case 0: setButtonState(BUTTON_A, true); break;
-        case 1: setButtonState(BUTTON_B, true); break;
-        case 8: setButtonState(BUTTON_SELECT, true); break;
-        case 9: setButtonState(BUTTON_START, true); break;
+        // Map based on typical SNES layout
+        case 0: setButtonState(BUTTON_B, true); break;  // SNES B -> NES B
+        case 1: setButtonState(BUTTON_A, true); break;  // SNES Y -> NES A
+        case 2: setButtonState(BUTTON_B, true); break;  // SNES Select -> NES Select
+        case 3: setButtonState(BUTTON_START, true); break;  // SNES Start -> NES Start
+        case 4: setButtonState(BUTTON_A, true); break;  // SNES A -> NES A (alternate)
+        case 5: setButtonState(BUTTON_B, true); break;  // SNES X -> NES B (alternate)
+        case 6: setButtonState(BUTTON_SELECT, true); break; // SNES L -> NES Select (alternate)
+        case 7: setButtonState(BUTTON_START, true); break;  // SNES R -> NES Start (alternate)
+        case 8: setButtonState(BUTTON_SELECT, true); break; // Another possible Select mapping
+        case 9: setButtonState(BUTTON_START, true); break;  // Another possible Start mapping
         default: break;
     }
 }

@@ -62,6 +62,10 @@ public:
      */
     void updateJoystickState();
 
+    // Debug function to print the current state of the controller
+    void printButtonStates() const;
+
+
 private:
     bool    buttonStates[8];
     uint8_t buttonIndex;
@@ -78,6 +82,10 @@ private:
 
     // Map SDL joystick/gamepad buttons to NES controller buttons
     void mapJoystickButtonToController(int button, ControllerButton nesButton);
+    
+    
+    // Creates a custom mapping for the Retrolink SNES Controller
+    void setupRetrolinkMapping();
 };
 
 #endif // CONTROLLER_HPP
