@@ -1,3 +1,35 @@
+# Super Mario Virtualized
+
+This is a recompiled version of Super Mario Brothers for Modern PCs.
+
+Originally forked from (https://github.com/MitchellSternke/SuperMarioBros-C), this version no longer required Flex or Bison (uses Python to convert) and no longer requires an external .nes rom (compiled into the image)
+
+**Dependencies**
+- C++11 compiler
+- Boost
+- SDL2
+- Python (only if you want to convert yourself)
+- CMake
+
+
+## Compile
+
+cmake .
+make
+
+## Running
+
+./smbc
+
+## Future Goal
+
+- Genericicize this so it can compile any NES 6502 ROM into a native application (targeting the ASM6 format); currently the SMB asm file is not compatible with ASM6 so lots of changes would have to be made (https://github.com/retroenv/nesgodisasm).  
+- Compile with MINGW for Windows Native Code
+- Add github actions pipeline
+
+
+## Original README Below
+
 SuperMarioBros-C
 ================
 
