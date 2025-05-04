@@ -10,8 +10,12 @@
 #include "Configuration.hpp"
 #include "Constants.hpp"
 #include "Util/VideoFilters.hpp"
+// Include the generated ROM header
+#include "SMBRom.hpp" // This contains smbRomData array
 
-uint8_t* romImage;
+// We no longer need this global variable as we'll use smbRomData directly
+// uint8_t* romImage;
+
 static SDL_Window* window;
 static SDL_Renderer* renderer;
 static SDL_Texture* texture;
@@ -23,55 +27,18 @@ static uint32_t prevFrameBuffer[RENDER_WIDTH * RENDER_HEIGHT];
 static bool msaaEnabled = false;
 
 /**
- * Load the Super Mario Bros. ROM image.
- */
-static bool loadRomImage()
-{
-    FILE* file = fopen(Configuration::getRomFileName().c_str(), "r");
-    if (file == NULL)
-    {
-        std::cout << "Failed to open the file \"" << Configuration::getRomFileName() << "\". Exiting.\n";
-        return false;
-    }
-
-    // Find the size of the file
-    fseek(file, 0L, SEEK_END);
-    size_t fileSize = ftell(file);
-    fseek(file, 0L, SEEK_SET);
-
-    // Read the entire file into a buffer
-    romImage = new uint8_t[fileSize];
-    fread(romImage, sizeof(uint8_t), fileSize, file);
-    fclose(file);
-
-    return true;
-}
-
-/**
- * SDL Audio callback function.
- */
-static void audioCallback(void* userdata, uint8_t* buffer, int len)
-{
-    if (smbEngine != nullptr)
-    {
-        smbEngine->audioCallback(buffer, len);
-    }
-}
-
-/**
  * Initialize libraries for use.
  */
 static bool initialize()
 {
     // Load the configuration
-    //
     Configuration::initialize(CONFIG_FILE_NAME);
 
-    // Load the SMB ROM image
-    if (!loadRomImage())
-    {
-        return false;
-    }
+    // We no longer need to load the ROM file
+    // if (!loadRomImage())
+    // {
+    //     return false;
+    // }
 
     // Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
@@ -120,7 +87,6 @@ static bool initialize()
     }
 
     // Set up custom palette, if configured
-    //
     if (!Configuration::getPaletteFileName().empty())
     {
         const uint32_t* palette = loadPalette(Configuration::getPaletteFileName());
@@ -184,11 +150,15 @@ static void shutdown()
     SDL_DestroyWindow(window);
 
     SDL_Quit();
+    
+    // We no longer need to free romImage as we're using the static array
+    // delete[] romImage;
 }
 
 static void mainLoop()
 {
-    SMBEngine engine(romImage);
+    // Use the embedded ROM data directly
+    SMBEngine engine(smbRomData);
     smbEngine = &engine;
     engine.reset();
 
@@ -291,7 +261,6 @@ static void mainLoop()
         SDL_RenderCopy(renderer, texture, NULL, NULL);
 
         // Render scanlines
-        //
         if (Configuration::getScanlinesEnabled())
         {
             SDL_RenderSetLogicalSize(renderer, RENDER_WIDTH * 3, RENDER_HEIGHT * 3);
