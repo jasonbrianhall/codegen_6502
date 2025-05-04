@@ -13,7 +13,12 @@ std::list<ConfigurationOption*> Configuration::configurationOptions = {
     &Configuration::renderScale,
     &Configuration::romFileName,
     &Configuration::scanlinesEnabled,
-    &Configuration::vsyncEnabled
+    &Configuration::vsyncEnabled,
+    &Configuration::hqdn3dEnabled,
+    &Configuration::hqdn3dSpatialStrength,
+    &Configuration::hqdn3dTemporalStrength,
+    &Configuration::antiAliasingEnabled,
+    &Configuration::antiAliasingMethod
 };
 
 /**
@@ -70,6 +75,42 @@ BasicConfigurationOption<bool> Configuration::scanlinesEnabled(
  */
 BasicConfigurationOption<bool> Configuration::vsyncEnabled(
     "video.vsync", true
+);
+
+/**
+ * Whether hqdn3d is enabled for video.
+ */
+BasicConfigurationOption<bool> Configuration::hqdn3dEnabled(
+    "video.hqdn3d", false
+);
+
+/**
+ * Spatial strength for hqdn3d filter (0.0 - 1.0)
+ */
+BasicConfigurationOption<float> Configuration::hqdn3dSpatialStrength(
+    "video.hqdn3d_spatial", 0.4f
+);
+
+/**
+ * Temporal strength for hqdn3d filter (0.0 - 1.0)
+ */
+BasicConfigurationOption<float> Configuration::hqdn3dTemporalStrength(
+    "video.hqdn3d_temporal", 0.6f
+);
+
+/**
+ * Whether anti-aliasing is enabled for video.
+ */
+BasicConfigurationOption<bool> Configuration::antiAliasingEnabled(
+    "video.antialiasing", false
+);
+
+/**
+ * Anti-aliasing method to use.
+ * 0 = FXAA, 1 = MSAA
+ */
+BasicConfigurationOption<int> Configuration::antiAliasingMethod(
+    "video.antialiasing_method", 0
 );
 
 ConfigurationOption::ConfigurationOption(
@@ -144,4 +185,29 @@ bool Configuration::getScanlinesEnabled()
 bool Configuration::getVsyncEnabled()
 {
     return vsyncEnabled.getValue();
+}
+
+bool Configuration::getHqdn3dEnabled()
+{
+    return hqdn3dEnabled.getValue();
+}
+
+float Configuration::getHqdn3dSpatialStrength()
+{
+    return hqdn3dSpatialStrength.getValue();
+}
+
+float Configuration::getHqdn3dTemporalStrength()
+{
+    return hqdn3dTemporalStrength.getValue();
+}
+
+bool Configuration::getAntiAliasingEnabled()
+{
+    return antiAliasingEnabled.getValue();
+}
+
+int Configuration::getAntiAliasingMethod()
+{
+    return antiAliasingMethod.getValue();
 }

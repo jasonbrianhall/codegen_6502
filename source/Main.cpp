@@ -9,6 +9,7 @@
 
 #include "Configuration.hpp"
 #include "Constants.hpp"
+#include "Util/VideoFilters.hpp"
 
 uint8_t* romImage;
 static SDL_Window* window;
@@ -17,6 +18,9 @@ static SDL_Texture* texture;
 static SDL_Texture* scanlineTexture;
 static SMBEngine* smbEngine = nullptr;
 static uint32_t renderBuffer[RENDER_WIDTH * RENDER_HEIGHT];
+static uint32_t filteredBuffer[RENDER_WIDTH * RENDER_HEIGHT];
+static uint32_t prevFrameBuffer[RENDER_WIDTH * RENDER_HEIGHT];
+static bool msaaEnabled = false;
 
 /**
  * Load the Super Mario Bros. ROM image.
@@ -126,6 +130,20 @@ static bool initialize()
         }
     }
 
+    // Initialize HQDN3D filter if enabled
+    if (Configuration::getHqdn3dEnabled())
+    {
+        initHQDN3D(RENDER_WIDTH, RENDER_HEIGHT);
+        // Initialize the previous frame buffer
+        memset(prevFrameBuffer, 0, RENDER_WIDTH * RENDER_HEIGHT * sizeof(uint32_t));
+    }
+
+    // Initialize MSAA if enabled and method is MSAA
+    if (Configuration::getAntiAliasingEnabled() && Configuration::getAntiAliasingMethod() == 1)
+    {
+        msaaEnabled = initMSAA(renderer);
+    }
+
     if (Configuration::getAudioEnabled())
     {
         // Initialize audio
@@ -152,6 +170,12 @@ static bool initialize()
  */
 static void shutdown()
 {
+    // Cleanup HQDN3D filter if it was initialized
+    if (Configuration::getHqdn3dEnabled())
+    {
+        cleanupHQDN3D();
+    }
+
     SDL_CloseAudio();
 
     SDL_DestroyTexture(scanlineTexture);
@@ -225,7 +249,40 @@ static void mainLoop()
         engine.update();
         engine.render(renderBuffer);
 
-        SDL_UpdateTexture(texture, NULL, renderBuffer, sizeof(uint32_t) * RENDER_WIDTH);
+        // Apply post-processing filters if enabled
+        uint32_t* sourceBuffer = renderBuffer;
+        uint32_t* targetBuffer = filteredBuffer;
+
+        // Apply HQDN3D filter if enabled
+        if (Configuration::getHqdn3dEnabled())
+        {
+            applyHQDN3D(targetBuffer, sourceBuffer, prevFrameBuffer, 
+                        RENDER_WIDTH, RENDER_HEIGHT, 
+                        Configuration::getHqdn3dSpatialStrength(), 
+                        Configuration::getHqdn3dTemporalStrength());
+            
+            // Store the current frame for next time
+            memcpy(prevFrameBuffer, sourceBuffer, RENDER_WIDTH * RENDER_HEIGHT * sizeof(uint32_t));
+            
+            // Swap buffers for potential next filter
+            uint32_t* temp = sourceBuffer;
+            sourceBuffer = targetBuffer;
+            targetBuffer = temp;
+        }
+
+        // Apply FXAA if enabled and method is FXAA
+        if (Configuration::getAntiAliasingEnabled() && Configuration::getAntiAliasingMethod() == 0)
+        {
+            applyFXAA(targetBuffer, sourceBuffer, RENDER_WIDTH, RENDER_HEIGHT);
+            
+            // Swap buffers for potential next filter
+            uint32_t* temp = sourceBuffer;
+            sourceBuffer = targetBuffer;
+            targetBuffer = temp;
+        }
+
+        // Update the texture with the filtered buffer
+        SDL_UpdateTexture(texture, NULL, sourceBuffer, sizeof(uint32_t) * RENDER_WIDTH);
 
         SDL_RenderClear(renderer);
 

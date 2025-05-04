@@ -130,6 +130,32 @@ public:
      */
     static bool getVsyncEnabled();
 
+    /**
+     * Get whether hqdn3d denoising is enabled or not.
+     */
+    static bool getHqdn3dEnabled();
+
+    /**
+     * Get the hqdn3d spatial strength.
+     */
+    static float getHqdn3dSpatialStrength();
+
+    /**
+     * Get the hqdn3d temporal strength.
+     */
+    static float getHqdn3dTemporalStrength();
+
+    /**
+     * Get whether anti-aliasing is enabled or not.
+     */
+    static bool getAntiAliasingEnabled();
+
+    /**
+     * Get the anti-aliasing method to use.
+     * 0 = FXAA, 1 = MSAA (if supported by hardware)
+     */
+    static int getAntiAliasingMethod();
+
 private:
     static BasicConfigurationOption<bool> audioEnabled;
     static BasicConfigurationOption<int> audioFrequency;
@@ -139,6 +165,11 @@ private:
     static BasicConfigurationOption<std::string> romFileName;
     static BasicConfigurationOption<bool> scanlinesEnabled;
     static BasicConfigurationOption<bool> vsyncEnabled;
+    static BasicConfigurationOption<bool> hqdn3dEnabled;
+    static BasicConfigurationOption<float> hqdn3dSpatialStrength;  
+    static BasicConfigurationOption<float> hqdn3dTemporalStrength;
+    static BasicConfigurationOption<bool> antiAliasingEnabled;
+    static BasicConfigurationOption<int> antiAliasingMethod;
 
     static std::list<ConfigurationOption*> configurationOptions;
 };
