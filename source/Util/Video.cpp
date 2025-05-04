@@ -3,6 +3,7 @@
 #include "../Constants.hpp"
 
 #include "Video.hpp"
+#include "../SMBRom.hpp"
 
 void drawBox(uint32_t* buffer, int xOffset, int yOffset, int width, int height, uint32_t palette)
 {
@@ -66,8 +67,9 @@ void drawCHRTile(uint32_t* buffer, int xOffset, int yOffset, int tile, uint32_t 
     // Read the pixels of the tile
     for( int row = 0; row < 8; row++ )
     {
-        uint8_t plane1 = romImage[16 + 2 * 16384 + tile * 16 + row];
-        uint8_t plane2 = romImage[16 + 2 * 16384 + tile * 16 + row + 8];
+        // Replace romImage with smbRomData
+        uint8_t plane1 = smbRomData[16 + 2 * 16384 + tile * 16 + row];
+        uint8_t plane2 = smbRomData[16 + 2 * 16384 + tile * 16 + row + 8];
 
         for( int column = 0; column < 8; column++ )
         {

@@ -52,6 +52,7 @@ SDL_Texture* generateScanlineTexture(SDL_Renderer* renderer);
 const uint32_t* loadPalette(const std::string& fileName);
 
 extern const uint32_t* paletteRGB;
-extern uint8_t* romImage;
+// Change from pointer to array declaration
+extern const uint8_t smbRomData[]; // Use array declaration without size
 
 #endif // VIDEO_HPP
