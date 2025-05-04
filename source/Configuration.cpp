@@ -62,7 +62,7 @@ BasicConfigurationOption<std::string> Configuration::romFileName(
  * Whether scanlines are enabled or not.
  */
 BasicConfigurationOption<bool> Configuration::scanlinesEnabled(
-    "video.scanlines", true
+    "video.scanlines", false
 );
 
 /**
