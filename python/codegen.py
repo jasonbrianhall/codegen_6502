@@ -21,39 +21,44 @@ def main():
         
     # Parse the input file
     try:
+        print(f"Parsing {sys.argv[1]}...")
         with open(sys.argv[1], 'r') as f:
             data = f.read()
             
         # Parse the ASM file
         root = parse(data)
+        print("Parsing complete.")
         
         # For debugging: uncomment to print the AST
+        # print("AST structure:")
         # for node in root.children:
         #     print_node(node)
             
         # Create translator
+        print("Translating to C++...")
         translator = Translator(sys.argv[1], root)
         
         # Get the output directory
         output_dir = sys.argv[2]
         
         # Create output directories if they don't exist
-        os.makedirs(os.path.join(output_dir, "source/SMB"), exist_ok=True)
+        os.makedirs(os.path.join(output_dir, "source", "SMB"), exist_ok=True)
         
         # Write the output files
-        source_file_path = os.path.join(output_dir, "source/SMB/SMB.cpp")
+        print("Writing output files...")
+        source_file_path = os.path.join(output_dir, "source", "SMB", "SMB.cpp")
         with open(source_file_path, 'w') as f:
             f.write(translator.get_source_output())
             
-        data_file_path = os.path.join(output_dir, "source/SMB/SMBData.cpp")
+        data_file_path = os.path.join(output_dir, "source", "SMB", "SMBData.cpp")
         with open(data_file_path, 'w') as f:
             f.write(translator.get_data_output())
             
-        data_header_file_path = os.path.join(output_dir, "source/SMB/SMBDataPointers.hpp")
+        data_header_file_path = os.path.join(output_dir, "source", "SMB", "SMBDataPointers.hpp")
         with open(data_header_file_path, 'w') as f:
             f.write(translator.get_data_header_output())
             
-        constant_header_file_path = os.path.join(output_dir, "source/SMB/SMBConstants.hpp")
+        constant_header_file_path = os.path.join(output_dir, "source", "SMB", "SMBConstants.hpp")
         with open(constant_header_file_path, 'w') as f:
             f.write(translator.get_constant_header_output())
             
@@ -61,6 +66,8 @@ def main():
         
     except Exception as e:
         print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
         
 if __name__ == "__main__":
