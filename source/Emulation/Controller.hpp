@@ -2,6 +2,7 @@
 #define CONTROLLER_HPP
 
 #include <cstdint>
+#include <SDL2/SDL.h>
 
 /**
  * Buttons found on a standard controller.
@@ -20,11 +21,19 @@ enum ControllerButton
 
 /**
  * Emulates an NES game controller device.
+ * Supports keyboard input and SDL joystick/gamepad input.
  */
 class Controller
 {
 public:
     Controller();
+    ~Controller();
+
+    /**
+     * Initialize SDL joystick subsystem.
+     * Returns true if successful, false otherwise.
+     */
+    bool initJoystick();
 
     /**
      * Read from the controller register.
@@ -34,17 +43,41 @@ public:
     /**
      * Set the state of a button on the controller.
      */
-    void setButtonState( ControllerButton button, bool state );
+    void setButtonState(ControllerButton button, bool state);
 
     /**
      * Write a byte to the controller register.
      */
-    void writeByte( uint8_t value );
+    void writeByte(uint8_t value);
+
+    /**
+     * Process SDL joystick events.
+     * This should be called in your main event loop.
+     */
+    void processJoystickEvent(const SDL_Event& event);
+
+    /**
+     * Update the controller state from the joystick.
+     * This should be called once per frame.
+     */
+    void updateJoystickState();
 
 private:
     bool    buttonStates[8];
     uint8_t buttonIndex;
     uint8_t strobe;
+
+    // SDL joystick handling
+    SDL_Joystick* joystick;
+    SDL_GameController* gameController;
+    int joystickID;
+    bool joystickInitialized;
+
+    // Joystick deadzone
+    static const int JOYSTICK_DEADZONE = 8000;
+
+    // Map SDL joystick/gamepad buttons to NES controller buttons
+    void mapJoystickButtonToController(int button, ControllerButton nesButton);
 };
 
 #endif // CONTROLLER_HPP

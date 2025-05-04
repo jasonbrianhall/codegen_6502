@@ -42,8 +42,8 @@ static bool initialize()
     // Load the configuration
     Configuration::initialize(CONFIG_FILE_NAME);
 
-    // Initialize SDL
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
+    // Initialize SDL with joystick support
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) < 0)
     {
         std::cout << "SDL_Init() failed during initialize(): " << SDL_GetError() << std::endl;
         return false;
@@ -161,6 +161,18 @@ static void mainLoop()
     smbEngine = &engine;
     engine.reset();
 
+    // Initialize controller's joystick
+    Controller& controller1 = engine.getController1();
+    bool joystickInitialized = controller1.initJoystick();
+    if (joystickInitialized)
+    {
+        std::cout << "Joystick initialized successfully!" << std::endl;
+    }
+    else
+    {
+        std::cout << "No joystick found or initialization failed. Using keyboard controls only." << std::endl;
+    }
+
     bool running = true;
     int progStartTime = SDL_GetTicks();
     int frame = 0;
@@ -182,14 +194,25 @@ static void mainLoop()
                     break;
                 }
                 break;
-
+            // Process joystick events
+            case SDL_JOYAXISMOTION:
+            case SDL_JOYBUTTONDOWN:
+            case SDL_JOYBUTTONUP:
+            case SDL_CONTROLLERBUTTONDOWN:
+            case SDL_CONTROLLERBUTTONUP:
+            case SDL_CONTROLLERAXISMOTION:
+                if (joystickInitialized)
+                {
+                    controller1.processJoystickEvent(event);
+                }
+                break;
             default:
                 break;
             }
         }
 
+        // Handle keyboard input
         const Uint8* keys = SDL_GetKeyboardState(NULL);
-        Controller& controller1 = engine.getController1();
         controller1.setButtonState(BUTTON_A, keys[SDL_SCANCODE_X]);
         controller1.setButtonState(BUTTON_B, keys[SDL_SCANCODE_Z]);
         controller1.setButtonState(BUTTON_SELECT, keys[SDL_SCANCODE_BACKSPACE]);
@@ -198,6 +221,12 @@ static void mainLoop()
         controller1.setButtonState(BUTTON_DOWN, keys[SDL_SCANCODE_DOWN]);
         controller1.setButtonState(BUTTON_LEFT, keys[SDL_SCANCODE_LEFT]);
         controller1.setButtonState(BUTTON_RIGHT, keys[SDL_SCANCODE_RIGHT]);
+
+        // Update joystick state (optional, if you want to poll the joystick state directly)
+        if (joystickInitialized)
+        {
+            controller1.updateJoystickState();
+        }
 
         if (keys[SDL_SCANCODE_R])
         {
