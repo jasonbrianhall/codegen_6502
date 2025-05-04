@@ -4,7 +4,7 @@ project(smbc)
 
 add_subdirectory(codegen)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wno-c++11-narrowing")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s -std=c++11 -Wno-c++11-narrowing -fpermissive")
 
 set(SOURCE_FILES
     source/Configuration.cpp
