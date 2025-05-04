@@ -17,7 +17,8 @@ set(SOURCE_FILES
     source/SMB/SMBData.cpp
     source/SMB/SMBEngine.cpp
     source/Util/Video.cpp
-    source/Util/VideoFilters.cpp)
+    source/Util/VideoFilters.cpp
+    source/SMBRom.cpp)
 
 find_package(SDL2 REQUIRED)
 find_package(Boost REQUIRED)

@@ -1,9 +1,11 @@
 /**
  * rom_to_header.cpp
- * Utility to convert a ROM file to a C++ header file containing the ROM data
+ * Utility to convert a ROM file to a C++ header and source file containing the ROM data
  * 
- * Usage: rom_to_header input_rom_file output_header_file variable_name
- * Example: rom_to_header "Super Mario Bros. (JU) (PRG0) [!].nes" SMBRom.hpp smbRomData
+ * Usage: rom_to_header input_rom_file output_base_name variable_name
+ * Example: rom_to_header "Super Mario Bros.nes" SMBRom smbRomData
+ * 
+ * This will generate SMBRom.hpp and SMBRom.cpp
  */
 
 #include <iostream>
@@ -56,12 +58,14 @@ std::string getCurrentDate() {
 int main(int argc, char* argv[]) {
     // Check command line arguments
     if (argc < 3) {
-        std::cerr << "Usage: " << argv[0] << " input_rom_file output_header_file [variable_name]" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " input_rom_file output_base_name [variable_name]" << std::endl;
         return 1;
     }
     
     std::string inputFile = argv[1];
-    std::string outputFile = argv[2];
+    std::string outputBaseName = argv[2];
+    std::string headerFile = outputBaseName + ".hpp";
+    std::string sourceFile = outputBaseName + ".cpp";
     std::string variableName = (argc >= 4) ? argv[3] : fileToIdentifier(inputFile) + "_data";
     
     // Open the ROM file for reading in binary mode
@@ -83,69 +87,84 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
-    // Open the output header file
-    std::ofstream headerFile(outputFile);
-    if (!headerFile) {
-        std::cerr << "Error: Could not create output header file: " << outputFile << std::endl;
-        return 1;
-    }
-    
     // Generate a header guard based on the output filename
-    std::string headerGuard = fileToIdentifier(outputFile);
+    std::string headerGuard = fileToIdentifier(headerFile);
     for (char& c : headerGuard) {
         c = std::toupper(c);
     }
     headerGuard += "_HPP";
     
-    // Write the header file
-    headerFile << "#ifndef " << headerGuard << "\n";
-    headerFile << "#define " << headerGuard << "\n\n";
+    // Open and write the header file (declarations only)
+    std::ofstream headerOut(headerFile);
+    if (!headerOut) {
+        std::cerr << "Error: Could not create output header file: " << headerFile << std::endl;
+        return 1;
+    }
     
-    headerFile << "#include <cstdint>\n";
-    headerFile << "#include <cstddef>\n\n";
+    headerOut << "#ifndef " << headerGuard << "\n";
+    headerOut << "#define " << headerGuard << "\n\n";
+    
+    headerOut << "#include <cstdint>\n";
+    headerOut << "#include <cstddef>\n\n";
     
     // Add file information as a comment
-    headerFile << "/**\n";
-    headerFile << " * ROM data for: " << inputFile << "\n";
-    headerFile << " * Size: " << fileSize << " bytes\n";
-    headerFile << " * Generated on: " << getCurrentDate() << "\n";
-    headerFile << " */\n\n";
+    headerOut << "/**\n";
+    headerOut << " * ROM data for: " << inputFile << "\n";
+    headerOut << " * Size: " << fileSize << " bytes\n";
+    headerOut << " * Generated on: " << getCurrentDate() << "\n";
+    headerOut << " */\n\n";
     
     // Write the array size constant
-    headerFile << "constexpr size_t " << variableName << "_size = " << fileSize << ";\n\n";
+    headerOut << "constexpr size_t " << variableName << "_size = " << fileSize << ";\n\n";
     
-    // Write the ROM data array
-    headerFile << "const uint8_t " << variableName << "[" << fileSize << "] = {\n";
+    // Declare the ROM data array but don't define it
+    headerOut << "extern const uint8_t " << variableName << "[" << variableName << "_size];\n\n";
+    
+    headerOut << "#endif // " << headerGuard << "\n";
+    headerOut.close();
+    
+    // Open and write the source file (definitions)
+    std::ofstream sourceOut(sourceFile);
+    if (!sourceOut) {
+        std::cerr << "Error: Could not create output source file: " << sourceFile << std::endl;
+        return 1;
+    }
+    
+    sourceOut << "#include \"" << headerFile << "\"\n\n";
+    
+    // Define the ROM data array
+    sourceOut << "const uint8_t " << variableName << "[" << variableName << "_size] = {\n";
     
     // Format the data as a hex array with comments for offsets
     const int BYTES_PER_LINE = 16;
     for (std::streamsize i = 0; i < fileSize; ++i) {
         if (i % BYTES_PER_LINE == 0) {
             // Add an offset comment at the start of each line
-            headerFile << "    /* 0x" << std::hex << std::setw(8) << std::setfill('0') << i << " */ ";
+            sourceOut << "    /* 0x" << std::hex << std::setw(8) << std::setfill('0') << i << " */ ";
         }
         
         // Write the byte value in hex
-        headerFile << "0x" << std::hex << std::setw(2) << std::setfill('0') 
-                  << static_cast<int>(buffer[i]);
+        sourceOut << "0x" << std::hex << std::setw(2) << std::setfill('0') 
+                 << static_cast<int>(buffer[i]);
         
         // Add a comma if this is not the last byte
         if (i < fileSize - 1) {
-            headerFile << ", ";
+            sourceOut << ", ";
         }
         
         // End the line after BYTES_PER_LINE bytes or at the end of the array
         if ((i + 1) % BYTES_PER_LINE == 0 || i == fileSize - 1) {
-            headerFile << "\n";
+            sourceOut << "\n";
         }
     }
     
-    headerFile << "};\n\n";
-    headerFile << "#endif // " << headerGuard << "\n";
+    sourceOut << "};\n";
+    sourceOut.close();
     
-    std::cout << "Successfully converted ROM file to header:\n";
+    std::cout << "Successfully converted ROM file to header and source:\n";
     std::cout << "  Input: " << inputFile << " (" << fileSize << " bytes)\n";
-    std::cout << "  Output: " << outputFile << "\n";
+    std::cout << "  Output Header: " << headerFile << "\n";
+    std::cout << "  Output Source: " << sourceFile << "\n";
     std::cout << "  Variable: " << variableName << "[" << fileSize << "]\n";
     
     return 0;
