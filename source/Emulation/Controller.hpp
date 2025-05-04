@@ -46,6 +46,11 @@ public:
     void setButtonState(ControllerButton button, bool state);
 
     /**
+     * Get the state of a button on the controller.
+     */
+    bool getButtonState(ControllerButton button) const;
+
+    /**
      * Write a byte to the controller register.
      */
     void writeByte(uint8_t value);
@@ -64,6 +69,7 @@ public:
 
     // Debug function to print the current state of the controller
     void printButtonStates() const;
+    
 
 
 private:
@@ -82,7 +88,6 @@ private:
 
     // Map SDL joystick/gamepad buttons to NES controller buttons
     void mapJoystickButtonToController(int button, ControllerButton nesButton);
-    
     
     // Creates a custom mapping for the Retrolink SNES Controller
     void setupRetrolinkMapping();

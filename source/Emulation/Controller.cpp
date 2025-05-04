@@ -146,6 +146,11 @@ void Controller::setButtonState(ControllerButton button, bool state)
     buttonStates[(int)button] = state;
 }
 
+bool Controller::getButtonState(ControllerButton button) const
+{
+    return buttonStates[(int)button];
+}
+
 void Controller::writeByte(uint8_t value)
 {
     if ((value & (1 << 0)) == 0 && (strobe & (1 << 0)) == 1)
@@ -234,19 +239,18 @@ void Controller::processJoystickEvent(const SDL_Event& event)
         case SDL_JOYBUTTONUP:
             if (event.jbutton.which == joystickID)
             {
-                // Mapping for Retrolink SNES Controller
+                // Log button release for debugging
+                std::cout << "Button released: " << (int)event.jbutton.button << std::endl;
+                
+                // Map based on Retrolink SNES layout - correct mapping for your controller
                 switch (event.jbutton.button)
                 {
-                    case 0: setButtonState(BUTTON_B, false); break;  // SNES B -> NES B
-                    case 1: setButtonState(BUTTON_A, false); break;  // SNES Y -> NES A
-                    case 2: setButtonState(BUTTON_SELECT, false); break;  // SNES Select -> NES Select
-                    case 3: setButtonState(BUTTON_START, false); break;  // SNES Start -> NES Start
-                    case 4: setButtonState(BUTTON_A, false); break;  // SNES A -> NES A (alternate)
-                    case 5: setButtonState(BUTTON_B, false); break;  // SNES X -> NES B (alternate)
-                    case 6: setButtonState(BUTTON_SELECT, false); break; // SNES L -> NES Select (alternate)
-                    case 7: setButtonState(BUTTON_START, false); break;  // SNES R -> NES Start (alternate)
-                    case 8: setButtonState(BUTTON_SELECT, false); break; // Another possible Select
-                    case 9: setButtonState(BUTTON_START, false); break;  // Another possible Start
+                    case 0: setButtonState(BUTTON_B, false); break;      // SNES B -> NES B
+                    case 1: setButtonState(BUTTON_A, false); break;      // SNES Y -> NES A 
+                    case 8: setButtonState(BUTTON_SELECT, false); break; // SNES Select -> NES Select
+                    case 9: setButtonState(BUTTON_START, false); break;  // SNES Start -> NES Start
+                    case 4: setButtonState(BUTTON_A, false); break;      // SNES A -> NES A (alternate)
+                    case 5: setButtonState(BUTTON_B, false); break;      // SNES X -> NES B (alternate)
                     default: break;
                 }
             }
@@ -371,28 +375,20 @@ void Controller::updateJoystickState()
     if (!joystickInitialized)
         return;
 
-    // Poll joystick state directly - this is often more reliable than events
+    // Poll joystick state directly - this ensures buttons remain pressed when held down
     if (joystick)
     {
-        // For Retrolink SNES Controller, we'll poll every button directly
-        
-        // Standard SNES button layout mapping to NES
-        // Button 0 (B) -> NES B
-        // Button 1 (Y) -> NES A or alternate button
-        // Button 2 (Select) -> NES Select
-        // Button 3 (Start) -> NES Start
-        // Button 4 (A) -> NES A 
-        // Button 5 (X) -> NES B alternate
-        
-        if (SDL_JoystickNumButtons(joystick) >= 6) 
+        // For Retrolink SNES Controller, specifically correct the Select and Start buttons
+        if (SDL_JoystickNumButtons(joystick) >= 10) 
         {
+            // Directly poll button states to properly handle held buttons
             setButtonState(BUTTON_B, SDL_JoystickGetButton(joystick, 0));
             setButtonState(BUTTON_A, SDL_JoystickGetButton(joystick, 1) || SDL_JoystickGetButton(joystick, 4));
-            setButtonState(BUTTON_SELECT, SDL_JoystickGetButton(joystick, 2));
-            setButtonState(BUTTON_START, SDL_JoystickGetButton(joystick, 3));
+            setButtonState(BUTTON_SELECT, SDL_JoystickGetButton(joystick, 8));  // Changed from 2 to 8
+            setButtonState(BUTTON_START, SDL_JoystickGetButton(joystick, 9));   // Changed from 3 to 9
             
             // These are alternatives that might be useful for some SNES controllers
-            if (!SDL_JoystickGetButton(joystick, 0)) // Don't override if already set
+            if (!buttonStates[BUTTON_B]) // Don't override if already set
                 setButtonState(BUTTON_B, SDL_JoystickGetButton(joystick, 5));
         }
         
@@ -401,6 +397,7 @@ void Controller::updateJoystickState()
         {
             Uint8 hatState = SDL_JoystickGetHat(joystick, 0);
             
+            // Always update D-pad buttons based on current hat state
             setButtonState(BUTTON_UP, (hatState & SDL_HAT_UP) != 0);
             setButtonState(BUTTON_DOWN, (hatState & SDL_HAT_DOWN) != 0);
             setButtonState(BUTTON_LEFT, (hatState & SDL_HAT_LEFT) != 0);
@@ -462,25 +459,18 @@ void Controller::setupRetrolinkMapping()
 
 void Controller::mapJoystickButtonToController(int button, ControllerButton nesButton)
 {
-    // Mapping specifically for Retrolink SNES Controller and similar controllers
-    // SNES layout: B, Y, Select, Start, Up, Down, Left, Right, A, X, L, R
-    
     // Log button presses for debugging
     std::cout << "Button pressed: " << button << std::endl;
     
+    // Map based on Retrolink SNES layout specifically for your controller
     switch (button)
     {
-        // Map based on typical SNES layout
-        case 0: setButtonState(BUTTON_B, true); break;  // SNES B -> NES B
-        case 1: setButtonState(BUTTON_A, true); break;  // SNES Y -> NES A
-        case 2: setButtonState(BUTTON_B, true); break;  // SNES Select -> NES Select
-        case 3: setButtonState(BUTTON_START, true); break;  // SNES Start -> NES Start
-        case 4: setButtonState(BUTTON_A, true); break;  // SNES A -> NES A (alternate)
-        case 5: setButtonState(BUTTON_B, true); break;  // SNES X -> NES B (alternate)
-        case 6: setButtonState(BUTTON_SELECT, true); break; // SNES L -> NES Select (alternate)
-        case 7: setButtonState(BUTTON_START, true); break;  // SNES R -> NES Start (alternate)
-        case 8: setButtonState(BUTTON_SELECT, true); break; // Another possible Select mapping
-        case 9: setButtonState(BUTTON_START, true); break;  // Another possible Start mapping
+        case 0: setButtonState(BUTTON_B, true); break;      // SNES B -> NES B
+        case 1: setButtonState(BUTTON_A, true); break;      // SNES Y -> NES A
+        case 8: setButtonState(BUTTON_SELECT, true); break; // SNES Select -> NES Select
+        case 9: setButtonState(BUTTON_START, true); break;  // SNES Start -> NES Start
+        case 4: setButtonState(BUTTON_A, true); break;      // SNES A -> NES A (alternate)
+        case 5: setButtonState(BUTTON_B, true); break;      // SNES X -> NES B (alternate)
         default: break;
     }
 }
