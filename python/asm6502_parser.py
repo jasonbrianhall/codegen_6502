@@ -107,14 +107,14 @@ def p_code_code_data(p):
 
 def p_data_databytes(p):
     'data : DATABYTES dlist'
-    p[0] = AstNode(AST_DATA8)
+    p[0] = AstNode(AstType.AST_DATA8)
     p[0].line_number = p.lineno(1)
     p[0].value.node = p[2]
     p[2].parent = p[0]
 
 def p_data_datawords(p):
     'data : DATAWORDS dlist'
-    p[0] = AstNode(AST_DATA16)
+    p[0] = AstNode(AstType.AST_DATA16)
     p[0].line_number = p.lineno(1)
     p[0].value.node = p[2]
     p[2].parent = p[0]
@@ -387,35 +387,35 @@ def p_const_dec(p):
 
 def p_expr_name(p):
     'expr : NAME'
-    p[0] = AstNode(AST_NAME, p[1])
+    p[0] = AstNode(AstType.AST_NAME, p[1])
 
 def p_expr_const(p):
     'expr : const'
-    p[0] = AstNode(AST_CONST, p[1])
+    p[0] = AstNode(AstType.AST_CONST, p[1])
 
 def p_expr_immediate(p):
     'expr : "#" expr'
-    p[0] = UnaryNode(AST_IMMEDIATE, p[2])
+    p[0] = UnaryNode(AstType.AST_IMMEDIATE, p[2])
 
 def p_expr_add(p):
     'expr : expr "+" expr'
-    p[0] = BinaryNode(AST_ADD, p[1], p[3])
+    p[0] = BinaryNode(AstType.AST_ADD, p[1], p[3])
 
 def p_expr_subtract(p):
     'expr : expr "-" expr'
-    p[0] = BinaryNode(AST_SUBTRACT, p[1], p[3])
+    p[0] = BinaryNode(AstType.AST_SUBTRACT, p[1], p[3])
 
 def p_expr_lobyte(p):
     'expr : "<" expr'
-    p[0] = UnaryNode(AST_LOBYTE, p[2])
+    p[0] = UnaryNode(AstType.AST_LOBYTE, p[2])
 
 def p_expr_hibyte(p):
     'expr : ">" expr'
-    p[0] = UnaryNode(AST_HIBYTE, p[2])
+    p[0] = UnaryNode(AstType.AST_HIBYTE, p[2])
 
 def p_expr_indirect(p):
     'expr : "(" expr ")"'
-    p[0] = UnaryNode(AST_INDIRECT, p[2])
+    p[0] = UnaryNode(AstType.AST_INDIRECT, p[2])
 
 def p_iexpr_expr(p):
     'iexpr : expr'
@@ -423,11 +423,11 @@ def p_iexpr_expr(p):
 
 def p_iexpr_indexed_x(p):
     'iexpr : expr "," x'
-    p[0] = UnaryNode(AST_INDEXED_X, p[1])
+    p[0] = UnaryNode(AstType.AST_INDEXED_X, p[1])
 
 def p_iexpr_indexed_y(p):
     'iexpr : expr "," y'
-    p[0] = UnaryNode(AST_INDEXED_Y, p[1])
+    p[0] = UnaryNode(AstType.AST_INDEXED_Y, p[1])
 
 # Error rule for syntax errors
 def p_error(p):
