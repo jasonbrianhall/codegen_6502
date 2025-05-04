@@ -1,0 +1,6 @@
+/home/jbhall/software_build/SuperMarioBros-C/CMakeFiles/smbc.dir
+/home/jbhall/software_build/SuperMarioBros-C/CMakeFiles/edit_cache.dir
+/home/jbhall/software_build/SuperMarioBros-C/CMakeFiles/rebuild_cache.dir
+/home/jbhall/software_build/SuperMarioBros-C/codegen/CMakeFiles/codegen.dir
+/home/jbhall/software_build/SuperMarioBros-C/codegen/CMakeFiles/edit_cache.dir
+/home/jbhall/software_build/SuperMarioBros-C/codegen/CMakeFiles/rebuild_cache.dir

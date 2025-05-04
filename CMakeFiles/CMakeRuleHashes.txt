@@ -1,0 +1,3 @@
+# Hashes of file build rules.
+058882069d2c8789e078101774a792fc codegen/lexer.cpp
+c0993f63547ecb1bafba5465409b7ef9 codegen/parser.cpp
