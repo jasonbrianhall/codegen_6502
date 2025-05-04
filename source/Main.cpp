@@ -13,9 +13,6 @@
 // Include the generated ROM header
 #include "SMBRom.hpp" // This contains smbRomData array
 
-// We no longer need this global variable as we'll use smbRomData directly
-// uint8_t* romImage;
-
 static SDL_Window* window;
 static SDL_Renderer* renderer;
 static SDL_Texture* texture;
@@ -27,18 +24,23 @@ static uint32_t prevFrameBuffer[RENDER_WIDTH * RENDER_HEIGHT];
 static bool msaaEnabled = false;
 
 /**
+ * SDL Audio callback function.
+ */
+static void audioCallback(void* userdata, uint8_t* buffer, int len)
+{
+    if (smbEngine != nullptr)
+    {
+        smbEngine->audioCallback(buffer, len);
+    }
+}
+
+/**
  * Initialize libraries for use.
  */
 static bool initialize()
 {
     // Load the configuration
     Configuration::initialize(CONFIG_FILE_NAME);
-
-    // We no longer need to load the ROM file
-    // if (!loadRomImage())
-    // {
-    //     return false;
-    // }
 
     // Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
@@ -150,9 +152,6 @@ static void shutdown()
     SDL_DestroyWindow(window);
 
     SDL_Quit();
-    
-    // We no longer need to free romImage as we're using the static array
-    // delete[] romImage;
 }
 
 static void mainLoop()
