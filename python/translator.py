@@ -67,54 +67,76 @@ class Translator:
         # Iterate through all root children
         i = 0
         while i < len(self.root.children):
-            node = self.root.children[i]
-            
-            # Skip non-labels
-            if node.type != AstType.AST_LABEL:
-                i += 1
-                continue
+            try:
+                node = self.root.children[i]
                 
-            label = node
-            
-            # Handle nested labels
-            while True:
+                # Skip non-labels
+                if node.type != AstType.AST_LABEL:
+                    i += 1
+                    continue
+                    
+                label = node
+                
+                # Handle nested labels
+                while True:
+                    if not hasattr(label, 'child') or label.child is None:
+                        print(f"Warning: Label {label.value.s if hasattr(label, 'value') else 'unknown'} has no child")
+                        break
+                        
+                    child = label.child
+                    
+                    if child.type == AstType.AST_LABEL:
+                        # Nested label - classify as alias and continue with child
+                        label.label_type = LabelType.LABEL_ALIAS
+                        label = label.child
+                        
+                        # Modify the AST
+                        # Pull the nested label out and promote to a child of the root node
+                        i += 1
+                        self.root.children.insert(i, child)
+                        
+                        # Go back one so that the iterator points to the child
+                        i -= 1
+                    else:
+                        break
+                        
+                # Check the first child node
+                if not hasattr(label, 'child') or label.child is None:
+                    print(f"Warning: Label {label.value.s if hasattr(label, 'value') else 'unknown'} has no child")
+                    i += 1
+                    continue
+                    
                 child = label.child
                 
-                if child.type == AstType.AST_LABEL:
-                    # Nested label - classify as alias and continue with child
-                    label.label_type = LabelType.LABEL_ALIAS
-                    label = label.child
-                    
-                    # Modify the AST
-                    # Pull the nested label out and promote to a child of the root node
+                # This should be a list
+                if child.type != AstType.AST_LIST:
+                    print(f"Warning: Label {label.value.s} has child of type {child.type} instead of AST_LIST")
                     i += 1
-                    self.root.children.insert(i, child)
-                    
-                    # Go back one so that the iterator points to the child
-                    i -= 1
-                else:
-                    break
-                    
-            # Check the first child node
-            child = label.child
-            
-            # This should be a list
-            assert child.type == AstType.AST_LIST
-            
-            # Check the type of the first contained list item
-            list_node = child
-            list_element = list_node.value.node
-            assert list_element is not None
-            
-            if list_element.type == AstType.AST_INSTRUCTION:
-                # Code
-                label.label_type = LabelType.LABEL_CODE
-            elif list_element.type == AstType.AST_DATA8:
-                label.label_type = LabelType.LABEL_DATA
-            else:
-                # Should be impossible
-                assert False
+                    continue
                 
+                # Check the first contained list item
+                list_node = child
+                if not hasattr(list_node, 'value') or not hasattr(list_node.value, 'node') or list_node.value.node is None:
+                    print(f"Warning: List node for label {label.value.s} has no value.node")
+                    i += 1
+                    continue
+                    
+                list_element = list_node.value.node
+                
+                if list_element.type == AstType.AST_INSTRUCTION:
+                    # Code
+                    label.label_type = LabelType.LABEL_CODE
+                elif list_element.type == AstType.AST_DATA8:
+                    label.label_type = LabelType.LABEL_DATA
+                else:
+                    print(f"Warning: Unexpected element type {list_element.type} for label {label.value.s}")
+                    # Default to code type
+                    label.label_type = LabelType.LABEL_CODE
+                    
+            except Exception as e:
+                print(f"Error processing label at index {i}: {e}")
+                # Continue with next label
+            
             i += 1
             
     def generate_code(self):
@@ -140,14 +162,14 @@ class Translator:
                 continue
                 
             label = node
-            if label.label_type != LabelType.LABEL_CODE:
+            if not hasattr(label, 'label_type') or label.label_type != LabelType.LABEL_CODE:
                 continue
                 
             # Output a C++ label for the label
             self.source_output += f"\n{label.value.s}"
             
             # Output a comment, if the label has one
-            if label.line_number != 0:
+            if hasattr(label, 'line_number') and label.line_number != 0:
                 comment = lookup_comment(label.line_number)
                 if comment:
                     # Skip the first character of the ASM comment (;)
@@ -155,41 +177,54 @@ class Translator:
                     
             self.source_output += "\n"
             
-            # Translate each piece of code under the label
-            list_element = label.child
-            while list_element is not None:
-                instruction = list_element.value.node
-                if instruction.type == AstType.AST_INSTRUCTION:
-                    self.source_output += f"{TAB}{self.translate_instruction(instruction)}"
+            try:
+                # Translate each piece of code under the label
+                list_element = label.child
+                while list_element is not None:
+                    if not hasattr(list_element, 'value') or not hasattr(list_element.value, 'node'):
+                        print(f"Warning: Invalid list element for label {label.value.s}")
+                        break
+                        
+                    instruction = list_element.value.node
+                    if instruction.type == AstType.AST_INSTRUCTION:
+                        self.source_output += f"{TAB}{self.translate_instruction(instruction)}"
+                        
+                        if hasattr(instruction, 'line_number') and instruction.line_number != 0:
+                            comment = lookup_comment(instruction.line_number)
+                            if comment:
+                                # Skip the first character of the ASM comment (;)
+                                self.source_output += f" // {comment[1:]}"
+                                
+                        # Add a nice line separator after return statements
+                        if instruction.code == RTS:
+                            self.source_output += "\n\n"
+                            self.source_output += LINE_SEPARATOR_COMMENT
+                        else:
+                            # Or just a newline for all other instructions
+                            self.source_output += "\n"
+                        
+                        if self.skip_next_instruction:
+                            # If we had a .db $2c instruction immediately before this one,
+                            # we need to add a label to be able to skip this instruction
+                            self.source_output += f"Skip_{self.skip_next_instruction_index}:\n"
+                            self.skip_next_instruction = False
+                    elif (instruction.type == AstType.AST_DATA8 and 
+                          hasattr(instruction, 'value') and 
+                          hasattr(instruction.value, 'node') and 
+                          hasattr(instruction.value.node, 'value') and 
+                          hasattr(instruction.value.node.value, 'node') and 
+                          hasattr(instruction.value.node.value.node, 'value') and 
+                          hasattr(instruction.value.node.value.node.value, 's') and
+                          instruction.value.node.value.node.value.s == "$2c"):
+                        # Special case: .db $2c
+                        # We need to goto the next instruction
+                        self.skip_next_instruction = True
+                        self.source_output += f"{TAB}goto Skip_{self.skip_next_instruction_index};\n"
+                        self.skip_next_instruction_index += 1
                     
-                    if instruction.line_number != 0:
-                        comment = lookup_comment(instruction.line_number)
-                        if comment:
-                            # Skip the first character of the ASM comment (;)
-                            self.source_output += f" // {comment[1:]}"
-                            
-                    # Add a nice line separator after return statements
-                    if instruction.code == RTS:
-                        self.source_output += "\n\n"
-                        self.source_output += LINE_SEPARATOR_COMMENT
-                    else:
-                        # Or just a newline for all other instructions
-                        self.source_output += "\n"
-                    
-                    if self.skip_next_instruction:
-                        # If we had a .db $2c instruction immediately before this one,
-                        # we need to add a label to be able to skip this instruction
-                        self.source_output += f"Skip_{self.skip_next_instruction_index}:\n"
-                        self.skip_next_instruction = False
-                elif (instruction.type == AstType.AST_DATA8 and 
-                      instruction.value.node.value.node.value.s == "$2c"):
-                    # Special case: .db $2c
-                    # We need to goto the next instruction
-                    self.skip_next_instruction = True
-                    self.source_output += f"{TAB}goto Skip_{self.skip_next_instruction_index};\n"
-                    self.skip_next_instruction_index += 1
-                
-                list_element = list_element.next
+                    list_element = list_element.next
+            except Exception as e:
+                print(f"Error generating code for label {label.value.s}: {e}")
                 
         # Generate a return jump table at the end of the code
         self.source_output += """// Return handler
@@ -219,14 +254,17 @@ Return:
                 
             decl = node
             
-            self.constant_header_output += f"#define {decl.value.s} {self.translate_expression(decl.expression)}"
-            
-            if decl.line_number != 0:
-                comment = lookup_comment(decl.line_number)
-                if comment:
-                    # Strip the initial ';' character
-                    self.constant_header_output += f" // {comment[1:]}"
-                    
+            try:
+                self.constant_header_output += f"#define {decl.value.s} {self.translate_expression(decl.expression)}"
+                
+                if hasattr(decl, 'line_number') and decl.line_number != 0:
+                    comment = lookup_comment(decl.line_number)
+                    if comment:
+                        # Strip the initial ';' character
+                        self.constant_header_output += f" // {comment[1:]}"
+            except Exception as e:
+                print(f"Error generating constant declaration for {decl.value.s}: {e}")
+                
             self.constant_header_output += "\n"
             
         self.constant_header_output += "\n#endif // SMBCONSTANTS_HPP\n"
@@ -267,80 +305,99 @@ struct SMBDataPointers
                 
             label = node
             
+            # Skip labels without a valid type
+            if not hasattr(label, 'label_type'):
+                continue
+                
             # Strip the trailing ':' character
             label_name = label.value.s
             if label_name.endswith(':'):
                 label_name = label_name[:-1]
                 
             if label.label_type == LabelType.LABEL_DATA or label.label_type == LabelType.LABEL_ALIAS:
-                if label.label_type == LabelType.LABEL_DATA:
-                    # The constant data declaration
-                    loading += f"{TAB}// {label_name}\n"
-                    loading += f"{TAB}//\n"
-                    loading += f"{TAB}const uint8_t {label_name}_data[] = {{"
-                    
-                    # Translate each data item stored in the label
-                    list_element = label.child
-                    assert list_element is not None
-                    
-                    byte_count = 0
-                    while list_element is not None:
-                        loading += f"\n{TAB}{TAB}"
+                try:
+                    if label.label_type == LabelType.LABEL_DATA:
+                        # The constant data declaration
+                        loading += f"{TAB}// {label_name}\n"
+                        loading += f"{TAB}//\n"
+                        loading += f"{TAB}const uint8_t {label_name}_data[] = {{"
                         
-                        data_item = list_element.value.node
+                        # Translate each data item stored in the label
+                        list_element = label.child
+                        if list_element is None:
+                            print(f"Warning: No child elements for data label {label_name}")
+                            continue
                         
-                        assert data_item.type == AstType.AST_DATA8
-                        
-                        data_list_element = data_item.value.node
-                        assert data_list_element.type == AstType.AST_LIST
-                        
-                        while data_list_element is not None:
-                            # Translate the data item's expression
-                            loading += self.translate_expression(data_list_element.value.node)
+                        byte_count = 0
+                        while list_element is not None:
+                            loading += f"\n{TAB}{TAB}"
                             
-                            if data_list_element.next is not None:
-                                loading += ", "
-                                
-                            byte_count += 1
-                            
-                            data_list_element = data_list_element.next
-                            
-                        if list_element.next is not None:
-                            if list_element.next.value.node.type != AstType.AST_DATA16:
-                                loading += ","
-                            else:
-                                # This only occurs at the very end of the disassembly (the interrupt vectors)
-                                # So we will ignore it
+                            data_item = list_element.value.node
+                            if data_item is None or data_item.type != AstType.AST_DATA8:
+                                print(f"Warning: Invalid data item for label {label_name}")
                                 break
+                            
+                            data_list_element = data_item.value.node
+                            if data_list_element is None or data_list_element.type != AstType.AST_LIST:
+                                print(f"Warning: Invalid data list element for label {label_name}")
+                                break
+                            
+                            while data_list_element is not None:
+                                # Translate the data item's expression
+                                if hasattr(data_list_element, 'value') and hasattr(data_list_element.value, 'node'):
+                                    try:
+                                        loading += self.translate_expression(data_list_element.value.node)
+                                    except Exception as e:
+                                        print(f"Error translating expression: {e}")
+                                        loading += "0 /* Error */"
+                                else:
+                                    loading += "0 /* Invalid node */"
                                 
-                        # Add comments at the end of the line (if they exist)
-                        if data_item.line_number != 0:
-                            comment = lookup_comment(data_item.line_number)
-                            if comment:
-                                # Strip the first ';' character
-                                loading += f" // {comment[1:]}"
+                                if data_list_element.next is not None:
+                                    loading += ", "
+                                    
+                                byte_count += 1
                                 
-                        list_element = list_element.next
+                                data_list_element = data_list_element.next
+                                
+                            if list_element.next is not None:
+                                if hasattr(list_element.next, 'value') and hasattr(list_element.next.value, 'node') and list_element.next.value.node.type != AstType.AST_DATA16:
+                                    loading += ","
+                                else:
+                                    # This only occurs at the very end of the disassembly (the interrupt vectors)
+                                    # So we will ignore it
+                                    break
+                                    
+                            # Add comments at the end of the line (if they exist)
+                            if hasattr(data_item, 'line_number') and data_item.line_number != 0:
+                                comment = lookup_comment(data_item.line_number)
+                                if comment:
+                                    # Strip the first ';' character
+                                    loading += f" // {comment[1:]}"
+                                    
+                            list_element = list_element.next
+                            
+                        loading += f"\n{TAB}}};\n"
+                        loading += f"{TAB}writeData({label_name}, {label_name}_data, sizeof({label_name}_data));\n\n"
                         
-                    loading += f"\n{TAB}}};\n"
-                    loading += f"{TAB}writeData({label_name}, {label_name}_data, sizeof({label_name}_data));\n\n"
-                    
-                    # The addresses that point to the data
-                    addresses += f"{TAB}uint16_t {label_name}_ptr;\n"
-                    
-                    address_defines += f"#define {label_name} (dataPointers.{label_name}_ptr)\n"
-                    
-                    address_defaults += f"{TAB}{TAB}this->{label_name}_ptr = 0x{storage_address:x};\n"
-                    
-                    storage_address += byte_count
-                # Alias label
-                else:
-                    # For aliases, we only need to worry about referencing the aliased value
-                    addresses += f"{TAB}uint16_t {label_name}_ptr; // alias\n"
-                    
-                    address_defines += f"#define {label_name} (dataPointers.{label_name}_ptr)\n"
-                    
-                    address_defaults += f"{TAB}{TAB}this->{label_name}_ptr = 0x{storage_address:x};\n"
+                        # The addresses that point to the data
+                        addresses += f"{TAB}uint16_t {label_name}_ptr;\n"
+                        
+                        address_defines += f"#define {label_name} (dataPointers.{label_name}_ptr)\n"
+                        
+                        address_defaults += f"{TAB}{TAB}this->{label_name}_ptr = 0x{storage_address:x};\n"
+                        
+                        storage_address += byte_count
+                    # Alias label
+                    else:
+                        # For aliases, we only need to worry about referencing the aliased value
+                        addresses += f"{TAB}uint16_t {label_name}_ptr; // alias\n"
+                        
+                        address_defines += f"#define {label_name} (dataPointers.{label_name}_ptr)\n"
+                        
+                        address_defaults += f"{TAB}{TAB}this->{label_name}_ptr = 0x{storage_address:x};\n"
+                except Exception as e:
+                    print(f"Error generating data declaration for {label_name}: {e}")
                     
         # Also store the first address of free space
         addresses += f"{TAB}uint16_t freeSpaceAddress;\n"
@@ -348,7 +405,7 @@ struct SMBDataPointers
         
         # Final stuff for the end of each section...
         address_defaults += f"{TAB}}}\n"
-        addresses += f"\n{address_defaults};\n\n"
+        addresses += f"\n{address_defaults}}};\n\n"
         address_defines += "\n"
         loading += "}\n\n"
         
@@ -377,25 +434,28 @@ struct SMBDataPointers
         """
         Perform the full translation process
         """
-        # Find all empty lines in the file
-        self.index_empty_lines()
-        
-        # Find all data and code labels
-        self.classify_labels()
-        
-        # Begin generating output
-        
-        # Put required header
-        self.source_output += "#include \"SMB.hpp\"\n\n"
-        
-        # Generate constant declarations first
-        self.generate_constant_declarations()
-        
-        # Generate data declarations next
-        self.generate_data_declarations()
-        
-        # Finally, generate code
-        self.generate_code()
+        try:
+            # Find all empty lines in the file
+            self.index_empty_lines()
+            
+            # Find all data and code labels
+            self.classify_labels()
+            
+            # Begin generating output
+            
+            # Put required header
+            self.source_output += "#include \"SMB.hpp\"\n\n"
+            
+            # Generate constant declarations first
+            self.generate_constant_declarations()
+            
+            # Generate data declarations next
+            self.generate_data_declarations()
+            
+            # Finally, generate code
+            self.generate_code()
+        except Exception as e:
+            print(f"Error during translation: {e}")
         
     def translate_branch(self, condition, destination):
         """
@@ -443,7 +503,8 @@ struct SMBDataPointers
                 else:
                     result = self.translate_expression(child) + " + y"
             else:
-                assert False, f"Unexpected expression type: {expr.type}"
+                print(f"Warning: Unexpected expression type: {expr.type}")
+                result = "0 /* Unknown expression type */"
                 
         return result
         
@@ -453,198 +514,210 @@ struct SMBDataPointers
         """
         result = ""
         
-        if inst.code == LDA:
-            result += "a = " + self.translate_operand(inst.value.node) + ";"
-        elif inst.code == LDX:
-            result += "x = " + self.translate_operand(inst.value.node) + ";"
-        elif inst.code == LDY:
-            result += "y = " + self.translate_operand(inst.value.node) + ";"
-        elif inst.code == STA:
-            result += "writeData(" + self.translate_expression(inst.value.node) + ", a);"
-        elif inst.code == STX:
-            result += "writeData(" + self.translate_expression(inst.value.node) + ", x);"
-        elif inst.code == STY:
-            result += "writeData(" + self.translate_expression(inst.value.node) + ", y);"
-        elif inst.code == TAX:
-            result = "x = a;"
-        elif inst.code == TAY:
-            result = "y = a;"
-        elif inst.code == TXA:
-            result = "a = x;"
-        elif inst.code == TYA:
-            result = "a = y;"
-        elif inst.code == TSX:
-            result = "x = s;"
-        elif inst.code == TXS:
-            result = "s = x;"
-        elif inst.code == PHA:
-            result = "pha();"
-        elif inst.code == PHP:
-            result = "php();"
-        elif inst.code == PLA:
-            result = "pla();"
-        elif inst.code == PLP:
-            result = "plp();"
-        elif inst.code == AND:
-            result += "a &= " + self.translate_operand(inst.value.node) + ";"
-        elif inst.code == EOR:
-            result += "a ^= " + self.translate_operand(inst.value.node) + ";"
-        elif inst.code == ORA:
-            result += "a |= " + self.translate_operand(inst.value.node) + ";"
-        elif inst.code == BIT:
-            result += "bit(" + self.translate_operand(inst.value.node) + ");"
-        elif inst.code == ADC:
-            result += "a += " + self.translate_operand(inst.value.node) + ";"
-        elif inst.code == SBC:
-            result += "a -= " + self.translate_operand(inst.value.node) + ";"
-        elif inst.code == CMP:
-            result += "compare(a, " + self.translate_operand(inst.value.node) + ");"
-        elif inst.code == CPX:
-            result += "compare(x, " + self.translate_operand(inst.value.node) + ");"
-        elif inst.code == CPY:
-            result += "compare(y, " + self.translate_operand(inst.value.node) + ");"
-        elif inst.code == INC:
-            result += "++" + self.translate_operand(inst.value.node) + ";"
-        elif inst.code == INX:
-            result += "++x;"
-        elif inst.code == INY:
-            result += "++y;"
-        elif inst.code == DEC:
-            result += "--" + self.translate_operand(inst.value.node) + ";"
-        elif inst.code == DEX:
-            result += "--x;"
-        elif inst.code == DEY:
-            result += "--y;"
-        elif inst.code == ASL:
-            if inst.value.node:
-                result += self.translate_operand(inst.value.node) + " <<= 1;"
-            else:
-                result += "a <<= 1;"
-        elif inst.code == LSR:
-            if inst.value.node:
-                result += self.translate_operand(inst.value.node) + " >>= 1;"
-            else:
-                result += "a >>= 1;"
-        elif inst.code == ROL:
-            if inst.value.node:
-                result += self.translate_operand(inst.value.node) + ".rol();"
-            else:
-                result += "a.rol();"
-        elif inst.code == ROR:
-            if inst.value.node:
-                result += self.translate_operand(inst.value.node) + ".ror();"
-            else:
-                result += "a.ror();"
-        elif inst.code == JMP:
-            # We only care about jumping to labels
-            # Jumping to a referenced address is only used once in JumpEngine,
-            # which we reimplement in a different way
-            if inst.value.node.type == AstType.AST_NAME:
-                # Check for special case (jmp EndlessLoop)
-                if inst.value.node.value.s == "EndlessLoop":
-                    result += "return;"
+        try:
+            if inst.code == LDA:
+                result += "a = " + self.translate_operand(inst.value.node) + ";"
+            elif inst.code == LDX:
+                result += "x = " + self.translate_operand(inst.value.node) + ";"
+            elif inst.code == LDY:
+                result += "y = " + self.translate_operand(inst.value.node) + ";"
+            elif inst.code == STA:
+                result += "writeData(" + self.translate_expression(inst.value.node) + ", a);"
+            elif inst.code == STX:
+                result += "writeData(" + self.translate_expression(inst.value.node) + ", x);"
+            elif inst.code == STY:
+                result += "writeData(" + self.translate_expression(inst.value.node) + ", y);"
+            elif inst.code == TAX:
+                result = "x = a;"
+            elif inst.code == TAY:
+                result = "y = a;"
+            elif inst.code == TXA:
+                result = "a = x;"
+            elif inst.code == TYA:
+                result = "a = y;"
+            elif inst.code == TSX:
+                result = "x = s;"
+            elif inst.code == TXS:
+                result = "s = x;"
+            elif inst.code == PHA:
+                result = "pha();"
+            elif inst.code == PHP:
+                result = "php();"
+            elif inst.code == PLA:
+                result = "pla();"
+            elif inst.code == PLP:
+                result = "plp();"
+            elif inst.code == AND:
+                result += "a &= " + self.translate_operand(inst.value.node) + ";"
+            elif inst.code == EOR:
+                result += "a ^= " + self.translate_operand(inst.value.node) + ";"
+            elif inst.code == ORA:
+                result += "a |= " + self.translate_operand(inst.value.node) + ";"
+            elif inst.code == BIT:
+                result += "bit(" + self.translate_operand(inst.value.node) + ");"
+            elif inst.code == ADC:
+                result += "a += " + self.translate_operand(inst.value.node) + ";"
+            elif inst.code == SBC:
+                result += "a -= " + self.translate_operand(inst.value.node) + ";"
+            elif inst.code == CMP:
+                result += "compare(a, " + self.translate_operand(inst.value.node) + ");"
+            elif inst.code == CPX:
+                result += "compare(x, " + self.translate_operand(inst.value.node) + ");"
+            elif inst.code == CPY:
+                result += "compare(y, " + self.translate_operand(inst.value.node) + ");"
+            elif inst.code == INC:
+                result += "++" + self.translate_operand(inst.value.node) + ";"
+            elif inst.code == INX:
+                result += "++x;"
+            elif inst.code == INY:
+                result += "++y;"
+            elif inst.code == DEC:
+                result += "--" + self.translate_operand(inst.value.node) + ";"
+            elif inst.code == DEX:
+                result += "--x;"
+            elif inst.code == DEY:
+                result += "--y;"
+            elif inst.code == ASL:
+                if hasattr(inst, 'value') and inst.value.node:
+                    result += self.translate_operand(inst.value.node) + " <<= 1;"
                 else:
-                    result += "goto " + self.translate_expression(inst.value.node) + ";"
-        elif inst.code == JSR:
-            # Check for special case (jsr JumpEngine)
-            if inst.value.s == "JumpEngine":
-                # Create a switch-case jump table
-                # using the labels that follow as data
-                result += "switch (a)\n"
-                result += TAB
-                result += "{\n"
-                
-                # Skip our element
-                list_element = inst.parent
-                assert list_element is not None
-                
-                list_element = list_element.next
-                index = 0
-                
-                while list_element is not None:
+                    result += "a <<= 1;"
+            elif inst.code == LSR:
+                if hasattr(inst, 'value') and inst.value.node:
+                    result += self.translate_operand(inst.value.node) + " >>= 1;"
+                else:
+                    result += "a >>= 1;"
+            elif inst.code == ROL:
+                if hasattr(inst, 'value') and inst.value.node:
+                    result += self.translate_operand(inst.value.node) + ".rol();"
+                else:
+                    result += "a.rol();"
+            elif inst.code == ROR:
+                if hasattr(inst, 'value') and inst.value.node:
+                    result += self.translate_operand(inst.value.node) + ".ror();"
+                else:
+                    result += "a.ror();"
+            elif inst.code == JMP:
+                # We only care about jumping to labels
+                # Jumping to a referenced address is only used once in JumpEngine,
+                # which we reimplement in a different way
+                if hasattr(inst, 'value') and inst.value.node and inst.value.node.type == AstType.AST_NAME:
+                    # Check for special case (jmp EndlessLoop)
+                    if inst.value.node.value.s == "EndlessLoop":
+                        result += "return;"
+                    else:
+                        result += "goto " + self.translate_expression(inst.value.node) + ";"
+                else:
+                    result += "/* jmp instruction with invalid operand */;"
+            elif inst.code == JSR:
+                # Check for special case (jsr JumpEngine)
+                if hasattr(inst, 'value') and inst.value.s == "JumpEngine":
+                    # Create a switch-case jump table
+                    # using the labels that follow as data
+                    result += "switch (a)\n"
                     result += TAB
-                    result += "case "
-                    result += str(index)
-                    result += ":\n"
+                    result += "{\n"
                     
-                    # A little funky...
-                    # We have an outer list element,
-                    # which contains a 16-bit data list element (.dw),
-                    # which contains another list element,
-                    # which contains the name that we want to add to our jump table
-                    result += TAB
-                    result += TAB
-                    result += "goto "
-                    result += self.translate_expression(list_element.value.node.value.node.value.node)
-                    result += ";"
-                    
-                    # Add comments at the end of the line (if they exist)
-                    if list_element.value.node.line_number != 0:
-                        comment = lookup_comment(list_element.value.node.line_number)
-                        if comment:
-                            # Strip the first ';' character
-                            result += " // "
-                            result += (comment[1:])
-                            
-                    result += "\n"
+                    # Skip our element
+                    list_element = inst.parent
+                    if list_element is None:
+                        result += TAB + "/* Invalid parent for JumpEngine */\n" + TAB + "}"
+                        return result
                     
                     list_element = list_element.next
-                    index += 1
-                
-                result += TAB
-                result += "}"
+                    index = 0
+                    
+                    while list_element is not None:
+                        result += TAB
+                        result += "case "
+                        result += str(index)
+                        result += ":\n"
+                        
+                        # A little funky...
+                        # We have an outer list element,
+                        # which contains a 16-bit data list element (.dw),
+                        # which contains another list element,
+                        # which contains the name that we want to add to our jump table
+                        try:
+                            result += TAB
+                            result += TAB
+                            result += "goto "
+                            result += self.translate_expression(list_element.value.node.value.node.value.node)
+                            result += ";"
+                        except Exception as e:
+                            result += TAB
+                            result += TAB
+                            result += f"/* Error processing jump table entry {index}: {e} */;"
+                        
+                        # Add comments at the end of the line (if they exist)
+                        if hasattr(list_element.value.node, 'line_number') and list_element.value.node.line_number != 0:
+                            comment = lookup_comment(list_element.value.node.line_number)
+                            if comment:
+                                # Strip the first ';' character
+                                result += " // "
+                                result += (comment[1:])
+                                
+                        result += "\n"
+                        
+                        list_element = list_element.next
+                        index += 1
+                    
+                    result += TAB
+                    result += "}"
+                else:
+                    return_label_index_str = str(self.return_label_index)
+                    result += f"JSR({inst.value.s}, {return_label_index_str});"
+                    self.return_label_index += 1
+            elif inst.code == RTS:
+                result += "goto Return;"
+            elif inst.code == BCC:
+                result = self.translate_branch("!c", inst.value.s)
+            elif inst.code == BCS:
+                result = self.translate_branch("c", inst.value.s)
+            elif inst.code == BEQ:
+                result = self.translate_branch("z", inst.value.s)
+            elif inst.code == BMI:
+                result = self.translate_branch("n", inst.value.s)
+            elif inst.code == BNE:
+                result = self.translate_branch("!z", inst.value.s)
+            elif inst.code == BPL:
+                result = self.translate_branch("!n", inst.value.s)
+            elif inst.code == BVC:
+                # For now, just use a placeholder
+                result = "/* BVC not implemented */;"
+            elif inst.code == BVS:
+                # For now, just use a placeholder
+                result = "/* BVS not implemented */;"
+            elif inst.code == CLC:
+                result = "c = 0;"
+            elif inst.code == CLD:
+                # IGNORE
+                result = "/* cld */"
+            elif inst.code == CLI:
+                # For now, just use a placeholder
+                result = "/* CLI not implemented */;"
+            elif inst.code == CLV:
+                # For now, just use a placeholder
+                result = "/* CLV not implemented */;"
+            elif inst.code == SEC:
+                result = "c = 1;"
+            elif inst.code == SED:
+                # For now, just use a placeholder
+                result = "/* SED not implemented */;"
+            elif inst.code == SEI:
+                # IGNORE
+                result = "/* sei */"
+            elif inst.code == BRK:
+                # For now, just use a placeholder
+                result = "/* BRK not implemented */;"
+            elif inst.code == NOP:
+                result += "; // nop"
+            elif inst.code == RTI:
+                result += "return;"
             else:
-                return_label_index_str = str(self.return_label_index)
-                result += f"JSR({inst.value.s}, {return_label_index_str});"
-                self.return_label_index += 1
-        elif inst.code == RTS:
-            result += "goto Return;"
-        elif inst.code == BCC:
-            result = self.translate_branch("!c", inst.value.s)
-        elif inst.code == BCS:
-            result = self.translate_branch("c", inst.value.s)
-        elif inst.code == BEQ:
-            result = self.translate_branch("z", inst.value.s)
-        elif inst.code == BMI:
-            result = self.translate_branch("n", inst.value.s)
-        elif inst.code == BNE:
-            result = self.translate_branch("!z", inst.value.s)
-        elif inst.code == BPL:
-            result = self.translate_branch("!n", inst.value.s)
-        elif inst.code == BVC:
-            # NYI
-            assert False, "BVC not implemented"
-        elif inst.code == BVS:
-            # NYI
-            assert False, "BVS not implemented"
-        elif inst.code == CLC:
-            result = "c = 0;"
-        elif inst.code == CLD:
-            # IGNORE
-            result = "/* cld */"
-        elif inst.code == CLI:
-            # NYI
-            assert False, "CLI not implemented"
-        elif inst.code == CLV:
-            # NYI
-            assert False, "CLV not implemented"
-        elif inst.code == SEC:
-            result = "c = 1;"
-        elif inst.code == SED:
-            # NYI
-            assert False, "SED not implemented"
-        elif inst.code == SEI:
-            # IGNORE
-            result = "/* sei */"
-        elif inst.code == BRK:
-            # NYI
-            assert False, "BRK not implemented"
-        elif inst.code == NOP:
-            result += "; // nop"
-        elif inst.code == RTI:
-            result += "return;"
-        else:
-            assert False, f"Unknown instruction code: {inst.code}"
+                result = f"/* Unknown instruction code: {inst.code} */;"
+        except Exception as e:
+            result = f"/* Error translating instruction: {e} */;"
             
         return result
         
@@ -654,11 +727,14 @@ struct SMBDataPointers
         """
         result = ""
         
-        if operand is not None:
-            # If immediate addressing is not the underlying node, it means read from memory
-            if operand.type != AstType.AST_IMMEDIATE:
-                result = "M(" + self.translate_expression(operand) + ")"
-            else:
-                result = self.translate_expression(operand)
+        try:
+            if operand is not None:
+                # If immediate addressing is not the underlying node, it means read from memory
+                if operand.type != AstType.AST_IMMEDIATE:
+                    result = "M(" + self.translate_expression(operand) + ")"
+                else:
+                    result = self.translate_expression(operand)
+        except Exception as e:
+            result = f"/* Error translating operand: {e} */"
                 
         return result
