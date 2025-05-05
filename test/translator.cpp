@@ -868,6 +868,30 @@ case DCP:
         result += "/* invalid DCP */";
     }
     break;
+case ISC:
+    if (inst->value.node)
+    {
+        // ISC performs INC followed by SBC
+        std::string operand = translateOperand(inst->value.node);
+        
+        result += "{\n";
+        result += TAB TAB;
+        result += "uint8_t temp = " + operand + ";\n";
+        result += TAB TAB;
+        result += "++temp;\n"; // Increment memory
+        result += TAB TAB;
+        result += "writeData(" + translateExpression(inst->value.node) + ", temp);\n";
+        result += TAB TAB;
+        result += "a -= temp;\n"; // Subtract from accumulator with carry
+        result += TAB;
+        result += "}";
+    }
+    else
+    {
+        // This should never happen for ISC
+        result += "/* invalid ISC */";
+    }
+    break;
     case LAX:
     if (inst->value.node)
     {

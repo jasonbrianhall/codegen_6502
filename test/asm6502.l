@@ -252,6 +252,10 @@ sre {
     return SRE;
 }
 
+isc {
+    return ISC;
+}
+
 lax {
     return LAX;
 }
