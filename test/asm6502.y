@@ -97,6 +97,7 @@ void yyerror(const char* s);
 %token BRK
 %token NOP
 %token RTI
+%token SLO
 
 %type <node> decl
 %type <node> section
@@ -246,6 +247,7 @@ inst: LDA iexpr { INST(@1, $$, LDA, $2); }
     | PLA       { INST(@1, $$, PLA, NULL); }
     | PLP       { INST(@1, $$, PLP, NULL); }
     | AND iexpr { INST(@1, $$, AND, $2); }
+    | SLO iexpr { INST(@1, $$, SLO, $2); }
     | EOR iexpr { INST(@1, $$, EOR, $2); }
     | ORA iexpr { INST(@1, $$, ORA, $2); }
     | BIT iexpr { INST(@1, $$, BIT, $2); }

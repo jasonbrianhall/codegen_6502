@@ -843,6 +843,31 @@ std::string Translator::translateInstruction(InstructionNode* inst)
             result += "a.rol();";
         }
         break;
+case SLO:
+    if (inst->value.node)
+    {
+        // SLO performs ASL followed by ORA
+        std::string operand = translateOperand(inst->value.node);
+        
+        // First do ASL (shift left)
+        result += "{\n";
+        result += TAB TAB;  // Just put them next to each other without the + operator
+        result += "uint8_t temp = " + operand + ";\n";
+        result += TAB TAB;  // Just put them next to each other without the + operator
+        result += "temp <<= 1;\n";
+        result += TAB TAB;  // Just put them next to each other without the + operator
+        result += "writeData(" + translateExpression(inst->value.node) + ", temp);\n";
+        result += TAB TAB;  // Just put them next to each other without the + operator
+        result += "a |= temp;\n";
+        result += TAB;
+        result += "}";
+    }
+    else
+    {
+        // If no operand, operate on accumulator (unlikely for SLO, but handle it)
+        result += "a = (a << 1) | a;";
+    }
+    break;
     case ROR:
         if (inst->value.node)
         {

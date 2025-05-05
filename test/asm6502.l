@@ -352,6 +352,10 @@ dec {
     return DEC;
 }
 
+slo {
+    return SLO;
+}
+
 dex {
     return DEX;
 }
