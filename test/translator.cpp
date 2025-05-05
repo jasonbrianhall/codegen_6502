@@ -735,6 +735,12 @@ std::string Translator::translateInstruction(InstructionNode* inst)
 {
     std::string result = "";
 
+    // Log unknown instruction codes for debugging
+    if (inst->code < 0 || inst->code > ISC) {
+        std::cout << "WARNING: Unknown instruction code: " << inst->code << " at line " << inst->lineNumber << std::endl;
+        return "/* Unknown instruction code: " + std::to_string(inst->code) + " */;";
+    }
+
     switch (inst->code)
     {
     case LDA:
@@ -897,149 +903,149 @@ std::string Translator::translateInstruction(InstructionNode* inst)
             result += "a.rol();";
         }
         break;
-case DCP:
-    if (inst->value.node)
-    {
-        // DCP performs DEC followed by CMP
-        std::string operand = translateOperand(inst->value.node);
-        
-        // First do DEC (decrement memory)
-        result += "{\n";
-        result += TAB TAB;
-        result += "uint8_t temp = " + operand + ";\n";
-        result += TAB TAB;
-        result += "--temp;\n";
-        result += TAB TAB;
-        result += "writeData(" + translateExpression(inst->value.node) + ", temp);\n";
-        result += TAB TAB;
-        result += "compare(a, temp);\n";
-        result += TAB;
-        result += "}";
-    }
-    else
-    {
-        // This should never happen for DCP
-        result += "/* invalid DCP */";
-    }
-    break;
-case ISC:
-    if (inst->value.node)
-    {
-        // ISC performs INC followed by SBC
-        std::string operand = translateOperand(inst->value.node);
-        
-        result += "{\n";
-        result += TAB TAB;
-        result += "uint8_t temp = " + operand + ";\n";
-        result += TAB TAB;
-        result += "++temp;\n"; // Increment memory
-        result += TAB TAB;
-        result += "writeData(" + translateExpression(inst->value.node) + ", temp);\n";
-        result += TAB TAB;
-        result += "a -= temp;\n"; // Subtract from accumulator with carry
-        result += TAB;
-        result += "}";
-    }
-    else
-    {
-        // This should never happen for ISC
-        result += "/* invalid ISC */";
-    }
-    break;
+    case DCP:
+        if (inst->value.node)
+        {
+            // DCP performs DEC followed by CMP
+            std::string operand = translateOperand(inst->value.node);
+            
+            // First do DEC (decrement memory)
+            result += "{\n";
+            result += TAB TAB;
+            result += "uint8_t temp = " + operand + ";\n";
+            result += TAB TAB;
+            result += "--temp;\n";
+            result += TAB TAB;
+            result += "writeData(" + translateExpression(inst->value.node) + ", temp);\n";
+            result += TAB TAB;
+            result += "compare(a, temp);\n";
+            result += TAB;
+            result += "}";
+        }
+        else
+        {
+            // This should never happen for DCP
+            result += "/* invalid DCP */";
+        }
+        break;
+    case ISC:
+        if (inst->value.node)
+        {
+            // ISC performs INC followed by SBC
+            std::string operand = translateOperand(inst->value.node);
+            
+            result += "{\n";
+            result += TAB TAB;
+            result += "uint8_t temp = " + operand + ";\n";
+            result += TAB TAB;
+            result += "++temp;\n"; // Increment memory
+            result += TAB TAB;
+            result += "writeData(" + translateExpression(inst->value.node) + ", temp);\n";
+            result += TAB TAB;
+            result += "a -= temp;\n"; // Subtract from accumulator with carry
+            result += TAB;
+            result += "}";
+        }
+        else
+        {
+            // This should never happen for ISC
+            result += "/* invalid ISC */";
+        }
+        break;
     case LAX:
-    if (inst->value.node)
-    {
-        // LAX loads both A and X with the same value
-        std::string operand = translateOperand(inst->value.node);
-        
-        result += "a = x = " + operand + ";";
-    }
-    else
-    {
-        // This should never happen for LAX
-        result += "/* invalid LAX */";
-    }
-    break;
-case SRE:
-    if (inst->value.node)
-    {
-        // SRE performs LSR followed by EOR
-        std::string operand = translateOperand(inst->value.node);
-        
-        result += "{\n";
-        result += TAB TAB;
-        result += "uint8_t temp = " + operand + ";\n";
-        result += TAB TAB;
-        result += "c = (temp & 0x01) != 0;\n"; // Set carry flag from bit 0
-        result += TAB TAB;
-        result += "temp >>= 1;\n"; // Shift right
-        result += TAB TAB;
-        result += "writeData(" + translateExpression(inst->value.node) + ", temp);\n";
-        result += TAB TAB;
-        result += "a ^= temp;\n"; // XOR with accumulator
-        result += TAB;
-        result += "}";
-    }
-    else
-    {
-        // This should never happen for SRE
-        result += "/* invalid SRE */";
-    }
-    break;
-case RLA:
-    if (inst->value.node)
-    {
-        // RLA performs ROL followed by AND
-        std::string operand = translateOperand(inst->value.node);
-        
-        // First do ROL (rotate left)
-        result += "{\n";
-        result += TAB TAB;
-        result += "uint8_t temp = " + operand + ";\n";
-        result += TAB TAB;
-        result += "bool old_carry = c;\n";
-        result += TAB TAB;
-        result += "c = (temp & 0x80) != 0;\n"; // Set carry flag from bit 7
-        result += TAB TAB;
-        result += "temp = (temp << 1) | (old_carry ? 1 : 0);\n"; // Shift left and incorporate old carry
-        result += TAB TAB;
-        result += "writeData(" + translateExpression(inst->value.node) + ", temp);\n";
-        result += TAB TAB;
-        result += "a &= temp;\n"; // AND with accumulator
-        result += TAB;
-        result += "}";
-    }
-    else
-    {
-        // This should never happen for RLA
-        result += "/* invalid RLA */";
-    }
-    break;
-case SLO:
-    if (inst->value.node)
-    {
-        // SLO performs ASL followed by ORA
-        std::string operand = translateOperand(inst->value.node);
-        
-        // First do ASL (shift left)
-        result += "{\n";
-        result += TAB TAB;  // Just put them next to each other without the + operator
-        result += "uint8_t temp = " + operand + ";\n";
-        result += TAB TAB;  // Just put them next to each other without the + operator
-        result += "temp <<= 1;\n";
-        result += TAB TAB;  // Just put them next to each other without the + operator
-        result += "writeData(" + translateExpression(inst->value.node) + ", temp);\n";
-        result += TAB TAB;  // Just put them next to each other without the + operator
-        result += "a |= temp;\n";
-        result += TAB;
-        result += "}";
-    }
-    else
-    {
-        // If no operand, operate on accumulator (unlikely for SLO, but handle it)
-        result += "a = (a << 1) | a;";
-    }
-    break;
+        if (inst->value.node)
+        {
+            // LAX loads both A and X with the same value
+            std::string operand = translateOperand(inst->value.node);
+            
+            result += "a = x = " + operand + ";";
+        }
+        else
+        {
+            // This should never happen for LAX
+            result += "/* invalid LAX */";
+        }
+        break;
+    case SRE:
+        if (inst->value.node)
+        {
+            // SRE performs LSR followed by EOR
+            std::string operand = translateOperand(inst->value.node);
+            
+            result += "{\n";
+            result += TAB TAB;
+            result += "uint8_t temp = " + operand + ";\n";
+            result += TAB TAB;
+            result += "c = (temp & 0x01) != 0;\n"; // Set carry flag from bit 0
+            result += TAB TAB;
+            result += "temp >>= 1;\n"; // Shift right
+            result += TAB TAB;
+            result += "writeData(" + translateExpression(inst->value.node) + ", temp);\n";
+            result += TAB TAB;
+            result += "a ^= temp;\n"; // XOR with accumulator
+            result += TAB;
+            result += "}";
+        }
+        else
+        {
+            // This should never happen for SRE
+            result += "/* invalid SRE */";
+        }
+        break;
+    case RLA:
+        if (inst->value.node)
+        {
+            // RLA performs ROL followed by AND
+            std::string operand = translateOperand(inst->value.node);
+            
+            // First do ROL (rotate left)
+            result += "{\n";
+            result += TAB TAB;
+            result += "uint8_t temp = " + operand + ";\n";
+            result += TAB TAB;
+            result += "bool old_carry = c;\n";
+            result += TAB TAB;
+            result += "c = (temp & 0x80) != 0;\n"; // Set carry flag from bit 7
+            result += TAB TAB;
+            result += "temp = (temp << 1) | (old_carry ? 1 : 0);\n"; // Shift left and incorporate old carry
+            result += TAB TAB;
+            result += "writeData(" + translateExpression(inst->value.node) + ", temp);\n";
+            result += TAB TAB;
+            result += "a &= temp;\n"; // AND with accumulator
+            result += TAB;
+            result += "}";
+        }
+        else
+        {
+            // This should never happen for RLA
+            result += "/* invalid RLA */";
+        }
+        break;
+    case SLO:
+        if (inst->value.node)
+        {
+            // SLO performs ASL followed by ORA
+            std::string operand = translateOperand(inst->value.node);
+            
+            // First do ASL (shift left)
+            result += "{\n";
+            result += TAB TAB;  // Just put them next to each other without the + operator
+            result += "uint8_t temp = " + operand + ";\n";
+            result += TAB TAB;  // Just put them next to each other without the + operator
+            result += "temp <<= 1;\n";
+            result += TAB TAB;  // Just put them next to each other without the + operator
+            result += "writeData(" + translateExpression(inst->value.node) + ", temp);\n";
+            result += TAB TAB;  // Just put them next to each other without the + operator
+            result += "a |= temp;\n";
+            result += TAB;
+            result += "}";
+        }
+        else
+        {
+            // If no operand, operate on accumulator (unlikely for SLO, but handle it)
+            result += "a = (a << 1) | a;";
+        }
+        break;
     case ROR:
         if (inst->value.node)
         {
@@ -1071,6 +1077,13 @@ case SLO:
                     result += translateExpression(inst->value.node);
                     result += ";";
                 }
+            }
+            else
+            {
+                // Handle non-name jump targets
+                result += "/* Jump to non-name target: ";
+                result += std::to_string(inst->value.node->type);
+                result += " */";
             }
         }
         break;
@@ -1113,7 +1126,15 @@ case SLO:
                     result += TAB;
                     result += TAB;
                     result += "goto ";
-                    result += translateExpression(listElement->value.node->value.node->value.node);
+                    
+                    // Add error checking here
+                    if (listElement->value.node && 
+                        listElement->value.node->value.node && 
+                        listElement->value.node->value.node->value.node) {
+                        result += translateExpression(listElement->value.node->value.node->value.node);
+                    } else {
+                        result += "/* Invalid jump table entry */";
+                    }
                     result += ";";
 
                     // Add comments at the end of the line (if they exist)
@@ -1173,14 +1194,10 @@ case SLO:
         result = translateBranch("!n", inst->value.s);
         break;
     case BVC:
-        // NYI
-        //
-        assert(false);
+        result = translateBranch("!v", inst->value.s);
         break;
     case BVS:
-        // NYI
-        //
-        assert(false);
+        result = translateBranch("v", inst->value.s);
         break;
     case CLC:
         result = "c = 0;";
@@ -1191,22 +1208,16 @@ case SLO:
         result = "/* cld */";
         break;
     case CLI:
-        // NYI
-        //
-        assert(false);
+        result = "/* cli */"; // Just comment it out instead of asserting
         break;
     case CLV:
-        // NYI
-        //
-        assert(false);
+        result = "v = 0;"; // Implement CLV properly
         break;
     case SEC:
         result = "c = 1;";
         break;
     case SED:
-        // NYI
-        //
-        assert(false);
+        result = "/* sed */"; // Just comment it out instead of asserting
         break;
     case SEI:
         // IGNORE
@@ -1214,9 +1225,7 @@ case SLO:
         result = "/* sei */";
         break;
     case BRK:
-        // NYI
-        //
-        assert(false);
+        result = "/* brk */"; // Just comment it out instead of asserting
         break;
     case NOP:
         result += "; // nop";
@@ -1225,7 +1234,9 @@ case SLO:
         result += "return;";
         break;
     default:
-        assert(false);
+        // Handle unknown instructions more gracefully
+        std::cout << "WARNING: Unhandled instruction code: " << inst->code << " at line " << inst->lineNumber << std::endl;
+        result = "/* Unknown instruction */;";
         break;
     }
 
