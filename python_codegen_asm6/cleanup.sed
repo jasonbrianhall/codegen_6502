@@ -15,9 +15,9 @@ s/\.byte/\.db/g
 s/\.pad/\.db/g
 
 # Replace .base with a label
-s/\.base \$FFFA/InterruptVectors:/g
+#s/\.base \$FFFA/InterruptVectors:/g
 
 # Fix the .dw directives to be one instruction with comma-separated values
-s/\.dw NMI\n\.dw Reset\n\.dw Reset/\.dw NMI, Reset, Reset/g
+#s/\.dw NMI\n\.dw Reset\n\.dw Reset/\.dw NMI, Reset, Reset/g
 
 
