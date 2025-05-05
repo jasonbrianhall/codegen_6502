@@ -722,6 +722,33 @@ struct SMBDataPointers
                 result += TAB + TAB + "writeData(" + self.translate_expression(inst.value.node) + ", temp);\n" 
                 result += TAB + TAB + "a |= temp; // ORA operation\n"
                 result += TAB + "}"
+            elif inst.code == DCP:
+                result += "// DCP instruction (undocumented) - Decrement Memory then Compare with A\n"
+                result += TAB + "{\n"
+                result += TAB + TAB + "uint8_t temp = " + self.translate_operand(inst.value.node) + ";\n"
+                result += TAB + TAB + "temp--; // DEC operation\n"
+                result += TAB + TAB + "writeData(" + self.translate_expression(inst.value.node) + ", temp);\n" 
+                result += TAB + TAB + "compare(a, temp); // CMP operation\n"
+                result += TAB + "}"      
+            elif inst.code == RLA:
+                result += "// RLA instruction (undocumented) - Rotate Left then AND with Accumulator\n"
+                result += TAB + "{\n"
+                result += TAB + TAB + "uint8_t temp = " + self.translate_operand(inst.value.node) + ";\n"
+                result += TAB + TAB + "uint8_t old_carry = c;\n"
+                result += TAB + TAB + "c = (temp & 0x80) != 0; // Save bit 7 to carry\n"
+                result += TAB + TAB + "temp = (temp << 1) | old_carry; // ROL operation\n"
+                result += TAB + TAB + "writeData(" + self.translate_expression(inst.value.node) + ", temp);\n" 
+                result += TAB + TAB + "a &= temp; // AND operation\n"
+                result += TAB + "}"
+            elif inst.code == SRE:
+                result += "// SRE instruction (undocumented) - Shift Right then EOR with Accumulator\n"
+                result += TAB + "{\n"
+                result += TAB + TAB + "uint8_t temp = " + self.translate_operand(inst.value.node) + ";\n"
+                result += TAB + TAB + "c = (temp & 0x01) != 0; // Save bit 0 to carry\n"
+                result += TAB + TAB + "temp >>= 1; // LSR operation\n"
+                result += TAB + TAB + "writeData(" + self.translate_expression(inst.value.node) + ", temp);\n" 
+                result += TAB + TAB + "a ^= temp; // EOR operation\n"
+                result += TAB + "}"                                      
             else:
                 result = f"/* Unknown instruction code: {inst.code} */;"
         except Exception as e:

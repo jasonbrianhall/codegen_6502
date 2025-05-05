@@ -71,6 +71,9 @@ reserved = {
     'brk': 'BRK',
     'nop': 'NOP',
     'rti': 'RTI',
+    'dcp': 'DCP',
+    'rla': 'RLA',
+    'sre': 'SRE',
     'x': 'x',
     'y': 'y',
 }

@@ -59,6 +59,10 @@ def p_plist_plist_section(p):
     root.children.append(p[2])
     p[2].parent = root
 
+def p_inst_sre(p):
+    'inst : SRE iexpr'
+    p[0] = INST(p.lineno(1), SRE, p[2])
+
 def p_dir(p):
     'dir : DIRECTIVE const'
     pass
@@ -356,6 +360,14 @@ def p_inst_sec(p):
 def p_inst_sed(p):
     'inst : SED'
     p[0] = INST(p.lineno(1), SED, None)
+
+def p_inst_dcp(p):
+    'inst : DCP iexpr'
+    p[0] = INST(p.lineno(1), DCP, p[2])
+
+def p_inst_rla(p):
+    'inst : RLA iexpr'
+    p[0] = INST(p.lineno(1), RLA, p[2])
 
 def p_inst_sei(p):
     'inst : SEI'
