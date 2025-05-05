@@ -100,6 +100,8 @@ void yyerror(const char* s);
 %token SLO
 %token DCP
 %token RLA
+%token SRE
+%token LAX
 
 %type <node> decl
 %type <node> section
@@ -251,6 +253,8 @@ inst: LDA iexpr { INST(@1, $$, LDA, $2); }
     | AND iexpr { INST(@1, $$, AND, $2); }
     | SLO iexpr { INST(@1, $$, SLO, $2); }
     | DCP iexpr { INST(@1, $$, DCP, $2); }
+    | LAX iexpr { INST(@1, $$, LAX, $2); }
+    | SRE iexpr { INST(@1, $$, SRE, $2); }
     | RLA iexpr { INST(@1, $$, RLA, $2); }
     | EOR iexpr { INST(@1, $$, EOR, $2); }
     | ORA iexpr { INST(@1, $$, ORA, $2); }

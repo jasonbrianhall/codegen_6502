@@ -248,6 +248,15 @@ ldy {
     return LDY;
 }
 
+sre {
+    return SRE;
+}
+
+lax {
+    return LAX;
+}
+
+
 sta {
     return STA;
 }

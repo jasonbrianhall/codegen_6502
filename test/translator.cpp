@@ -868,6 +868,46 @@ case DCP:
         result += "/* invalid DCP */";
     }
     break;
+    case LAX:
+    if (inst->value.node)
+    {
+        // LAX loads both A and X with the same value
+        std::string operand = translateOperand(inst->value.node);
+        
+        result += "a = x = " + operand + ";";
+    }
+    else
+    {
+        // This should never happen for LAX
+        result += "/* invalid LAX */";
+    }
+    break;
+case SRE:
+    if (inst->value.node)
+    {
+        // SRE performs LSR followed by EOR
+        std::string operand = translateOperand(inst->value.node);
+        
+        result += "{\n";
+        result += TAB TAB;
+        result += "uint8_t temp = " + operand + ";\n";
+        result += TAB TAB;
+        result += "c = (temp & 0x01) != 0;\n"; // Set carry flag from bit 0
+        result += TAB TAB;
+        result += "temp >>= 1;\n"; // Shift right
+        result += TAB TAB;
+        result += "writeData(" + translateExpression(inst->value.node) + ", temp);\n";
+        result += TAB TAB;
+        result += "a ^= temp;\n"; // XOR with accumulator
+        result += TAB;
+        result += "}";
+    }
+    else
+    {
+        // This should never happen for SRE
+        result += "/* invalid SRE */";
+    }
+    break;
 case RLA:
     if (inst->value.node)
     {

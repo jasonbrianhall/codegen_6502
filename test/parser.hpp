@@ -121,7 +121,9 @@ extern int yydebug;
     RTI = 322,                     /* RTI  */
     SLO = 323,                     /* SLO  */
     DCP = 324,                     /* DCP  */
-    RLA = 325                      /* RLA  */
+    RLA = 325,                     /* RLA  */
+    SRE = 326,                     /* SRE  */
+    LAX = 327                      /* LAX  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -137,7 +139,7 @@ union YYSTYPE
     ListNode* list;
     InstructionNode* instruction;
 
-#line 141 "/home/jbhall/software_build/codegen_6502/test/parser.hpp"
+#line 143 "/home/jbhall/software_build/codegen_6502/test/parser.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;
