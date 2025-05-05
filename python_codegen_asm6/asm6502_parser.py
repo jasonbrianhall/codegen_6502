@@ -27,6 +27,14 @@ def p_program(p):
     'program : plist'
     pass
 
+def p_inst_lax(p):
+    'inst : LAX iexpr'
+    p[0] = INST(p.lineno(1), LAX, p[2])
+
+def p_inst_isc(p):
+    'inst : ISC iexpr'
+    p[0] = INST(p.lineno(1), ISC, p[2])
+
 def p_plist_dir(p):
     'plist : dir'
     pass

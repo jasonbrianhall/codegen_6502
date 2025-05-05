@@ -74,6 +74,8 @@ reserved = {
     'dcp': 'DCP',
     'rla': 'RLA',
     'sre': 'SRE',
+    'lax': 'LAX',
+    'isc': 'ISC',
     'x': 'x',
     'y': 'y',
 }

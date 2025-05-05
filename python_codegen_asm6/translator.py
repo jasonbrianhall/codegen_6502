@@ -748,7 +748,22 @@ struct SMBDataPointers
                 result += TAB + TAB + "temp >>= 1; // LSR operation\n"
                 result += TAB + TAB + "writeData(" + self.translate_expression(inst.value.node) + ", temp);\n" 
                 result += TAB + TAB + "a ^= temp; // EOR operation\n"
-                result += TAB + "}"                                      
+                result += TAB + "}"
+            elif inst.code == LAX:
+                result += "// LAX instruction (undocumented) - Load both A and X with the same value\n"
+                result += TAB + "{\n"
+                result += TAB + TAB + "uint8_t temp = " + self.translate_operand(inst.value.node) + ";\n"
+                result += TAB + TAB + "a = temp; // LDA operation\n"
+                result += TAB + TAB + "x = temp; // LDX operation\n"
+                result += TAB + "}"
+            elif inst.code == ISC:
+                result += "// ISC instruction (undocumented) - Increment memory, then SBC\n"
+                result += TAB + "{\n"
+                result += TAB + TAB + "uint8_t temp = " + self.translate_operand(inst.value.node) + ";\n"
+                result += TAB + TAB + "temp++; // INC operation\n"
+                result += TAB + TAB + "writeData(" + self.translate_expression(inst.value.node) + ", temp);\n" 
+                result += TAB + TAB + "a -= temp; // SBC operation\n"
+                result += TAB + "}"                                                                    
             else:
                 result = f"/* Unknown instruction code: {inst.code} */;"
         except Exception as e:
