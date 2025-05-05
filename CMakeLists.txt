@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.5)
 
 project(smbc)
 
-add_subdirectory(codegen)
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s -std=c++11 -Wno-c++11-narrowing -fpermissive")
 
 set(SOURCE_FILES
@@ -27,5 +25,3 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 add_executable(smbc ${SOURCE_FILES})
 target_link_libraries(smbc ${SDL2_LIBRARY} ${SDL2_LIBRARIES})
-
-add_dependencies(smbc codegen)
