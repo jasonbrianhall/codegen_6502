@@ -315,7 +315,9 @@ ora {
 bit {
     return BIT;
 }
-
+dcp {
+    return DCP;
+}
 adc {
     return ADC;
 }

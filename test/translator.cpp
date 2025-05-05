@@ -843,6 +843,31 @@ std::string Translator::translateInstruction(InstructionNode* inst)
             result += "a.rol();";
         }
         break;
+case DCP:
+    if (inst->value.node)
+    {
+        // DCP performs DEC followed by CMP
+        std::string operand = translateOperand(inst->value.node);
+        
+        // First do DEC (decrement memory)
+        result += "{\n";
+        result += TAB TAB;
+        result += "uint8_t temp = " + operand + ";\n";
+        result += TAB TAB;
+        result += "--temp;\n";
+        result += TAB TAB;
+        result += "writeData(" + translateExpression(inst->value.node) + ", temp);\n";
+        result += TAB TAB;
+        result += "compare(a, temp);\n";
+        result += TAB;
+        result += "}";
+    }
+    else
+    {
+        // This should never happen for DCP
+        result += "/* invalid DCP */";
+    }
+    break;
 case SLO:
     if (inst->value.node)
     {
