@@ -187,6 +187,48 @@ uint8_t SMBEngine::readData(uint16_t address)
     return 0;
 }
 
+// Push accumulator to stack
+void SMBEngine::pha() {
+    stack[s--] = a;
+}
+
+// Pull accumulator from stack
+void SMBEngine::pla() {
+    a = stack[++s];
+}
+
+// Push processor status to stack
+void SMBEngine::php() {
+    // Push processor status byte to stack
+    // Construct status byte from individual flags
+    uint8_t status = 0;
+    if (c) status |= 0x01;  // Carry flag
+    if (z) status |= 0x02;  // Zero flag
+    if (i) status |= 0x04;  // Interrupt disable
+    if (d) status |= 0x08;  // Decimal mode
+    if (b) status |= 0x10;  // Break command
+    status |= 0x20;         // Bit 5 is always set
+    if (v) status |= 0x40;  // Overflow flag
+    if (n) status |= 0x80;  // Negative flag
+    
+    stack[s--] = status;
+}
+
+// Pull processor status from stack
+void SMBEngine::plp() {
+    uint8_t status = stack[++s];
+    
+    // Unpack status byte into flags
+    c = (status & 0x01) != 0;  // Carry flag
+    z = (status & 0x02) != 0;  // Zero flag
+    i = (status & 0x04) != 0;  // Interrupt disable
+    d = (status & 0x08) != 0;  // Decimal mode
+    b = (status & 0x10) != 0;  // Break command
+    // Bit 5 is ignored
+    v = (status & 0x40) != 0;  // Overflow flag
+    n = (status & 0x80) != 0;  // Negative flag
+}
+
 void SMBEngine::setZN(uint8_t value)
 {
     z = (value == 0);
