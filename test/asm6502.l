@@ -268,6 +268,10 @@ tay {
     return TAY;
 }
 
+rla {
+    return RLA;
+}
+
 txa {
     return TXA;
 }

@@ -868,6 +868,35 @@ case DCP:
         result += "/* invalid DCP */";
     }
     break;
+case RLA:
+    if (inst->value.node)
+    {
+        // RLA performs ROL followed by AND
+        std::string operand = translateOperand(inst->value.node);
+        
+        // First do ROL (rotate left)
+        result += "{\n";
+        result += TAB TAB;
+        result += "uint8_t temp = " + operand + ";\n";
+        result += TAB TAB;
+        result += "bool old_carry = c;\n";
+        result += TAB TAB;
+        result += "c = (temp & 0x80) != 0;\n"; // Set carry flag from bit 7
+        result += TAB TAB;
+        result += "temp = (temp << 1) | (old_carry ? 1 : 0);\n"; // Shift left and incorporate old carry
+        result += TAB TAB;
+        result += "writeData(" + translateExpression(inst->value.node) + ", temp);\n";
+        result += TAB TAB;
+        result += "a &= temp;\n"; // AND with accumulator
+        result += TAB;
+        result += "}";
+    }
+    else
+    {
+        // This should never happen for RLA
+        result += "/* invalid RLA */";
+    }
+    break;
 case SLO:
     if (inst->value.node)
     {
