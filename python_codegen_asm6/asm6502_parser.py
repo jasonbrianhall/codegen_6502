@@ -413,6 +413,10 @@ def p_expr_hibyte(p):
     'expr : ">" expr'
     p[0] = UnaryNode(AstType.AST_HIBYTE, p[2])
 
+def p_inst_slo(p):
+    'inst : SLO iexpr'
+    p[0] = INST(p.lineno(1), SLO, p[2])
+
 def p_expr_indirect(p):
     'expr : "(" expr ")"'
     p[0] = UnaryNode(AstType.AST_INDIRECT, p[2])

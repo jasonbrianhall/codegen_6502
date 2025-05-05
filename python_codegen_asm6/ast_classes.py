@@ -87,6 +87,7 @@ SEI = 53
 BRK = 54
 NOP = 55
 RTI = 56
+SLO = 57
 
 # AstValue union - in Python we'll use a simple class
 class AstValue:

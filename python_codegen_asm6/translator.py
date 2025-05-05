@@ -714,6 +714,14 @@ struct SMBDataPointers
                 result += "; // nop"
             elif inst.code == RTI:
                 result += "return;"
+            elif inst.code == SLO:
+                result += "// SLO instruction (undocumented) - Shift Left then OR with Accumulator\n"
+                result += TAB + "{\n"
+                result += TAB + TAB + "uint8_t temp = " + self.translate_operand(inst.value.node) + ";\n"
+                result += TAB + TAB + "temp <<= 1; // ASL operation\n"
+                result += TAB + TAB + "writeData(" + self.translate_expression(inst.value.node) + ", temp);\n" 
+                result += TAB + TAB + "a |= temp; // ORA operation\n"
+                result += TAB + "}"
             else:
                 result = f"/* Unknown instruction code: {inst.code} */;"
         except Exception as e:
