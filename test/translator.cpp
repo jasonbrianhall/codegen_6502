@@ -457,7 +457,15 @@ void Translator::generateDataDeclarations()
 
                     AstNode* dataItem = listElement->value.node;
 
-                    assert(dataItem->type == AST_DATA8);
+                    // Check for valid data types
+                    if (dataItem->type != AST_DATA8) {
+                        std::cout << "WARNING: Expected AST_DATA8 (2) but got type " << dataItem->type 
+                                  << " for label " << labelName << std::endl;
+                        
+                        // Skip this item and continue with the next one
+                        listElement = static_cast<ListNode*>(listElement->next);
+                        continue;
+                    }
 
                     ListNode* dataListElement = static_cast<ListNode*>(dataItem->value.node);
                     assert(dataListElement->type == AST_LIST);
