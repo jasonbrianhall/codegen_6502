@@ -64,7 +64,6 @@ void Translator::classifyLabels()
         AstNode* node = (*it);
 
         // Skip non-labels
-        //
         if (node->type != AST_LABEL)
         {
             continue;
@@ -76,10 +75,9 @@ void Translator::classifyLabels()
         LabelNode* label = static_cast<LabelNode*>(node);
         std::cout << "  Label value: " << (label->value.s ? label->value.s : "NULL") << std::endl;
 
+        // Process aliases first
         while (true)
         {
-            // Check the first element of the label
-            //
             AstNode* child = label->child;
             if (!child) {
                 std::cout << "  ERROR: Label has NULL child" << std::endl;
@@ -90,38 +88,12 @@ void Translator::classifyLabels()
             
             if (child->type == AST_LABEL)
             {
-                // Nested... classify the label as an alias, and continue trying to classify the child
-                //
                 std::cout << "  Found nested label (alias)" << std::endl;
                 label->labelType = LABEL_ALIAS;
                 label = static_cast<LabelNode*>(label->child);
 
-                // Modify the AST
-                // Pull the nested label out and promote to a child of the root node
-                // (this makes processing simpler later)
-                //
-                // Instead of this:
-                // (root)
-                // |
-                // --...
-                // --(label)
-                // | |
-                // | --(label2)
-                // --...
-                //
-                // We want this:
-                // (root)
-                // |
-                // --...
-                // --(label)
-                // --(label2)
-                // --...
-                //
                 ++it;
                 root->children.insert(it, child);
-
-                // We have to go back one so that the iterator points to the child
-                //
                 --it;
             }
             else
@@ -130,8 +102,7 @@ void Translator::classifyLabels()
             }
         }
 
-        // Check the first child node
-        //
+        // Check content after alias processing
         AstNode* child = label->child;
         std::cout << "  After alias processing, checking child node" << std::endl;
         
@@ -141,52 +112,53 @@ void Translator::classifyLabels()
         }
         
         // This should be a list
-        //
         std::cout << "  Child node type: " << child->type << std::endl;
         if (child->type != AST_LIST) {
             std::cout << "  ERROR: Expected child type to be AST_LIST (" << AST_LIST << "), but got " << child->type << std::endl;
             continue;
         }
 
-        // Check the type of the first contained list item
-        //
+        // Get the list of content
         ListNode* list = static_cast<ListNode*>(child);
-        AstNode* listElement = list->value.node;
+        AstNode* firstElement = list->value.node;
         
-        if (!listElement) {
-            std::cout << "  ERROR: List element is NULL" << std::endl;
-            // Default to something to avoid crashes
+        if (!firstElement) {
+            std::cout << "  ERROR: First list element is NULL" << std::endl;
             label->labelType = LABEL_DATA;
             continue;
         }
         
-        std::cout << "  List element type: " << listElement->type << std::endl;
+        std::cout << "  First list element type: " << firstElement->type << std::endl;
+
+        // Check for mixed content - scan through list to see if there are any instructions
+        bool hasData = false;
+        bool hasInstructions = false;
         
-        if (listElement->type == AST_INSTRUCTION)
-        {
-            // Code
-            //
-            std::cout << "  Classifying as code label" << std::endl;
-            label->labelType = LABEL_CODE;
-        }
-        else if (listElement->type == AST_DATA8)
-        {
-            std::cout << "  Classifying as data label" << std::endl;
-            label->labelType = LABEL_DATA;
-        }
-        else
-        {
-            // Should be impossible...
-            //
-            std::cout << "  ERROR: Unexpected list element type: " << listElement->type << std::endl;
-            if (listElement->value.s) {
-                std::cout << "  List element value: " << listElement->value.s << std::endl;
+        ListNode* currentNode = list;
+        while (currentNode != NULL) {
+            AstNode* element = currentNode->value.node;
+            if (element) {
+                if (element->type == AST_DATA8 || element->type == AST_DATA16) {
+                    hasData = true;
+                } else if (element->type == AST_INSTRUCTION) {
+                    hasInstructions = true;
+                    break; // Found an instruction, no need to continue
+                }
             }
-            std::cout << "  List element line number: " << listElement->lineNumber << std::endl;
-            
-            // Instead of asserting, let's set a default and continue
-            std::cout << "  Setting default label type (DATA) to avoid crash" << std::endl;
+            currentNode = static_cast<ListNode*>(currentNode->next);
+        }
+        
+        // Use the presence of instructions to classify the label
+        if (hasInstructions) {
+            std::cout << "  Classifying as CODE label (found instructions)" << std::endl;
+            label->labelType = LABEL_CODE;
+        } else if (hasData) {
+            std::cout << "  Classifying as DATA label (found only data)" << std::endl;
             label->labelType = LABEL_DATA;
+        } else {
+            std::cout << "  ERROR: Could not determine label type" << std::endl;
+            // Default to code to be safe
+            label->labelType = LABEL_CODE;
         }
     }
     
