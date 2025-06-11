@@ -187,16 +187,6 @@ uint8_t SMBEngine::readData(uint16_t address)
     return 0;
 }
 
-// Push accumulator to stack
-void SMBEngine::pha() {
-    stack[s--] = a;
-}
-
-// Pull accumulator from stack
-void SMBEngine::pla() {
-    a = stack[++s];
-}
-
 // Push processor status to stack
 void SMBEngine::php() {
     // Push processor status byte to stack
