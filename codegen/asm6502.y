@@ -8,6 +8,14 @@
 #include "ast.hpp"
 #include "translator.hpp"
 
+// Add these includes for directory creation
+#ifdef _WIN32
+    #include <direct.h>
+#else
+    #include <sys/stat.h>
+    #include <sys/types.h>
+#endif
+
 extern int yylex();
 extern FILE* yyin;
 extern int yylineno;
@@ -348,7 +356,7 @@ int main(int argc, char** argv)
 {
     if (argc < 3)
     {
-        printf("usage: codegen <INPUT ASM FILE> <OUTPUT ROOT DIRECTORY>\n");
+        printf("usage: codegen <INPUT ASM FILE> <OUTPUT DIRECTORY>\n");
         exit(1);
     }
 
@@ -370,27 +378,40 @@ int main(int argc, char** argv)
 
     Translator translator(argv[1], root);
 
+    // Use the specified output directory directly (relative to current directory)
     std::string outputDir(argv[2]);
+    
+    // Create the output directory if it doesn't exist
+    #ifdef _WIN32
+        _mkdir(outputDir.c_str());
+    #else
+        mkdir(outputDir.c_str(), 0755);
+    #endif
 
-    std::string sourceFilePath = outputDir + "/source/SMB/SMB.cpp";
+    std::string sourceFilePath = outputDir + "/SMB.cpp";
     std::ofstream sourceFile(sourceFilePath.c_str());
     sourceFile << translator.getSourceOutput();
 
-    std::string dataFilePath = outputDir + "/source/SMB/SMBData.cpp";
+    std::string dataFilePath = outputDir + "/SMBData.cpp";
     std::ofstream dataFile(dataFilePath.c_str());
     dataFile << translator.getDataOutput();
 
-    std::string dataHeaderFilePath = outputDir + "/source/SMB/SMBDataPointers.hpp";
+    std::string dataHeaderFilePath = outputDir + "/SMBDataPointers.hpp";
     std::ofstream dataHeaderFile(dataHeaderFilePath.c_str());
     dataHeaderFile << translator.getDataHeaderOutput();
 
-    std::string constantHeaderFilePath = outputDir + "/source/SMB/SMBConstants.hpp";
+    std::string constantHeaderFilePath = outputDir + "/SMBConstants.hpp";
     std::ofstream constantHeaderFile(constantHeaderFilePath.c_str());
     constantHeaderFile << translator.getConstantHeaderOutput();
     
+    printf("Generated files in %s:\n", outputDir.c_str());
+    printf("  SMB.cpp\n");
+    printf("  SMBData.cpp\n");
+    printf("  SMBDataPointers.hpp\n");
+    printf("  SMBConstants.hpp\n");
+    
     return 0;
 }
-
 void yyerror(const char* s)
 {
     printf("Parse error: %s\n", s);
