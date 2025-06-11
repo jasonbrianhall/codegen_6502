@@ -1,5 +1,15 @@
 cmake_minimum_required(VERSION 3.5)
 
+# Build options:
+#   -DRUN_CODEGEN_POST_BUILD=ON  : Run codegen on smbdis.asm after build (default: OFF)
+#
+# Examples:
+#   cmake .                                    # Build without running codegen
+#   cmake -DRUN_CODEGEN_POST_BUILD=ON .       # Build and run codegen on smbdis.asm
+
+# Option to control whether to run the post-build command
+option(RUN_CODEGEN_POST_BUILD "Run codegen on smbdis.asm after build" OFF)
+
 find_package(BISON)
 find_package(FLEX)
 
@@ -17,6 +27,9 @@ add_executable(codegen
     util.cpp
 )
 
-add_custom_command(TARGET codegen
-                   POST_BUILD 
-                   COMMAND $<TARGET_FILE:codegen> ${PROJECT_SOURCE_DIR}/docs/smbdis.asm ${PROJECT_SOURCE_DIR})
+# Only add the custom command if the option is enabled
+if(RUN_CODEGEN_POST_BUILD)
+    add_custom_command(TARGET codegen
+                       POST_BUILD 
+                       COMMAND $<TARGET_FILE:codegen> ${PROJECT_SOURCE_DIR}/docs/smbdis.asm ${PROJECT_SOURCE_DIR})
+endif()
