@@ -14,6 +14,11 @@
 // Public interface
 //---------------------------------------------------------------------
 
+uint8_t i;
+uint8_t d;
+uint8_t b;
+uint8_t v;
+
 SMBEngine::SMBEngine(uint8_t* romImage) :
     a(*this, &registerA),
     x(*this, &registerX),
@@ -189,7 +194,6 @@ uint8_t SMBEngine::readData(uint16_t address)
 
 // Push processor status to stack
 void SMBEngine::php() {
-    // Push processor status byte to stack
     // Construct status byte from individual flags
     uint8_t status = 0;
     if (c) status |= 0x01;  // Carry flag
@@ -201,12 +205,14 @@ void SMBEngine::php() {
     if (v) status |= 0x40;  // Overflow flag
     if (n) status |= 0x80;  // Negative flag
     
-    stack[s--] = status;
+    writeData(0x100 | (uint16_t)registerS, status);
+    registerS--;
 }
 
 // Pull processor status from stack
 void SMBEngine::plp() {
-    uint8_t status = stack[++s];
+    registerS++;
+    uint8_t status = readData(0x100 | (uint16_t)registerS);
     
     // Unpack status byte into flags
     c = (status & 0x01) != 0;  // Carry flag
