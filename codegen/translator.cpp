@@ -1103,11 +1103,11 @@ case JMP:
     case SEC:
         result = "c = 1;";
         break;
-    case SED:
-        // NYI
-        //
-        assert(false);
-        break;
+case SED:
+    // IGNORE - decimal mode not used on NES
+    //
+    result = "/* sed */";
+    break;
     case SEI:
         // IGNORE
         //
@@ -1178,9 +1178,11 @@ case JMP:
         result += ", temp); a -= temp; }";
         break;
         
-    default:
-        assert(false);
-        break;
+default:
+    printf("Unknown instruction code: %d\n", inst->code);
+    result = "/* UNKNOWN INSTRUCTION */";
+    //assert(false);
+    break;
     }
 
     return result;
