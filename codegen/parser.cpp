@@ -2652,20 +2652,34 @@ yyreturnlab:
 
 int main(int argc, char** argv)
 {
+    printf("Starting...\n");
+    
     if (argc < 3)
     {
         printf("usage: codegen <INPUT ASM FILE> <OUTPUT DIRECTORY>\n");
         exit(1);
     }
-
+    
+    printf("Creating root node...\n");
     root = new RootNode();
     
+    printf("Opening file: %s\n", argv[1]);
     yyin = fopen(argv[1], "r");
+    if (!yyin) {
+        printf("Error: Could not open file %s\n", argv[1]);
+        exit(1);
+    }
+    
+    printf("Starting parse...\n");
     yyparse();
+    
+    printf("Parse complete, closing file...\n");
     fclose(yyin);
     
+    printf("Cleaning up AST...\n");
     cleanupAst(root);
     
+    printf("Creating translator...\n");
     /*
     for (std::list<AstNode*>::iterator it = root->children.begin(); it != root->children.end(); ++it)
     {
@@ -2673,9 +2687,9 @@ int main(int argc, char** argv)
         printNode(node);
     }
     */
-
     Translator translator(argv[1], root);
-
+    
+    printf("Translator created, setting up output directory...\n");
     // Use the specified output directory directly (relative to current directory)
     std::string outputDir(argv[2]);
     
@@ -2686,18 +2700,22 @@ int main(int argc, char** argv)
         mkdir(outputDir.c_str(), 0755);
     #endif
 
+    printf("Writing source file...\n");
     std::string sourceFilePath = outputDir + "/SMB.cpp";
     std::ofstream sourceFile(sourceFilePath.c_str());
     sourceFile << translator.getSourceOutput();
 
+    printf("Writing data file...\n");
     std::string dataFilePath = outputDir + "/SMBData.cpp";
     std::ofstream dataFile(dataFilePath.c_str());
     dataFile << translator.getDataOutput();
 
+    printf("Writing data header file...\n");
     std::string dataHeaderFilePath = outputDir + "/SMBDataPointers.hpp";
     std::ofstream dataHeaderFile(dataHeaderFilePath.c_str());
     dataHeaderFile << translator.getDataHeaderOutput();
 
+    printf("Writing constant header file...\n");
     std::string constantHeaderFilePath = outputDir + "/SMBConstants.hpp";
     std::ofstream constantHeaderFile(constantHeaderFilePath.c_str());
     constantHeaderFile << translator.getConstantHeaderOutput();
@@ -2708,8 +2726,10 @@ int main(int argc, char** argv)
     printf("  SMBDataPointers.hpp\n");
     printf("  SMBConstants.hpp\n");
     
+    printf("Done!\n");
     return 0;
 }
+
 void yyerror(const char* s)
 {
     printf("Parse error at line %d: %s\n", yylineno, s);
