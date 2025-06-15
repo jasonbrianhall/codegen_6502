@@ -293,6 +293,18 @@ slo {
     return SLO;
 }
 
+dcp {
+    return DCP;
+}
+
+rla {
+    return RLA;
+}
+
+sre {
+    return SRE;
+}
+
 a: {
     yylval.str = DUP_YYTEXT;
     return NAME;

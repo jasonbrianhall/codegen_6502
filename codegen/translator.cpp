@@ -1112,6 +1112,34 @@ case JMP:
         result += translateExpression(inst->value.node);
         result += ", temp); a |= temp; }";
         break;
+
+    case DCP:
+        // DCP (undocumented): Decrement, then compare with accumulator
+        // Equivalent to: DEC operand; CMP operand
+        result += "{ uint8_t temp = M(";
+        result += translateExpression(inst->value.node);
+        result += ") - 1; writeData(";
+        result += translateExpression(inst->value.node);
+        result += ", temp); compare(a, temp); }";
+        break;
+    case RLA:
+        // RLA (undocumented): Rotate left, then AND with accumulator
+        // Equivalent to: ROL operand; AND operand
+        result += "{ uint8_t temp = M(";
+        result += translateExpression(inst->value.node);
+        result += "); temp = (temp << 1) | (c ? 1 : 0); c = (temp & 0x80) ? 1 : 0; temp &= 0x7F; writeData(";
+        result += translateExpression(inst->value.node);
+        result += ", temp); a &= temp; }";
+        break;        
+    case SRE:
+        // SRE (undocumented): Shift right, then XOR with accumulator
+        // Equivalent to: LSR operand; EOR operand
+        result += "{ uint8_t temp = M(";
+        result += translateExpression(inst->value.node);
+        result += "); c = (temp & 0x01) ? 1 : 0; temp >>= 1; writeData(";
+        result += translateExpression(inst->value.node);
+        result += ", temp); a ^= temp; }";
+        break;
         
     default:
         assert(false);

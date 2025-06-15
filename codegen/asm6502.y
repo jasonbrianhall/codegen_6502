@@ -106,9 +106,11 @@ void yyerror(const char* s);
 %token NOP
 %token RTI
 %token SLO
+%token DCP
 %token DATASPACE
 %token BASEADDR
-
+%token RLA
+%token SRE
 %type <node> decl
 %type <node> statement
 %type <list> code_item
@@ -302,6 +304,9 @@ inst: LDA iexpr { INST(@1, $$, LDA, $2); }
     | NOP       { INST(@1, $$, NOP, NULL); }
     | RTI       { INST(@1, $$, RTI, NULL); }
     | SLO iexpr { INST(@1, $$, SLO, $2); }
+    | DCP iexpr { INST(@1, $$, DCP, $2); }
+    | RLA iexpr { INST(@1, $$, RLA, $2); }
+    | SRE iexpr { INST(@1, $$, SRE, $2); }
     ;
 
 const: HEXCONST
