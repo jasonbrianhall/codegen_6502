@@ -186,8 +186,14 @@ void Translator::classifyLabels()
         //
         ListNode* list = static_cast<ListNode*>(child);
         AstNode* listElement = list->value.node;
-        assert(listElement != NULL);
-        if (listElement->type == AST_INSTRUCTION)
+
+        // Handle empty labels (labels with no content)
+        if (listElement == NULL)
+        {
+            // Default to code label for empty labels
+            label->labelType = LABEL_CODE;
+        }
+        else if (listElement->type == AST_INSTRUCTION)
         {
             // Code
             //
