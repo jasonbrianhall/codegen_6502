@@ -401,7 +401,7 @@ void Translator::generateConstantDeclarations()
 
         constantHeaderOutput << "\n";
     }
-    
+       generateMissingDataDeclarations();  
     constantHeaderOutput << "\n" <<
         "#endif // SMBCONSTANTS_HPP\n";
 }
@@ -672,6 +672,7 @@ std::string Translator::translateExpression(AstNode* expr)
         {
         case AST_NAME:
             result = expr->value.s;
+            trackDataReference(expr->value.s); 
             break;
         case AST_CONST:
             switch (expr->value.s[0])
@@ -1187,6 +1188,62 @@ default:
 
     return result;
 }
+
+void Translator::trackDataReference(const std::string& name)
+{
+        referencedDataLabels.insert(name);
+}
+
+void Translator::generateMissingDataDeclarations()
+{
+    // Generate declarations for any data labels that were referenced but not defined
+    for (std::set<std::string>::iterator it = referencedDataLabels.begin();
+         it != referencedDataLabels.end(); ++it)
+    {
+        const std::string& labelName = *it;
+        
+        // Check if this label was already defined in our data
+        bool found = false;
+        for (std::list<AstNode*>::iterator astIt = root->children.begin();
+             astIt != root->children.end(); ++astIt)
+        {
+            AstNode* node = (*astIt);
+            if (node->type == AST_LABEL)
+            {
+                LabelNode* label = static_cast<LabelNode*>(node);
+                std::string definedName = label->value.s;
+                definedName = definedName.substr(0, definedName.size() - 1); // Remove ':'
+                
+                if (definedName == labelName)
+                {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        
+        if (!found)
+        {
+            // Extract the hex address from the label name
+            // e.g., "underscoredataunderscoree5dfunderscoreindexed" -> "0xE5DF"
+            size_t pos = labelName.find("underscoredataunderscore");
+            if (pos == 0)
+            {
+                std::string addressPart = labelName.substr(23); // Skip "underscoredataunderscore"
+                size_t underscorePos = addressPart.find("underscore");
+                if (underscorePos != std::string::npos)
+                {
+                    std::string hexAddr = addressPart.substr(0, underscorePos);
+                    // Convert to uppercase and add 0x prefix
+                    std::transform(hexAddr.begin(), hexAddr.end(), hexAddr.begin(), ::toupper);
+                    
+                    constantHeaderOutput << "#define " << labelName << " 0x" << hexAddr << "\n";
+                }
+            }
+        }
+    }
+}
+
 
 std::string Translator::translateOperand(AstNode* operand)
 {

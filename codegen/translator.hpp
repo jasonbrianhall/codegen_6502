@@ -6,6 +6,8 @@
 #include <string>
 #include <map>
 #include <cstdint>
+#include <set>
+#include <algorithm>
 
 
 #include "ast.hpp"
@@ -21,6 +23,11 @@ public:
     std::string getSourceOutput() const;
 
 private:
+    std::set<std::string> referencedDataLabels;  // Track all referenced data labels
+    
+    void trackDataReference(const std::string& name);
+    void generateMissingDataDeclarations();
+
     std::string inputFilename;
     std::stringstream constantHeaderOutput;
     std::stringstream dataOutput;
