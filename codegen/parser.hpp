@@ -119,8 +119,9 @@ extern int yydebug;
     BRK = 320,                     /* BRK  */
     NOP = 321,                     /* NOP  */
     RTI = 322,                     /* RTI  */
-    DATASPACE = 323,               /* DATASPACE  */
-    BASEADDR = 324                 /* BASEADDR  */
+    SLO = 323,                     /* SLO  */
+    DATASPACE = 324,               /* DATASPACE  */
+    BASEADDR = 325                 /* BASEADDR  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -136,7 +137,7 @@ union YYSTYPE
     ListNode* list;
     InstructionNode* instruction;
 
-#line 140 "/home/jbhall/software_build/codegen_6502/codegen/parser.hpp"
+#line 141 "/home/jbhall/software_build/codegen_6502/codegen/parser.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

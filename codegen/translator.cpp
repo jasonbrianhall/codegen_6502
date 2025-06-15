@@ -1103,6 +1103,16 @@ case JMP:
     case RTI:
         result += "return;";
         break;
+    case SLO:
+        // SLO (undocumented): Shift left, then OR with accumulator
+        // Equivalent to: ASL operand; ORA operand
+        result += "{ uint8_t temp = M(";
+        result += translateExpression(inst->value.node);
+        result += "); temp <<= 1; writeData(";
+        result += translateExpression(inst->value.node);
+        result += ", temp); a |= temp; }";
+        break;
+        
     default:
         assert(false);
         break;
