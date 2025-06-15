@@ -107,10 +107,12 @@ void yyerror(const char* s);
 %token RTI
 %token SLO
 %token DCP
+%token ISC
 %token DATASPACE
 %token BASEADDR
 %token RLA
 %token SRE
+%token LAX
 %type <node> decl
 %type <node> statement
 %type <list> code_item
@@ -307,6 +309,8 @@ inst: LDA iexpr { INST(@1, $$, LDA, $2); }
     | DCP iexpr { INST(@1, $$, DCP, $2); }
     | RLA iexpr { INST(@1, $$, RLA, $2); }
     | SRE iexpr { INST(@1, $$, SRE, $2); }
+    | LAX iexpr { INST(@1, $$, LAX, $2); }
+    | ISC iexpr { INST(@1, $$, ISC, $2); }
     ;
 
 const: HEXCONST
@@ -331,6 +335,10 @@ expr: NAME
         {
             $$ = new AstNode(AST_NAME, $1);
         }
+    | '(' expr ',' 'x' ')'
+    {
+        $$ = new UnaryNode(AST_INDIRECT_INDEXED_X, $2);
+    }
     | const
         {
             $$ = new AstNode(AST_CONST, $1);

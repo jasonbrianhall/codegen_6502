@@ -196,35 +196,37 @@ enum yysymbol_kind_t
   YYSYMBOL_RTI = 67,                       /* RTI  */
   YYSYMBOL_SLO = 68,                       /* SLO  */
   YYSYMBOL_DCP = 69,                       /* DCP  */
-  YYSYMBOL_DATASPACE = 70,                 /* DATASPACE  */
-  YYSYMBOL_BASEADDR = 71,                  /* BASEADDR  */
-  YYSYMBOL_RLA = 72,                       /* RLA  */
-  YYSYMBOL_SRE = 73,                       /* SRE  */
-  YYSYMBOL_74_ = 74,                       /* '='  */
-  YYSYMBOL_75_ = 75,                       /* ','  */
-  YYSYMBOL_76_ = 76,                       /* '#'  */
-  YYSYMBOL_77_ = 77,                       /* '+'  */
-  YYSYMBOL_78_ = 78,                       /* '-'  */
-  YYSYMBOL_79_ = 79,                       /* '<'  */
-  YYSYMBOL_80_ = 80,                       /* '>'  */
-  YYSYMBOL_81_ = 81,                       /* '('  */
-  YYSYMBOL_82_ = 82,                       /* ')'  */
-  YYSYMBOL_83_x_ = 83,                     /* 'x'  */
-  YYSYMBOL_84_y_ = 84,                     /* 'y'  */
-  YYSYMBOL_85_ = 85,                       /* ':'  */
-  YYSYMBOL_YYACCEPT = 86,                  /* $accept  */
-  YYSYMBOL_program = 87,                   /* program  */
-  YYSYMBOL_statement_list = 88,            /* statement_list  */
-  YYSYMBOL_statement = 89,                 /* statement  */
-  YYSYMBOL_dir = 90,                       /* dir  */
-  YYSYMBOL_decl = 91,                      /* decl  */
-  YYSYMBOL_code_item = 92,                 /* code_item  */
-  YYSYMBOL_data = 93,                      /* data  */
-  YYSYMBOL_dlist = 94,                     /* dlist  */
-  YYSYMBOL_inst = 95,                      /* inst  */
-  YYSYMBOL_const = 96,                     /* const  */
-  YYSYMBOL_expr = 97,                      /* expr  */
-  YYSYMBOL_iexpr = 98                      /* iexpr  */
+  YYSYMBOL_ISC = 70,                       /* ISC  */
+  YYSYMBOL_DATASPACE = 71,                 /* DATASPACE  */
+  YYSYMBOL_BASEADDR = 72,                  /* BASEADDR  */
+  YYSYMBOL_RLA = 73,                       /* RLA  */
+  YYSYMBOL_SRE = 74,                       /* SRE  */
+  YYSYMBOL_LAX = 75,                       /* LAX  */
+  YYSYMBOL_76_ = 76,                       /* '='  */
+  YYSYMBOL_77_ = 77,                       /* ','  */
+  YYSYMBOL_78_ = 78,                       /* '('  */
+  YYSYMBOL_79_x_ = 79,                     /* 'x'  */
+  YYSYMBOL_80_ = 80,                       /* ')'  */
+  YYSYMBOL_81_ = 81,                       /* '#'  */
+  YYSYMBOL_82_ = 82,                       /* '+'  */
+  YYSYMBOL_83_ = 83,                       /* '-'  */
+  YYSYMBOL_84_ = 84,                       /* '<'  */
+  YYSYMBOL_85_ = 85,                       /* '>'  */
+  YYSYMBOL_86_y_ = 86,                     /* 'y'  */
+  YYSYMBOL_87_ = 87,                       /* ':'  */
+  YYSYMBOL_YYACCEPT = 88,                  /* $accept  */
+  YYSYMBOL_program = 89,                   /* program  */
+  YYSYMBOL_statement_list = 90,            /* statement_list  */
+  YYSYMBOL_statement = 91,                 /* statement  */
+  YYSYMBOL_dir = 92,                       /* dir  */
+  YYSYMBOL_decl = 93,                      /* decl  */
+  YYSYMBOL_code_item = 94,                 /* code_item  */
+  YYSYMBOL_data = 95,                      /* data  */
+  YYSYMBOL_dlist = 96,                     /* dlist  */
+  YYSYMBOL_inst = 97,                      /* inst  */
+  YYSYMBOL_const = 98,                     /* const  */
+  YYSYMBOL_expr = 99,                      /* expr  */
+  YYSYMBOL_iexpr = 100                     /* iexpr  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -555,19 +557,19 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  3
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   341
+#define YYLAST   351
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  86
+#define YYNTOKENS  88
 /* YYNNTS -- Number of nonterminals.  */
 #define YYNNTS  13
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  104
+#define YYNRULES  107
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  154
+#define YYNSTATES  161
 
 /* YYMAXUTOK -- Last valid token kind.  */
-#define YYMAXUTOK   328
+#define YYMAXUTOK   330
 
 
 /* YYTRANSLATE(TOKEN-NUM) -- Symbol number corresponding to TOKEN-NUM
@@ -584,16 +586,16 @@ static const yytype_int8 yytranslate[] =
        0,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,    76,     2,     2,     2,     2,
-      81,    82,     2,    77,    75,    78,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,    85,     2,
-      79,    74,    80,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,    81,     2,     2,     2,     2,
+      78,    80,     2,    82,    77,    83,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,    87,     2,
+      84,    76,    85,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-      83,    84,     2,     2,     2,     2,     2,     2,     2,     2,
+      79,    86,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -613,24 +615,25 @@ static const yytype_int8 yytranslate[] =
       35,    36,    37,    38,    39,    40,    41,    42,    43,    44,
       45,    46,    47,    48,    49,    50,    51,    52,    53,    54,
       55,    56,    57,    58,    59,    60,    61,    62,    63,    64,
-      65,    66,    67,    68,    69,    70,    71,    72,    73
+      65,    66,    67,    68,    69,    70,    71,    72,    73,    74,
+      75
 };
 
 #if YYDEBUG
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,   126,   126,   129,   130,   139,   143,   147,   153,   162,
-     166,   173,   174,   175,   176,   177,   180,   187,   193,   199,
-     206,   215,   222,   231,   237,   246,   247,   248,   249,   250,
-     251,   252,   253,   254,   255,   256,   257,   258,   259,   260,
-     261,   262,   263,   264,   265,   266,   267,   268,   269,   270,
-     271,   272,   273,   274,   275,   276,   277,   278,   279,   280,
-     281,   282,   283,   284,   285,   286,   287,   288,   289,   290,
-     291,   292,   293,   294,   295,   296,   297,   298,   299,   300,
-     301,   302,   303,   304,   305,   306,   307,   308,   309,   312,
-     316,   320,   324,   330,   334,   338,   342,   346,   350,   354,
-     358,   364,   368,   372,   376
+       0,   128,   128,   131,   132,   141,   145,   149,   155,   164,
+     168,   175,   176,   177,   178,   179,   182,   189,   195,   201,
+     208,   217,   224,   233,   239,   248,   249,   250,   251,   252,
+     253,   254,   255,   256,   257,   258,   259,   260,   261,   262,
+     263,   264,   265,   266,   267,   268,   269,   270,   271,   272,
+     273,   274,   275,   276,   277,   278,   279,   280,   281,   282,
+     283,   284,   285,   286,   287,   288,   289,   290,   291,   292,
+     293,   294,   295,   296,   297,   298,   299,   300,   301,   302,
+     303,   304,   305,   306,   307,   308,   309,   310,   311,   312,
+     313,   316,   320,   324,   328,   334,   338,   342,   346,   350,
+     354,   358,   362,   366,   372,   376,   380,   384
 };
 #endif
 
@@ -654,10 +657,10 @@ static const char *const yytname[] =
   "DEC", "DEX", "DEY", "ASL", "LSR", "ROL", "ROR", "JMP", "JSR", "RTS",
   "BCC", "BCS", "BEQ", "BMI", "BNE", "BPL", "BVC", "BVS", "CLC", "CLD",
   "CLI", "CLV", "SEC", "SED", "SEI", "BRK", "NOP", "RTI", "SLO", "DCP",
-  "DATASPACE", "BASEADDR", "RLA", "SRE", "'='", "','", "'#'", "'+'", "'-'",
-  "'<'", "'>'", "'('", "')'", "'x'", "'y'", "':'", "$accept", "program",
-  "statement_list", "statement", "dir", "decl", "code_item", "data",
-  "dlist", "inst", "const", "expr", "iexpr", YY_NULLPTR
+  "ISC", "DATASPACE", "BASEADDR", "RLA", "SRE", "LAX", "'='", "','", "'('",
+  "'x'", "')'", "'#'", "'+'", "'-'", "'<'", "'>'", "'y'", "':'", "$accept",
+  "program", "statement_list", "statement", "dir", "decl", "code_item",
+  "data", "dlist", "inst", "const", "expr", "iexpr", YY_NULLPTR
 };
 
 static const char *
@@ -667,12 +670,12 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 }
 #endif
 
-#define YYPACT_NINF (-71)
+#define YYPACT_NINF (-78)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
 
-#define YYTABLE_NINF (-95)
+#define YYTABLE_NINF (-98)
 
 #define yytable_value_is_error(Yyn) \
   0
@@ -681,22 +684,23 @@ yysymbol_name (yysymbol_kind_t yysymbol)
    STATE-NUM.  */
 static const yytype_int16 yypact[] =
 {
-     -71,     2,   139,   -71,     6,   -65,   207,    14,    14,    22,
-      22,    22,    22,    22,    22,   -71,   -71,   -71,   -71,   -71,
-     -71,   -71,   -71,   -71,   -71,    22,    22,    22,    22,    22,
-      22,    22,    22,    22,    22,   -71,   -71,    22,   -71,   -71,
-      22,    22,    22,    22,    22,     7,   -71,     9,    17,    25,
-      35,    39,    48,    49,    50,   -71,   -71,   -71,   -71,   -71,
-     -71,   -71,   -71,   -71,   -71,    22,    22,    26,    26,    22,
-      22,   -71,   -71,   -71,   -71,   -71,   -37,   -71,   -71,   -71,
-     -71,    14,    14,    14,    14,   -28,   -33,   -58,    14,   207,
-     -71,   -71,   -71,   -28,   -71,   -28,   -30,   -29,   -71,   -71,
-     -71,   -71,   -71,   -71,   -71,   -71,   -71,   -71,   -71,   -71,
-     -71,   -71,   -71,   -71,   -71,   -71,   -71,   -71,   -71,   -71,
-     -71,   -71,   -71,   -71,   -71,   -71,   -71,   -71,   -71,   -71,
-     -71,   -71,   -71,   -71,   -71,   -58,   -58,   -58,   -70,    14,
-      14,    14,   -58,   -71,   -71,    14,   -56,   -71,   -58,   -58,
-     -58,   -58,   -71,   -71
+     -78,     8,   143,   -78,    11,   -62,   213,    19,    19,    27,
+      27,    27,    27,    27,    27,   -78,   -78,   -78,   -78,   -78,
+     -78,   -78,   -78,   -78,   -78,    27,    27,    27,    27,    27,
+      27,    27,    27,    27,    27,   -78,   -78,    27,   -78,   -78,
+      27,    27,    27,    27,    27,    14,   -78,    22,    44,    45,
+      46,    47,    48,    49,    50,   -78,   -78,   -78,   -78,   -78,
+     -78,   -78,   -78,   -78,   -78,    27,    27,    27,    34,    34,
+      27,    27,    27,   -78,   -78,   -78,   -78,   -78,   -66,   -78,
+     -78,   -78,   -78,    19,    19,    19,    19,   -22,   -43,   -58,
+      19,   213,   -78,   -78,   -78,   -22,   -78,   -22,   -31,   -36,
+     -78,   -78,   -78,   -78,   -78,   -78,   -78,   -78,   -78,   -78,
+     -78,   -78,   -78,   -78,   -78,   -78,   -78,   -78,   -78,   -78,
+     -78,   -78,   -78,   -78,   -78,   -78,   -78,   -78,   -78,   -78,
+     -78,   -78,   -78,   -78,   -78,   -78,   -78,   -78,   -78,   -70,
+     -58,   -58,   -58,    19,    19,    19,   -58,   -78,   -78,    19,
+     -77,   -21,   -78,   -58,   -58,   -58,   -58,   -78,   -78,   -23,
+     -78
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -711,29 +715,30 @@ static const yytype_int8 yydefact[] =
       56,    58,    60,    62,     0,     0,    66,     0,     0,     0,
        0,     0,     0,     0,     0,    75,    76,    77,    78,    79,
       80,    81,    82,    83,    84,     0,     0,     0,     0,     0,
-       0,     4,     5,     6,     9,    10,    12,    89,    90,    91,
-      92,     0,     0,     0,     0,    13,    11,    23,     0,     7,
-      18,    17,    93,    21,    94,    22,    93,   101,    25,    26,
-      27,    28,    29,    30,    41,    42,    43,    44,    45,    46,
-      47,    48,    49,    50,    53,    57,    59,    61,    63,    64,
-      65,    67,    68,    69,    70,    71,    72,    73,    74,    85,
-      86,    14,    15,    87,    88,    95,    98,    99,     0,     0,
-       0,     0,    16,    20,    19,     0,     0,   100,    24,    96,
-      97,   104,   102,   103
+       0,     0,     0,     4,     5,     6,     9,    10,    12,    91,
+      92,    93,    94,     0,     0,     0,     0,    13,    11,    23,
+       0,     7,    18,    17,    95,    21,    97,    22,    95,   104,
+      25,    26,    27,    28,    29,    30,    41,    42,    43,    44,
+      45,    46,    47,    48,    49,    50,    53,    57,    59,    61,
+      63,    64,    65,    67,    68,    69,    70,    71,    72,    73,
+      74,    85,    86,    90,    14,    15,    87,    88,    89,     0,
+      98,   101,   102,     0,     0,     0,    16,    20,    19,     0,
+       0,     0,   103,    24,    99,   100,   107,   105,   106,     0,
+      96
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int16 yypgoto[] =
 {
-     -71,   -71,   -71,   -71,   -71,   -71,   -71,    -1,    43,     0,
-      -3,    -4,   271
+     -78,   -78,   -78,   -78,   -78,   -78,   -78,    -1,    25,     0,
+      -3,    -4,   279
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-       0,     1,     2,    71,    72,    73,    89,    74,    85,    75,
-      94,    97,    98
+       0,     1,     2,    73,    74,    75,    91,    76,    87,    77,
+      96,    99,   100
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -741,118 +746,121 @@ static const yytype_int8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int16 yytable[] =
 {
-      87,    86,     3,    87,    87,    90,    91,   140,   141,    88,
-      76,   120,   147,   121,    77,    78,    79,    80,    92,   140,
-     141,   122,    77,    78,    79,    80,    96,   152,   153,   123,
-      77,    78,    79,    80,    77,    78,    79,    80,   -93,   124,
-     -93,   -93,   -94,   125,   -94,   -94,   146,   139,   140,   141,
-      93,    95,   126,   127,   128,   145,     0,     0,     0,     0,
-       0,     0,     0,     0,   131,   132,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,     0,     0,   135,   136,   137,
-     138,     0,    81,     0,   142,    82,    83,    84,   143,   144,
-      81,     0,     0,    82,    83,    84,     0,     0,    81,     0,
-       0,    82,    83,    84,     0,     0,     0,     0,     0,     0,
+      89,    88,   157,    89,    89,    92,    93,   151,     3,   158,
+     152,   -95,   144,   145,    90,    78,   -95,   -95,   122,    79,
+      80,    81,    82,    94,   144,   145,   123,    79,    80,    81,
+      82,    98,    95,    97,   -97,    79,    80,    81,    82,   -97,
+     -97,   150,    79,    80,    81,    82,   144,   145,   124,   125,
+     126,   127,   128,   129,   130,   143,   149,   160,   159,     0,
+       0,     0,     0,     0,     0,   134,   135,     0,     0,     0,
+       0,     0,     0,     0,     0,     0,     0,     0,     0,   139,
+     140,   141,   142,     0,     0,     0,   146,     0,     0,    83,
+     147,   148,    84,     0,     0,    85,    86,    83,     0,     0,
+      84,     0,     0,    85,    86,    83,     0,     0,    84,     0,
+       0,    85,    86,     0,     0,     0,     0,     0,     0,     0,
        0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+       0,     0,     0,     0,     0,     0,     0,     0,     0,   153,
+     154,   155,     0,     0,     0,   156,     4,     5,     6,     7,
+       8,     0,     0,     0,     0,     9,    10,    11,    12,    13,
+      14,    15,    16,    17,    18,    19,    20,    21,    22,    23,
+      24,    25,    26,    27,    28,    29,    30,    31,    32,    33,
+      34,    35,    36,    37,    38,    39,    40,    41,    42,    43,
+      44,    45,    46,    47,    48,    49,    50,    51,    52,    53,
+      54,    55,    56,    57,    58,    59,    60,    61,    62,    63,
+      64,    65,    66,    67,    68,    69,    70,    71,    72,     7,
+       8,     0,     0,     0,     0,     9,    10,    11,    12,    13,
+      14,    15,    16,    17,    18,    19,    20,    21,    22,    23,
+      24,    25,    26,    27,    28,    29,    30,    31,    32,    33,
+      34,    35,    36,    37,    38,    39,    40,    41,    42,    43,
+      44,    45,    46,    47,    48,    49,    50,    51,    52,    53,
+      54,    55,    56,    57,    58,    59,    60,    61,    62,    63,
+      64,    65,    66,    67,     0,     0,    70,    71,    72,   101,
+     102,   103,   104,   105,     0,     0,     0,     0,     0,     0,
+       0,     0,     0,     0,   106,   107,   108,   109,   110,   111,
+     112,   113,   114,   115,     0,     0,   116,     0,     0,   117,
+     118,   119,   120,   121,     0,     0,     0,     0,     0,     0,
        0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,   148,   149,   150,     0,     0,
-       0,   151,     4,     5,     6,     7,     8,     0,     0,     0,
-       0,     9,    10,    11,    12,    13,    14,    15,    16,    17,
-      18,    19,    20,    21,    22,    23,    24,    25,    26,    27,
-      28,    29,    30,    31,    32,    33,    34,    35,    36,    37,
-      38,    39,    40,    41,    42,    43,    44,    45,    46,    47,
-      48,    49,    50,    51,    52,    53,    54,    55,    56,    57,
-      58,    59,    60,    61,    62,    63,    64,    65,    66,    67,
-      68,    69,    70,     7,     8,     0,     0,     0,     0,     9,
-      10,    11,    12,    13,    14,    15,    16,    17,    18,    19,
-      20,    21,    22,    23,    24,    25,    26,    27,    28,    29,
-      30,    31,    32,    33,    34,    35,    36,    37,    38,    39,
-      40,    41,    42,    43,    44,    45,    46,    47,    48,    49,
-      50,    51,    52,    53,    54,    55,    56,    57,    58,    59,
-      60,    61,    62,    63,    64,    65,    66,     0,     0,    69,
-      70,    99,   100,   101,   102,   103,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,     0,   104,   105,   106,   107,
-     108,   109,   110,   111,   112,   113,     0,     0,   114,     0,
-       0,   115,   116,   117,   118,   119,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,     0,   129,   130,     0,     0,
-     133,   134
+       0,     0,     0,     0,   131,   132,   133,     0,     0,   136,
+     137,   138
 };
 
 static const yytype_int16 yycheck[] =
 {
-       4,     4,     0,     7,     8,     6,     6,    77,    78,    74,
-       4,     4,    82,     4,     8,     9,    10,    11,     4,    77,
-      78,     4,     8,     9,    10,    11,     4,    83,    84,     4,
-       8,     9,    10,    11,     8,     9,    10,    11,    75,     4,
-      77,    78,    75,     4,    77,    78,    75,    75,    77,    78,
-       7,     8,     4,     4,     4,    85,    -1,    -1,    -1,    -1,
-      -1,    -1,    -1,    -1,    67,    68,    -1,    -1,    -1,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    -1,    81,    82,    83,
-      84,    -1,    76,    -1,    88,    79,    80,    81,    89,    89,
-      76,    -1,    -1,    79,    80,    81,    -1,    -1,    76,    -1,
-      -1,    79,    80,    81,    -1,    -1,    -1,    -1,    -1,    -1,
+       4,     4,    79,     7,     8,     6,     6,    77,     0,    86,
+      80,    77,    82,    83,    76,     4,    82,    83,     4,     8,
+       9,    10,    11,     4,    82,    83,     4,     8,     9,    10,
+      11,     4,     7,     8,    77,     8,     9,    10,    11,    82,
+      83,    77,     8,     9,    10,    11,    82,    83,     4,     4,
+       4,     4,     4,     4,     4,    77,    87,    80,    79,    -1,
+      -1,    -1,    -1,    -1,    -1,    68,    69,    -1,    -1,    -1,
+      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    83,
+      84,    85,    86,    -1,    -1,    -1,    90,    -1,    -1,    78,
+      91,    91,    81,    -1,    -1,    84,    85,    78,    -1,    -1,
+      81,    -1,    -1,    84,    85,    78,    -1,    -1,    81,    -1,
+      -1,    84,    85,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
       -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
+      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,   143,
+     144,   145,    -1,    -1,    -1,   149,     3,     4,     5,     6,
+       7,    -1,    -1,    -1,    -1,    12,    13,    14,    15,    16,
+      17,    18,    19,    20,    21,    22,    23,    24,    25,    26,
+      27,    28,    29,    30,    31,    32,    33,    34,    35,    36,
+      37,    38,    39,    40,    41,    42,    43,    44,    45,    46,
+      47,    48,    49,    50,    51,    52,    53,    54,    55,    56,
+      57,    58,    59,    60,    61,    62,    63,    64,    65,    66,
+      67,    68,    69,    70,    71,    72,    73,    74,    75,     6,
+       7,    -1,    -1,    -1,    -1,    12,    13,    14,    15,    16,
+      17,    18,    19,    20,    21,    22,    23,    24,    25,    26,
+      27,    28,    29,    30,    31,    32,    33,    34,    35,    36,
+      37,    38,    39,    40,    41,    42,    43,    44,    45,    46,
+      47,    48,    49,    50,    51,    52,    53,    54,    55,    56,
+      57,    58,    59,    60,    61,    62,    63,    64,    65,    66,
+      67,    68,    69,    70,    -1,    -1,    73,    74,    75,    10,
+      11,    12,    13,    14,    -1,    -1,    -1,    -1,    -1,    -1,
+      -1,    -1,    -1,    -1,    25,    26,    27,    28,    29,    30,
+      31,    32,    33,    34,    -1,    -1,    37,    -1,    -1,    40,
+      41,    42,    43,    44,    -1,    -1,    -1,    -1,    -1,    -1,
       -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-      -1,    -1,    -1,    -1,    -1,   139,   140,   141,    -1,    -1,
-      -1,   145,     3,     4,     5,     6,     7,    -1,    -1,    -1,
-      -1,    12,    13,    14,    15,    16,    17,    18,    19,    20,
-      21,    22,    23,    24,    25,    26,    27,    28,    29,    30,
-      31,    32,    33,    34,    35,    36,    37,    38,    39,    40,
-      41,    42,    43,    44,    45,    46,    47,    48,    49,    50,
-      51,    52,    53,    54,    55,    56,    57,    58,    59,    60,
-      61,    62,    63,    64,    65,    66,    67,    68,    69,    70,
-      71,    72,    73,     6,     7,    -1,    -1,    -1,    -1,    12,
-      13,    14,    15,    16,    17,    18,    19,    20,    21,    22,
-      23,    24,    25,    26,    27,    28,    29,    30,    31,    32,
-      33,    34,    35,    36,    37,    38,    39,    40,    41,    42,
-      43,    44,    45,    46,    47,    48,    49,    50,    51,    52,
-      53,    54,    55,    56,    57,    58,    59,    60,    61,    62,
-      63,    64,    65,    66,    67,    68,    69,    -1,    -1,    72,
-      73,    10,    11,    12,    13,    14,    -1,    -1,    -1,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    25,    26,    27,    28,
-      29,    30,    31,    32,    33,    34,    -1,    -1,    37,    -1,
-      -1,    40,    41,    42,    43,    44,    -1,    -1,    -1,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    65,    66,    -1,    -1,
-      69,    70
+      -1,    -1,    -1,    -1,    65,    66,    67,    -1,    -1,    70,
+      71,    72
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,    87,    88,     0,     3,     4,     5,     6,     7,    12,
+       0,    89,    90,     0,     3,     4,     5,     6,     7,    12,
       13,    14,    15,    16,    17,    18,    19,    20,    21,    22,
       23,    24,    25,    26,    27,    28,    29,    30,    31,    32,
       33,    34,    35,    36,    37,    38,    39,    40,    41,    42,
       43,    44,    45,    46,    47,    48,    49,    50,    51,    52,
       53,    54,    55,    56,    57,    58,    59,    60,    61,    62,
       63,    64,    65,    66,    67,    68,    69,    70,    71,    72,
-      73,    89,    90,    91,    93,    95,     4,     8,     9,    10,
-      11,    76,    79,    80,    81,    94,    96,    97,    74,    92,
-      93,    95,     4,    94,    96,    94,     4,    97,    98,    98,
-      98,    98,    98,    98,    98,    98,    98,    98,    98,    98,
-      98,    98,    98,    98,    98,    98,    98,    98,    98,    98,
-       4,     4,     4,     4,     4,     4,     4,     4,     4,    98,
-      98,    96,    96,    98,    98,    97,    97,    97,    97,    75,
-      77,    78,    97,    93,    95,    85,    75,    82,    97,    97,
-      97,    97,    83,    84
+      73,    74,    75,    91,    92,    93,    95,    97,     4,     8,
+       9,    10,    11,    78,    81,    84,    85,    96,    98,    99,
+      76,    94,    95,    97,     4,    96,    98,    96,     4,    99,
+     100,   100,   100,   100,   100,   100,   100,   100,   100,   100,
+     100,   100,   100,   100,   100,   100,   100,   100,   100,   100,
+     100,   100,     4,     4,     4,     4,     4,     4,     4,     4,
+       4,   100,   100,   100,    98,    98,   100,   100,   100,    99,
+      99,    99,    99,    77,    82,    83,    99,    95,    97,    87,
+      77,    77,    80,    99,    99,    99,    99,    79,    86,    79,
+      80
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    86,    87,    88,    88,    89,    89,    89,    89,    89,
-      89,    90,    90,    90,    90,    90,    91,    92,    92,    92,
-      92,    93,    93,    94,    94,    95,    95,    95,    95,    95,
-      95,    95,    95,    95,    95,    95,    95,    95,    95,    95,
-      95,    95,    95,    95,    95,    95,    95,    95,    95,    95,
-      95,    95,    95,    95,    95,    95,    95,    95,    95,    95,
-      95,    95,    95,    95,    95,    95,    95,    95,    95,    95,
-      95,    95,    95,    95,    95,    95,    95,    95,    95,    95,
-      95,    95,    95,    95,    95,    95,    95,    95,    95,    96,
-      96,    96,    96,    97,    97,    97,    97,    97,    97,    97,
-      97,    98,    98,    98,    98
+       0,    88,    89,    90,    90,    91,    91,    91,    91,    91,
+      91,    92,    92,    92,    92,    92,    93,    94,    94,    94,
+      94,    95,    95,    96,    96,    97,    97,    97,    97,    97,
+      97,    97,    97,    97,    97,    97,    97,    97,    97,    97,
+      97,    97,    97,    97,    97,    97,    97,    97,    97,    97,
+      97,    97,    97,    97,    97,    97,    97,    97,    97,    97,
+      97,    97,    97,    97,    97,    97,    97,    97,    97,    97,
+      97,    97,    97,    97,    97,    97,    97,    97,    97,    97,
+      97,    97,    97,    97,    97,    97,    97,    97,    97,    97,
+      97,    98,    98,    98,    98,    99,    99,    99,    99,    99,
+      99,    99,    99,    99,   100,   100,   100,   100
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
@@ -866,9 +874,9 @@ static const yytype_int8 yyr2[] =
        2,     1,     1,     2,     1,     1,     1,     2,     1,     2,
        1,     2,     1,     2,     2,     2,     1,     2,     2,     2,
        2,     2,     2,     2,     2,     1,     1,     1,     1,     1,
-       1,     1,     1,     1,     1,     2,     2,     2,     2,     1,
-       1,     1,     1,     1,     1,     2,     3,     3,     2,     2,
-       3,     1,     3,     3,     3
+       1,     1,     1,     1,     1,     2,     2,     2,     2,     2,
+       2,     1,     1,     1,     1,     1,     5,     1,     2,     3,
+       3,     2,     2,     3,     1,     3,     3,     3
 };
 
 
@@ -1716,44 +1724,44 @@ yyreduce:
   switch (yyn)
     {
   case 4: /* statement_list: statement_list statement  */
-#line 131 "asm6502.y"
+#line 133 "asm6502.y"
                 {
                     if ((yyvsp[0].node) != NULL) {
                         root->children.push_back((yyvsp[0].node));
                         (yyvsp[0].node)->parent = root;
                     }
                 }
-#line 1727 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
-    break;
-
-  case 5: /* statement: dir  */
-#line 140 "asm6502.y"
-           {
-               (yyval.node) = NULL; // directives don't create nodes
-           }
 #line 1735 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
-  case 6: /* statement: decl  */
-#line 144 "asm6502.y"
+  case 5: /* statement: dir  */
+#line 142 "asm6502.y"
            {
-               (yyval.node) = (yyvsp[0].node);
+               (yyval.node) = NULL; // directives don't create nodes
            }
 #line 1743 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
+  case 6: /* statement: decl  */
+#line 146 "asm6502.y"
+           {
+               (yyval.node) = (yyvsp[0].node);
+           }
+#line 1751 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+    break;
+
   case 7: /* statement: LABEL code_item  */
-#line 148 "asm6502.y"
+#line 150 "asm6502.y"
            {
                (yyval.node) = new LabelNode((yyvsp[-1].str), (yyvsp[0].list));
                (yyval.node)->lineNumber = (yylsp[-1]).first_line;
                (yyvsp[0].list)->parent = (yyval.node);
            }
-#line 1753 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1761 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 8: /* statement: LABEL  */
-#line 154 "asm6502.y"
+#line 156 "asm6502.y"
            {
                // Label with no code following - create empty list
                ListNode* emptyList = new ListNode();
@@ -1762,635 +1770,655 @@ yyreduce:
                (yyval.node)->lineNumber = (yylsp[0]).first_line;
                emptyList->parent = (yyval.node);
            }
-#line 1766 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
-    break;
-
-  case 9: /* statement: data  */
-#line 163 "asm6502.y"
-           {
-               (yyval.node) = (yyvsp[0].node);
-           }
 #line 1774 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
+  case 9: /* statement: data  */
+#line 165 "asm6502.y"
+           {
+               (yyval.node) = (yyvsp[0].node);
+           }
+#line 1782 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+    break;
+
   case 10: /* statement: inst  */
-#line 167 "asm6502.y"
+#line 169 "asm6502.y"
            {
                // Allow standalone instructions
                (yyval.node) = (yyvsp[0].instruction);
            }
-#line 1783 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1791 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 16: /* decl: NAME '=' expr  */
-#line 181 "asm6502.y"
+#line 183 "asm6502.y"
         {
             (yyval.node) = new DeclNode((yyvsp[-2].str), (yyvsp[0].node));
             (yyval.node)->lineNumber = (yylsp[-2]).first_line;
         }
-#line 1792 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1800 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 17: /* code_item: inst  */
-#line 188 "asm6502.y"
+#line 190 "asm6502.y"
            {
                (yyval.list) = new ListNode();
                (yyval.list)->value.node = (yyvsp[0].instruction);
                (yyvsp[0].instruction)->parent = (yyval.list);
            }
-#line 1802 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1810 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 18: /* code_item: data  */
-#line 194 "asm6502.y"
+#line 196 "asm6502.y"
            {
                (yyval.list) = new ListNode();
                (yyval.list)->value.node = (yyvsp[0].node);
                (yyvsp[0].node)->parent = (yyval.list);
            }
-#line 1812 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1820 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 19: /* code_item: code_item inst  */
-#line 200 "asm6502.y"
+#line 202 "asm6502.y"
            {
                (yyval.list) = new ListNode();
                (yyval.list)->value.node = (yyvsp[0].instruction);
                (yyvsp[0].instruction)->parent = (yyval.list);
                (yyval.list)->next = (yyvsp[-1].list);
            }
-#line 1823 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1831 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 20: /* code_item: code_item data  */
-#line 207 "asm6502.y"
+#line 209 "asm6502.y"
            {
                (yyval.list) = new ListNode();
                (yyval.list)->value.node = (yyvsp[0].node);
                (yyvsp[0].node)->parent = (yyval.list);
                (yyval.list)->next = (yyvsp[-1].list);
            }
-#line 1834 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1842 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 21: /* data: DATABYTES dlist  */
-#line 216 "asm6502.y"
+#line 218 "asm6502.y"
         {
             (yyval.node) = new AstNode(AST_DATA8);
             (yyval.node)->lineNumber = (yylsp[-1]).first_line;
             (yyval.node)->value.node = (yyvsp[0].list);
             (yyvsp[0].list)->parent = (yyval.node);
         }
-#line 1845 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1853 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 22: /* data: DATAWORDS dlist  */
-#line 223 "asm6502.y"
+#line 225 "asm6502.y"
         {
             (yyval.node) = new AstNode(AST_DATA16);
             (yyval.node)->lineNumber = (yylsp[-1]).first_line;
             (yyval.node)->value.node = (yyvsp[0].list);
             (yyvsp[0].list)->parent = (yyval.node);
         }
-#line 1856 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1864 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 23: /* dlist: expr  */
-#line 232 "asm6502.y"
+#line 234 "asm6502.y"
         {
             (yyval.list) = new ListNode();
             (yyval.list)->value.node = (yyvsp[0].node);
             (yyvsp[0].node)->parent = (yyval.list);
         }
-#line 1866 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1874 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 24: /* dlist: dlist ',' expr  */
-#line 238 "asm6502.y"
+#line 240 "asm6502.y"
         {
             (yyval.list) = new ListNode();
             (yyval.list)->value.node = (yyvsp[0].node);
             (yyvsp[0].node)->parent = (yyval.list);
             (yyval.list)->next = (yyvsp[-2].list);
         }
-#line 1877 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1885 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 25: /* inst: LDA iexpr  */
-#line 246 "asm6502.y"
+#line 248 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), LDA, (yyvsp[0].node)); }
-#line 1883 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1891 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 26: /* inst: LDX iexpr  */
-#line 247 "asm6502.y"
+#line 249 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), LDX, (yyvsp[0].node)); }
-#line 1889 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1897 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 27: /* inst: LDY iexpr  */
-#line 248 "asm6502.y"
+#line 250 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), LDY, (yyvsp[0].node)); }
-#line 1895 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1903 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 28: /* inst: STA iexpr  */
-#line 249 "asm6502.y"
+#line 251 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), STA, (yyvsp[0].node)); }
-#line 1901 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1909 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 29: /* inst: STX iexpr  */
-#line 250 "asm6502.y"
+#line 252 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), STX, (yyvsp[0].node)); }
-#line 1907 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1915 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 30: /* inst: STY iexpr  */
-#line 251 "asm6502.y"
+#line 253 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), STY, (yyvsp[0].node)); }
-#line 1913 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1921 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 31: /* inst: TAX  */
-#line 252 "asm6502.y"
+#line 254 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), TAX, NULL); }
-#line 1919 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1927 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 32: /* inst: TAY  */
-#line 253 "asm6502.y"
+#line 255 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), TAY, NULL); }
-#line 1925 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1933 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 33: /* inst: TXA  */
-#line 254 "asm6502.y"
+#line 256 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), TXA, NULL); }
-#line 1931 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1939 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 34: /* inst: TYA  */
-#line 255 "asm6502.y"
+#line 257 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), TYA, NULL); }
-#line 1937 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1945 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 35: /* inst: TSX  */
-#line 256 "asm6502.y"
+#line 258 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), TSX, NULL); }
-#line 1943 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1951 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 36: /* inst: TXS  */
-#line 257 "asm6502.y"
+#line 259 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), TXS, NULL); }
-#line 1949 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1957 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 37: /* inst: PHA  */
-#line 258 "asm6502.y"
+#line 260 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), PHA, NULL); }
-#line 1955 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1963 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 38: /* inst: PHP  */
-#line 259 "asm6502.y"
+#line 261 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), PHP, NULL); }
-#line 1961 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1969 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 39: /* inst: PLA  */
-#line 260 "asm6502.y"
+#line 262 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), PLA, NULL); }
-#line 1967 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1975 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 40: /* inst: PLP  */
-#line 261 "asm6502.y"
+#line 263 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), PLP, NULL); }
-#line 1973 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1981 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 41: /* inst: AND iexpr  */
-#line 262 "asm6502.y"
+#line 264 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), AND, (yyvsp[0].node)); }
-#line 1979 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1987 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 42: /* inst: EOR iexpr  */
-#line 263 "asm6502.y"
+#line 265 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), EOR, (yyvsp[0].node)); }
-#line 1985 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1993 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 43: /* inst: ORA iexpr  */
-#line 264 "asm6502.y"
+#line 266 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), ORA, (yyvsp[0].node)); }
-#line 1991 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 1999 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 44: /* inst: BIT iexpr  */
-#line 265 "asm6502.y"
+#line 267 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), BIT, (yyvsp[0].node)); }
-#line 1997 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2005 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 45: /* inst: ADC iexpr  */
-#line 266 "asm6502.y"
+#line 268 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), ADC, (yyvsp[0].node)); }
-#line 2003 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2011 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 46: /* inst: SBC iexpr  */
-#line 267 "asm6502.y"
+#line 269 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), SBC, (yyvsp[0].node)); }
-#line 2009 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2017 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 47: /* inst: CMP iexpr  */
-#line 268 "asm6502.y"
+#line 270 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), CMP, (yyvsp[0].node)); }
-#line 2015 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2023 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 48: /* inst: CPX iexpr  */
-#line 269 "asm6502.y"
+#line 271 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), CPX, (yyvsp[0].node)); }
-#line 2021 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2029 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 49: /* inst: CPY iexpr  */
-#line 270 "asm6502.y"
+#line 272 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), CPY, (yyvsp[0].node)); }
-#line 2027 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2035 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 50: /* inst: INC iexpr  */
-#line 271 "asm6502.y"
+#line 273 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), INC, (yyvsp[0].node)); }
-#line 2033 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2041 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 51: /* inst: INX  */
-#line 272 "asm6502.y"
+#line 274 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), INX, NULL); }
-#line 2039 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2047 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 52: /* inst: INY  */
-#line 273 "asm6502.y"
+#line 275 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), INY, NULL); }
-#line 2045 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2053 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 53: /* inst: DEC iexpr  */
-#line 274 "asm6502.y"
+#line 276 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), DEC, (yyvsp[0].node)); }
-#line 2051 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2059 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 54: /* inst: DEX  */
-#line 275 "asm6502.y"
+#line 277 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), DEX, NULL); }
-#line 2057 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2065 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 55: /* inst: DEY  */
-#line 276 "asm6502.y"
+#line 278 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), DEY, NULL); }
-#line 2063 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2071 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 56: /* inst: ASL  */
-#line 277 "asm6502.y"
+#line 279 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), ASL, NULL); }
-#line 2069 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2077 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 57: /* inst: ASL iexpr  */
-#line 278 "asm6502.y"
+#line 280 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), ASL, (yyvsp[0].node)); }
-#line 2075 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2083 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 58: /* inst: LSR  */
-#line 279 "asm6502.y"
+#line 281 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), LSR, NULL); }
-#line 2081 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2089 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 59: /* inst: LSR iexpr  */
-#line 280 "asm6502.y"
+#line 282 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), LSR, (yyvsp[0].node)); }
-#line 2087 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2095 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 60: /* inst: ROL  */
-#line 281 "asm6502.y"
+#line 283 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), ROL, NULL); }
-#line 2093 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2101 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 61: /* inst: ROL iexpr  */
-#line 282 "asm6502.y"
+#line 284 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), ROL, (yyvsp[0].node)); }
-#line 2099 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2107 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 62: /* inst: ROR  */
-#line 283 "asm6502.y"
+#line 285 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), ROR, NULL); }
-#line 2105 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2113 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 63: /* inst: ROR iexpr  */
-#line 284 "asm6502.y"
+#line 286 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), ROR, (yyvsp[0].node)); }
-#line 2111 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2119 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 64: /* inst: JMP iexpr  */
-#line 285 "asm6502.y"
+#line 287 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), JMP, (yyvsp[0].node)); }
-#line 2117 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2125 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 65: /* inst: JSR NAME  */
-#line 286 "asm6502.y"
+#line 288 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), JSR, (yyvsp[0].str)); }
-#line 2123 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2131 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 66: /* inst: RTS  */
-#line 287 "asm6502.y"
+#line 289 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), RTS, NULL); }
-#line 2129 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2137 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 67: /* inst: BCC NAME  */
-#line 288 "asm6502.y"
+#line 290 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), BCC, (yyvsp[0].str)); }
-#line 2135 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2143 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 68: /* inst: BCS NAME  */
-#line 289 "asm6502.y"
+#line 291 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), BCS, (yyvsp[0].str)); }
-#line 2141 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2149 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 69: /* inst: BEQ NAME  */
-#line 290 "asm6502.y"
+#line 292 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), BEQ, (yyvsp[0].str)); }
-#line 2147 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2155 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 70: /* inst: BMI NAME  */
-#line 291 "asm6502.y"
+#line 293 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), BMI, (yyvsp[0].str)); }
-#line 2153 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2161 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 71: /* inst: BNE NAME  */
-#line 292 "asm6502.y"
+#line 294 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), BNE, (yyvsp[0].str)); }
-#line 2159 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2167 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 72: /* inst: BPL NAME  */
-#line 293 "asm6502.y"
+#line 295 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), BPL, (yyvsp[0].str)); }
-#line 2165 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2173 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 73: /* inst: BVC NAME  */
-#line 294 "asm6502.y"
+#line 296 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), BVC, (yyvsp[0].str)); }
-#line 2171 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2179 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 74: /* inst: BVS NAME  */
-#line 295 "asm6502.y"
+#line 297 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), BVS, (yyvsp[0].str)); }
-#line 2177 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2185 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 75: /* inst: CLC  */
-#line 296 "asm6502.y"
+#line 298 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), CLC, NULL); }
-#line 2183 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2191 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 76: /* inst: CLD  */
-#line 297 "asm6502.y"
+#line 299 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), CLD, NULL); }
-#line 2189 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2197 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 77: /* inst: CLI  */
-#line 298 "asm6502.y"
+#line 300 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), CLI, NULL); }
-#line 2195 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2203 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 78: /* inst: CLV  */
-#line 299 "asm6502.y"
+#line 301 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), CLV, NULL); }
-#line 2201 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2209 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 79: /* inst: SEC  */
-#line 300 "asm6502.y"
+#line 302 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), SEC, NULL); }
-#line 2207 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2215 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 80: /* inst: SED  */
-#line 301 "asm6502.y"
+#line 303 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), SED, NULL); }
-#line 2213 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2221 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 81: /* inst: SEI  */
-#line 302 "asm6502.y"
+#line 304 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), SEI, NULL); }
-#line 2219 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2227 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 82: /* inst: BRK  */
-#line 303 "asm6502.y"
+#line 305 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), BRK, NULL); }
-#line 2225 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2233 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 83: /* inst: NOP  */
-#line 304 "asm6502.y"
+#line 306 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), NOP, NULL); }
-#line 2231 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2239 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 84: /* inst: RTI  */
-#line 305 "asm6502.y"
+#line 307 "asm6502.y"
                 { INST((yylsp[0]), (yyval.instruction), RTI, NULL); }
-#line 2237 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2245 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 85: /* inst: SLO iexpr  */
-#line 306 "asm6502.y"
+#line 308 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), SLO, (yyvsp[0].node)); }
-#line 2243 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2251 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 86: /* inst: DCP iexpr  */
-#line 307 "asm6502.y"
+#line 309 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), DCP, (yyvsp[0].node)); }
-#line 2249 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2257 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 87: /* inst: RLA iexpr  */
-#line 308 "asm6502.y"
+#line 310 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), RLA, (yyvsp[0].node)); }
-#line 2255 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2263 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
   case 88: /* inst: SRE iexpr  */
-#line 309 "asm6502.y"
+#line 311 "asm6502.y"
                 { INST((yylsp[-1]), (yyval.instruction), SRE, (yyvsp[0].node)); }
-#line 2261 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
-    break;
-
-  case 89: /* const: HEXCONST  */
-#line 313 "asm6502.y"
-        {
-            (yyval.str) = (yyvsp[0].str);
-        }
 #line 2269 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
-  case 90: /* const: BINCONST  */
+  case 89: /* inst: LAX iexpr  */
+#line 312 "asm6502.y"
+                { INST((yylsp[-1]), (yyval.instruction), LAX, (yyvsp[0].node)); }
+#line 2275 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+    break;
+
+  case 90: /* inst: ISC iexpr  */
+#line 313 "asm6502.y"
+                { INST((yylsp[-1]), (yyval.instruction), ISC, (yyvsp[0].node)); }
+#line 2281 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+    break;
+
+  case 91: /* const: HEXCONST  */
 #line 317 "asm6502.y"
         {
             (yyval.str) = (yyvsp[0].str);
         }
-#line 2277 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2289 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
-  case 91: /* const: DECCONST  */
+  case 92: /* const: BINCONST  */
 #line 321 "asm6502.y"
         {
             (yyval.str) = (yyvsp[0].str);
         }
-#line 2285 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2297 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
-  case 92: /* const: STRINGCONST  */
+  case 93: /* const: DECCONST  */
 #line 325 "asm6502.y"
         {
             (yyval.str) = (yyvsp[0].str);
         }
-#line 2293 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2305 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
-  case 93: /* expr: NAME  */
-#line 331 "asm6502.y"
+  case 94: /* const: STRINGCONST  */
+#line 329 "asm6502.y"
+        {
+            (yyval.str) = (yyvsp[0].str);
+        }
+#line 2313 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+    break;
+
+  case 95: /* expr: NAME  */
+#line 335 "asm6502.y"
         {
             (yyval.node) = new AstNode(AST_NAME, (yyvsp[0].str));
         }
-#line 2301 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2321 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
-  case 94: /* expr: const  */
-#line 335 "asm6502.y"
+  case 96: /* expr: '(' expr ',' 'x' ')'  */
+#line 339 "asm6502.y"
+    {
+        (yyval.node) = new UnaryNode(AST_INDIRECT_INDEXED_X, (yyvsp[-3].node));
+    }
+#line 2329 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+    break;
+
+  case 97: /* expr: const  */
+#line 343 "asm6502.y"
         {
             (yyval.node) = new AstNode(AST_CONST, (yyvsp[0].str));
         }
-#line 2309 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2337 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
-  case 95: /* expr: '#' expr  */
-#line 339 "asm6502.y"
+  case 98: /* expr: '#' expr  */
+#line 347 "asm6502.y"
         {
             (yyval.node) = new UnaryNode(AST_IMMEDIATE, (yyvsp[0].node));
         }
-#line 2317 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2345 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
-  case 96: /* expr: expr '+' expr  */
-#line 343 "asm6502.y"
+  case 99: /* expr: expr '+' expr  */
+#line 351 "asm6502.y"
         {
             (yyval.node) = new BinaryNode(AST_ADD, (yyvsp[-2].node), (yyvsp[0].node));
         }
-#line 2325 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2353 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
-  case 97: /* expr: expr '-' expr  */
-#line 347 "asm6502.y"
+  case 100: /* expr: expr '-' expr  */
+#line 355 "asm6502.y"
         {
             (yyval.node) = new BinaryNode(AST_SUBTRACT, (yyvsp[-2].node), (yyvsp[0].node));
         }
-#line 2333 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2361 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
-  case 98: /* expr: '<' expr  */
-#line 351 "asm6502.y"
+  case 101: /* expr: '<' expr  */
+#line 359 "asm6502.y"
         {
             (yyval.node) = new UnaryNode(AST_LOBYTE, (yyvsp[0].node));
         }
-#line 2341 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2369 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
-  case 99: /* expr: '>' expr  */
-#line 355 "asm6502.y"
+  case 102: /* expr: '>' expr  */
+#line 363 "asm6502.y"
         {
             (yyval.node) = new UnaryNode(AST_HIBYTE, (yyvsp[0].node));
         }
-#line 2349 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2377 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
-  case 100: /* expr: '(' expr ')'  */
-#line 359 "asm6502.y"
+  case 103: /* expr: '(' expr ')'  */
+#line 367 "asm6502.y"
         {
             (yyval.node) = new UnaryNode(AST_INDIRECT, (yyvsp[-1].node));
         }
-#line 2357 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2385 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
-  case 101: /* iexpr: expr  */
-#line 365 "asm6502.y"
+  case 104: /* iexpr: expr  */
+#line 373 "asm6502.y"
         {
             (yyval.node) = (yyvsp[0].node);
         }
-#line 2365 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2393 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
-  case 102: /* iexpr: expr ',' 'x'  */
-#line 369 "asm6502.y"
+  case 105: /* iexpr: expr ',' 'x'  */
+#line 377 "asm6502.y"
         {
             (yyval.node) = new UnaryNode(AST_INDEXED_X, (yyvsp[-2].node));
         }
-#line 2373 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2401 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
-  case 103: /* iexpr: expr ',' 'y'  */
-#line 373 "asm6502.y"
+  case 106: /* iexpr: expr ',' 'y'  */
+#line 381 "asm6502.y"
         {
             (yyval.node) = new UnaryNode(AST_INDEXED_Y, (yyvsp[-2].node));
         }
-#line 2381 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2409 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
-  case 104: /* iexpr: NAME ':' expr  */
-#line 377 "asm6502.y"
+  case 107: /* iexpr: NAME ':' expr  */
+#line 385 "asm6502.y"
         {
             // Handle addressing mode like "a:variable"
             (yyval.node) = (yyvsp[0].node);  // Just use the expression, ignore the addressing mode prefix
         }
-#line 2390 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2418 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
     break;
 
 
-#line 2394 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
+#line 2422 "/home/jbhall/software_build/codegen_6502/codegen/parser.cpp"
 
       default: break;
     }
@@ -2619,7 +2647,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 383 "asm6502.y"
+#line 391 "asm6502.y"
 
 
 int main(int argc, char** argv)

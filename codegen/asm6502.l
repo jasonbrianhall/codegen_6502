@@ -289,6 +289,10 @@ rti {
     return RTI;
 }
 
+isc {
+    return ISC;
+}
+
 slo {
     return SLO;
 }
@@ -303,6 +307,10 @@ rla {
 
 sre {
     return SRE;
+}
+
+lax {
+    return LAX;
 }
 
 a: {

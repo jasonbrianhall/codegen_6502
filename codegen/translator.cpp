@@ -691,6 +691,11 @@ std::string Translator::translateExpression(AstNode* expr)
                 result = translateExpression(node->lhs) + " - " + translateExpression(node->rhs);
             }
             break;
+        case AST_INDIRECT_INDEXED_X:
+            result = "M(W(";
+            result += translateExpression(static_cast<UnaryNode*>(expr)->child);
+            result += " + x))";
+            break;
         case AST_HIBYTE:
             result = "HIBYTE(";
             result += translateExpression(static_cast<UnaryNode*>(expr)->child);
@@ -1139,6 +1144,22 @@ case JMP:
         result += "); c = (temp & 0x01) ? 1 : 0; temp >>= 1; writeData(";
         result += translateExpression(inst->value.node);
         result += ", temp); a ^= temp; }";
+        break;
+    case LAX:
+        // LAX (undocumented): Load accumulator and X register
+        // Equivalent to: LDA operand; TAX
+        result += "a = x = ";
+        result += translateOperand(inst->value.node);
+        result += ";";
+        break;        
+    case ISC:
+        // ISC (undocumented): Increment, then subtract with carry
+        // Equivalent to: INC operand; SBC operand
+        result += "{ uint8_t temp = M(";
+        result += translateExpression(inst->value.node);
+        result += ") + 1; writeData(";
+        result += translateExpression(inst->value.node);
+        result += ", temp); a -= temp; }";
         break;
         
     default:

@@ -215,6 +215,14 @@ void printNode(AstNode* node, int indent)
             printIndent(indent);
             printf("name: %s\n", node->value.s);
             break;
+        case AST_INDIRECT_INDEXED_X:
+            {
+                UnaryNode* n = static_cast<UnaryNode*>(node);
+                printIndent(indent);
+                printf("indirect indexed x:\n");
+                printNode(n->child, indent + 4);
+            }
+    break;            
         case AST_CONST:
             printIndent(indent);
             printf("constant: %s\n", node->value.s);
