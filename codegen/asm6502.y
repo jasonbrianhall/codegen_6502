@@ -359,6 +359,11 @@ iexpr: expr
         {
             $$ = new UnaryNode(AST_INDEXED_Y, $1);
         }
+     | NAME ':' expr
+        {
+            // Handle addressing mode like "a:variable"
+            $$ = $3;  // Just use the expression, ignore the addressing mode prefix
+        }
      ;
 
 %%
