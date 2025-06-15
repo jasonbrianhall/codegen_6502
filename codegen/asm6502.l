@@ -26,6 +26,10 @@ void yyerror(const char *);
     return STRINGCONST;
 }
 
+[a-zA-Z_][a-zA-Z0-9_]*: {
+    yylval.str = DUP_YYTEXT;
+    return LABEL;
+}
 
 \.dsb {
     return DATASPACE;
@@ -46,11 +50,6 @@ void yyerror(const char *);
 \.[a-z]+ {
     yylval.str = DUP_YYTEXT;
     return DIRECTIVE;
-}
-
-[a-zA-Z]+[a-zA-Z0-9_]*: {
-    yylval.str = DUP_YYTEXT;
-    return LABEL;
 }
 
 x {
@@ -285,7 +284,7 @@ rti {
     return RTI;
 }
 
-[a-zA-Z]+[a-zA-Z0-9_]* {
+[a-zA-Z_][a-zA-Z0-9_]* {
     yylval.str = DUP_YYTEXT;
     return NAME;
 }

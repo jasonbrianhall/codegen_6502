@@ -1,4 +1,4 @@
-%error-verbose
+%define parse.error verbose
 
 %{
 #include <fstream>
@@ -107,9 +107,10 @@ void yyerror(const char* s);
 %token RTI
 %token DATASPACE
 %token BASEADDR
+
 %type <node> decl
-%type <node> section
-%type <list> code
+%type <node> statement
+%type <list> code_item
 %type <node> data
 %type <list> dlist
 %type <instruction> inst
@@ -119,47 +120,51 @@ void yyerror(const char* s);
 
 %%
 
-program: plist
+program: statement_list
        ;
 
-plist: dir
-     | decl 
-        {
-            root->children.push_back($1);
-            $1->parent = root;
-        }
-     | section
-        {
-            root->children.push_back($1);
-            $1->parent = root;
-        }
-     | data                    // Add this line - standalone data
-        {
-            root->children.push_back($1);
-            $1->parent = root;
-        }        
-     | plist dir
-     | plist decl 
-        {
-            root->children.push_back($2);
-            $2->parent = root;
-        }
-     | plist section
-        {
-            root->children.push_back($2);
-            $2->parent = root;
-        }
-     | plist data              // Add this line
-        {
-            root->children.push_back($2);
-            $2->parent = root;
-        }
-       
-     ;
+statement_list: /* empty */
+              | statement_list statement
+                {
+                    if ($2 != NULL) {
+                        root->children.push_back($2);
+                        $2->parent = root;
+                    }
+                }
+              ;
+
+statement: dir
+           {
+               $$ = NULL; // directives don't create nodes
+           }
+         | decl 
+           {
+               $$ = $1;
+           }
+         | LABEL code_item
+           {
+               $$ = new LabelNode($1, $2);
+               $$->lineNumber = @1.first_line;
+               $2->parent = $$;
+           }
+         | LABEL
+           {
+               // Label with no code following - create empty list
+               ListNode* emptyList = new ListNode();
+               emptyList->value.node = NULL;
+               $$ = new LabelNode($1, emptyList);
+               $$->lineNumber = @1.first_line;
+               emptyList->parent = $$;
+           }
+         | data
+           {
+               $$ = $1;
+           }
+         ;
 
 dir: DIRECTIVE const 
-   | DATASPACE const         // .dsb directive
-   | BASEADDR const          // .base directive
+   | DATASPACE const
+   | BASEADDR const
    ;
 
 decl: NAME '=' expr 
@@ -169,46 +174,33 @@ decl: NAME '=' expr
         }
     ;
 
-section: LABEL code
-        {
-            $$ = new LabelNode($1, $2);
-            $$->lineNumber = @1.first_line;
-            $2->parent = $$;
-        }
-       | LABEL section
-        {
-            $$ = new LabelNode($1, $2);
-            $2->parent = $$;
-        }
-       ;
-
-code: inst
-        {
-            $$ = new ListNode();
-            $$->value.node = $1;
-            $1->parent = $$;
-        }
-    | data
-        {
-            $$ = new ListNode();
-            $$->value.node = $1;
-            $1->parent = $$;
-        }
-    | code inst
-        {
-            $$ = new ListNode();
-            $$->value.node = $2;
-            $2->parent = $$;
-            $$->next = $1;
-        }
-    | code data
-        {
-            $$ = new ListNode();
-            $$->value.node = $2;
-            $2->parent = $$;
-            $$->next = $1;
-        }
-    ;
+code_item: inst
+           {
+               $$ = new ListNode();
+               $$->value.node = $1;
+               $1->parent = $$;
+           }
+         | data
+           {
+               $$ = new ListNode();
+               $$->value.node = $1;
+               $1->parent = $$;
+           }
+         | code_item inst
+           {
+               $$ = new ListNode();
+               $$->value.node = $2;
+               $2->parent = $$;
+               $$->next = $1;
+           }
+         | code_item data
+           {
+               $$ = new ListNode();
+               $$->value.node = $2;
+               $2->parent = $$;
+               $$->next = $1;
+           }
+         ;
     
 data: DATABYTES dlist
         {
@@ -433,6 +425,28 @@ int main(int argc, char** argv)
 }
 void yyerror(const char* s)
 {
-    printf("Parse error: %s\n", s);
+    printf("Parse error at line %d: %s\n", yylineno, s);
+    
+    // Try to show the problematic line if possible
+    if (yyin != NULL) {
+        long current_pos = ftell(yyin);
+        rewind(yyin);
+        
+        char line[1024];
+        int line_num = 1;
+        
+        // Read to the error line
+        while (line_num <= yylineno && fgets(line, sizeof(line), yyin)) {
+            if (line_num == yylineno) {
+                printf("Problem line %d: %s", yylineno, line);
+                break;
+            }
+            line_num++;
+        }
+        
+        // Restore file position
+        fseek(yyin, current_pos, SEEK_SET);
+    }
+    
     exit(-1);
 }
