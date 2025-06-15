@@ -105,6 +105,7 @@ void yyerror(const char* s);
 %token BRK
 %token NOP
 %token RTI
+%token SLO
 %token DATASPACE
 %token BASEADDR
 
@@ -160,13 +161,20 @@ statement: dir
            {
                $$ = $1;
            }
+         | inst
+           {
+               // Allow standalone instructions
+               $$ = $1;
+           }
          ;
 
 dir: DIRECTIVE const 
+   | DIRECTIVE NAME
+   | DIRECTIVE dlist
    | DATASPACE const
    | BASEADDR const
    ;
-
+   
 decl: NAME '=' expr 
         {
             $$ = new DeclNode($1, $3);
@@ -293,6 +301,7 @@ inst: LDA iexpr { INST(@1, $$, LDA, $2); }
     | BRK       { INST(@1, $$, BRK, NULL); }
     | NOP       { INST(@1, $$, NOP, NULL); }
     | RTI       { INST(@1, $$, RTI, NULL); }
+    | SLO iexpr { INST(@1, $$, SLO, $2); }
     ;
 
 const: HEXCONST

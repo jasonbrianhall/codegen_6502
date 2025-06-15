@@ -26,6 +26,11 @@ void yyerror(const char *);
     return STRINGCONST;
 }
 
+a: {
+    yylval.str = DUP_YYTEXT;
+    return NAME;
+}
+
 [a-zA-Z_][a-zA-Z0-9_]*: {
     yylval.str = DUP_YYTEXT;
     return LABEL;
@@ -284,6 +289,15 @@ rti {
     return RTI;
 }
 
+slo {
+    return SLO;
+}
+
+a: {
+    yylval.str = DUP_YYTEXT;
+    return NAME;
+}
+
 [a-zA-Z_][a-zA-Z0-9_]* {
     yylval.str = DUP_YYTEXT;
     return NAME;
@@ -329,6 +343,10 @@ rti {
 }
 
 , {
+    return *yytext;
+}
+
+: {
     return *yytext;
 }
 
