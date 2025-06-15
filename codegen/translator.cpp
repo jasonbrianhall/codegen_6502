@@ -123,7 +123,6 @@ void Translator::classifyLabels()
         AstNode* node = (*it);
 
         // Skip non-labels
-        //
         if (node->type != AST_LABEL)
         {
             continue;
@@ -134,42 +133,17 @@ void Translator::classifyLabels()
         while (true)
         {
             // Check the first element of the label
-            //
             AstNode* child = label->child;
             
             if (child->type == AST_LABEL)
             {
                 // Nested... classify the label as an alias, and continue trying to classify the child
-                //
                 label->labelType = LABEL_ALIAS;
                 label = static_cast<LabelNode*>(label->child);
 
-                // Modify the AST
-                // Pull the nested label out and promote to a child of the root node
-                // (this makes processing simpler later)
-                //
-                // Instead of this:
-                // (root)
-                // |
-                // --...
-                // --(label)
-                // | |
-                // | --(label2)
-                // --...
-                //
-                // We want this:
-                // (root)
-                // |
-                // --...
-                // --(label)
-                // --(label2)
-                // --...
-                //
+                // Modify the AST - pull the nested label out and promote to a child of the root node
                 ++it;
                 root->children.insert(it, child);
-
-                // We have to go back one so that the iterator points to the child
-                //
                 --it;
             }
             else
@@ -179,15 +153,12 @@ void Translator::classifyLabels()
         }
 
         // Check the first child node
-        //
         AstNode* child = label->child;
         
         // This should be a list
-        //
         assert(child->type == AST_LIST);
 
         // Check the type of the first contained list item
-        //
         ListNode* list = static_cast<ListNode*>(child);
         AstNode* listElement = list->value.node;
 
@@ -200,18 +171,17 @@ void Translator::classifyLabels()
         else if (listElement->type == AST_INSTRUCTION)
         {
             // Code
-            //
             label->labelType = LABEL_CODE;
         }
-        else if (listElement->type == AST_DATA8)
+        else if (listElement->type == AST_DATA8 || listElement->type == AST_DATA16)
         {
+            // Data
             label->labelType = LABEL_DATA;
         }
         else
         {
-            // Should be impossible...
-            //
-            assert(false);
+            // Fallback to code for unknown types
+            label->labelType = LABEL_CODE;
         }
     }
 }
@@ -369,7 +339,7 @@ void Translator::generateCode()
 void Translator::generateConstantDeclarations()
 {
     constantHeaderOutput <<
-        "#ifndef SMBCONSTANTS_HPP\n" <<
+        "#ifndef SMBCONSTANTS_HPP\n" 
         "#define SMBCONSTANTS_HPP\n\n";
 
     // Search through the root node, and grab all Decl nodes
@@ -401,8 +371,33 @@ void Translator::generateConstantDeclarations()
 
         constantHeaderOutput << "\n";
     }
-       generateMissingDataDeclarations();  
-    constantHeaderOutput << "\n" <<
+
+    // Generate address definitions for all code labels too
+    for (std::list<AstNode*>::iterator it = root->children.begin();
+         it != root->children.end(); ++it)
+    {
+        AstNode* node = (*it);
+        if (node->type == AST_LABEL)
+        {
+            LabelNode* label = static_cast<LabelNode*>(node);
+            if (label->labelType == LABEL_CODE)
+            {
+                std::string labelName = label->value.s;
+                labelName = labelName.substr(0, labelName.size() - 1); // Remove ':'
+                
+                // Generate a define for this code label's address
+                std::map<std::string, uint16_t>::iterator addrIt = labelAddresses.find(labelName);
+                if (addrIt != labelAddresses.end())
+                {
+                    constantHeaderOutput << "#define " << labelName << " 0x" 
+                                       << std::hex << addrIt->second << std::dec << "\n";
+                }
+            }
+        }
+    }
+
+    generateMissingDataDeclarations();  
+    constantHeaderOutput << "\n" 
         "#endif // SMBCONSTANTS_HPP\n";
 }
 
@@ -621,12 +616,26 @@ void Translator::indexEmptyLines()
 void Translator::translate()
 {
     // Find all empty lines in the file
-    //
     indexEmptyLines();
 
     // Find all data and code labels
-    //
     classifyLabels();
+
+    // DEBUG: Print all labels that were parsed
+    printf("=== ALL PARSED LABELS ===\n");
+    for (std::list<AstNode*>::iterator it = root->children.begin();
+         it != root->children.end(); ++it)
+    {
+        AstNode* node = (*it);
+        if (node->type == AST_LABEL)
+        {
+            LabelNode* label = static_cast<LabelNode*>(node);
+            std::string labelName = label->value.s;
+            labelName = labelName.substr(0, labelName.size() - 1); // Remove ':'
+            printf("Label: %s, Type: %d\n", labelName.c_str(), label->labelType);
+        }
+    }
+    printf("=== END LABELS ===\n");
 
     // Begin generating output
     //
@@ -1202,7 +1211,7 @@ void Translator::generateMissingDataDeclarations()
     {
         const std::string& labelName = *it;
         
-        // Check if this label was already defined in our data
+        // Check if this label was already defined
         bool found = false;
         for (std::list<AstNode*>::iterator astIt = root->children.begin();
              astIt != root->children.end(); ++astIt)
@@ -1224,26 +1233,11 @@ void Translator::generateMissingDataDeclarations()
         
         if (!found)
         {
-            // Extract the hex address from the label name
-            // e.g., "underscoredataunderscoree5dfunderscoreindexed" -> "0xE5DF"
-            size_t pos = labelName.find("underscoredataunderscore");
-            if (pos == 0)
-            {
-                std::string addressPart = labelName.substr(23); // Skip "underscoredataunderscore"
-                size_t underscorePos = addressPart.find("underscore");
-                if (underscorePos != std::string::npos)
-                {
-                    std::string hexAddr = addressPart.substr(0, underscorePos);
-                    // Convert to uppercase and add 0x prefix
-                    std::transform(hexAddr.begin(), hexAddr.end(), hexAddr.begin(), ::toupper);
-                    
-                    constantHeaderOutput << "#define " << labelName << " 0x" << hexAddr << "\n";
-                }
-            }
+            // Generate a placeholder definition for any missing label
+            constantHeaderOutput << "#define " << labelName << " 0x0000  // FIXME: Missing label\n";
         }
     }
 }
-
 
 std::string Translator::translateOperand(AstNode* operand)
 {
