@@ -4,6 +4,9 @@
 #include <list>
 #include <sstream>
 #include <string>
+#include <map>
+#include <cstdint>
+
 
 #include "ast.hpp"
 

@@ -21,6 +21,20 @@ void yyerror(const char *);
     mapComment(yylineno, yytext);
 }
 
+\"[^\"]*\" {
+    yylval.str = DUP_YYTEXT;
+    return STRINGCONST;
+}
+
+
+\.dsb {
+    return DATASPACE;
+}
+
+\.base {
+    return BASEADDR;
+}
+
 \.db {
     return DATABYTES;
 }

@@ -48,6 +48,7 @@ void yyerror(const char* s);
 %token<str> HEXCONST
 %token<str> BINCONST
 %token<str> DECCONST
+%token<str> STRINGCONST
 %token LDA
 %token LDX
 %token LDY
@@ -104,7 +105,8 @@ void yyerror(const char* s);
 %token BRK
 %token NOP
 %token RTI
-
+%token DATASPACE
+%token BASEADDR
 %type <node> decl
 %type <node> section
 %type <list> code
@@ -131,6 +133,11 @@ plist: dir
             root->children.push_back($1);
             $1->parent = root;
         }
+     | data                    // Add this line - standalone data
+        {
+            root->children.push_back($1);
+            $1->parent = root;
+        }        
      | plist dir
      | plist decl 
         {
@@ -142,9 +149,17 @@ plist: dir
             root->children.push_back($2);
             $2->parent = root;
         }
+     | plist data              // Add this line
+        {
+            root->children.push_back($2);
+            $2->parent = root;
+        }
+       
      ;
 
 dir: DIRECTIVE const 
+   | DATASPACE const         // .dsb directive
+   | BASEADDR const          // .base directive
    ;
 
 decl: NAME '=' expr 
@@ -297,6 +312,10 @@ const: HEXCONST
             $$ = $1;
         }
      | DECCONST
+        {
+            $$ = $1;
+        }
+     | STRINGCONST
         {
             $$ = $1;
         }

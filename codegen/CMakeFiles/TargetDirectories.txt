@@ -1,0 +1,3 @@
+/home/jbhall/software_build/codegen_6502/codegen/CMakeFiles/codegen.dir
+/home/jbhall/software_build/codegen_6502/codegen/CMakeFiles/edit_cache.dir
+/home/jbhall/software_build/codegen_6502/codegen/CMakeFiles/rebuild_cache.dir
