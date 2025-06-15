@@ -25,7 +25,6 @@ private:
     std::stringstream sourceOutput;
     RootNode* root;
     int returnLabelIndex;
-
     void classifyLabels();
     void generateCode();
     void generateConstantDeclarations();
@@ -36,6 +35,12 @@ private:
     std::string translateExpression(AstNode* expr);
     std::string translateInstruction(InstructionNode* inst);
     std::string translateOperand(AstNode* operand);
+
+    std::map<std::string, uint16_t> labelAddresses;  // Map label names to their addresses
+    bool hasIndirectJumps;  // Track if we need to generate the dispatcher
+    void calculateLabelAddresses();
+    void generateIndirectJumpDispatcher();
+
 };
 
 #endif // TRANSLATOR_HPP

@@ -18,9 +18,68 @@
 static bool skipNextInstruction = false;
 static int skipNextInstructionIndex = 0;
 
+void Translator::calculateLabelAddresses()
+{
+    uint16_t currentAddress = 0x8000;  // Starting address
+    
+    for (std::list<AstNode*>::iterator it = root->children.begin();
+         it != root->children.end(); ++it)
+    {
+        AstNode* node = (*it);
+        
+        if (node->type == AST_LABEL)
+        {
+            LabelNode* label = static_cast<LabelNode*>(node);
+            
+            // Strip the trailing ':' character
+            std::string labelName = label->value.s;
+            labelName = labelName.substr(0, labelName.size() - 1);
+            
+            if (label->labelType == LABEL_CODE)
+            {
+                labelAddresses[labelName] = currentAddress;
+                
+                // Count instructions to estimate size
+                // This is a rough estimate - you might want to be more precise
+                ListNode* listElement = static_cast<ListNode*>(label->child);
+                while (listElement != NULL)
+                {
+                    currentAddress += 3;  // Average instruction size
+                    listElement = static_cast<ListNode*>(listElement->next);
+                }
+            }
+        }
+    }
+}
+
+void Translator::generateIndirectJumpDispatcher()
+{
+    if (!hasIndirectJumps) return;
+    
+    sourceOutput << "\n// Indirect jump dispatcher\n";
+    sourceOutput << "IndirectJumpResult:\n";
+    sourceOutput << TAB << "switch (indirectJumpAddress)\n";
+    sourceOutput << TAB << "{\n";
+    
+    // Generate case statements for each code label
+    for (std::map<std::string, uint16_t>::iterator it = labelAddresses.begin();
+         it != labelAddresses.end(); ++it)
+    {
+        sourceOutput << TAB << "case 0x" << std::hex << it->second << std::dec << ":\n";
+        sourceOutput << TAB << TAB << "goto " << it->first << ";\n";
+    }
+    
+    sourceOutput << TAB << "default:\n";
+    sourceOutput << TAB << TAB << "// Unknown address - could be data or invalid\n";
+    sourceOutput << TAB << TAB << "return; // or handle error\n";
+    sourceOutput << TAB << "}\n\n";
+}
+
+
 Translator::Translator(const std::string& inputFilename, RootNode* astRootNode) :
     inputFilename(inputFilename),
-    root(astRootNode)
+    root(astRootNode),
+    hasIndirectJumps(false)  // Initialize the flag
 {
     returnLabelIndex = 0;
 
@@ -149,9 +208,20 @@ void Translator::classifyLabels()
 
 void Translator::generateCode()
 {
+    // Calculate label addresses first
+    calculateLabelAddresses();
+    
     sourceOutput <<
         "void SMBEngine::code(int mode)\n" <<
-        "{\n" <<
+        "{\n";
+    
+    // Declare the indirect jump address variable if needed
+    if (hasIndirectJumps)
+    {
+        sourceOutput << TAB << "uint16_t indirectJumpAddress;\n\n";
+    }
+    
+    sourceOutput <<
         TAB << "switch (mode)\n" <<
         TAB << "{\n" <<
         TAB << "case 0:\n" <<
@@ -162,7 +232,6 @@ void Translator::generateCode()
         TAB << "}\n\n";
     
     // Search through the root node, and grab all code label nodes
-    //
     for (std::list<AstNode*>::iterator it = root->children.begin();
          it != root->children.end(); ++it)
     {
@@ -180,27 +249,23 @@ void Translator::generateCode()
         }
 
         // Output a C++ label for the label
-        //
         sourceOutput << "\n";
         sourceOutput << label->value.s;
 
         // Output a comment, if the label has one
-        //
         if (label->lineNumber != 0)
         {
             const char* comment = lookupComment(label->lineNumber);
             if (comment)
             {
                 // Skip the first character of the ASM comment (;)
-                //
                 sourceOutput << " // " << (comment + 1);
             }
         }
 
         sourceOutput << "\n";
 
-        // Translate each piece of code under the label...
-        //
+        // Translate each piece of code under the label
         ListNode* listElement = static_cast<ListNode*>(label->child);
         while (listElement != NULL)
         {
@@ -215,13 +280,11 @@ void Translator::generateCode()
                     if (comment)
                     {
                         // Skip the first character of the ASM comment (;)
-                        //
                         sourceOutput << " // " << (comment + 1);
                     }
                 }
 
                 // Add a nice line separator after return statements
-                //
                 if (static_cast<InstructionNode*>(instruction)->code == RTS)
                 {
                     sourceOutput << "\n\n";
@@ -230,7 +293,6 @@ void Translator::generateCode()
                 else
                 {
                     // Or just a newline for all other instructions
-                    //
                     sourceOutput << "\n";
                 }
                 
@@ -238,7 +300,6 @@ void Translator::generateCode()
                 {
                     // If we had a .db $2c instruction immediately before this one,
                     // we need to add a label to be able to skip this instruction
-                    //
                     char indexStr[8];
                     sprintf(indexStr, "%d", skipNextInstructionIndex++);
                     sourceOutput << "Skip_" << indexStr << ":\n";
@@ -251,7 +312,6 @@ void Translator::generateCode()
             {
                 // Special case: .db $2c
                 // We need to goto the next instruction
-                //
                 skipNextInstruction = true;
                 char indexStr[8];
                 sprintf(indexStr, "%d", skipNextInstructionIndex);
@@ -262,8 +322,10 @@ void Translator::generateCode()
         }
     }
 
+    // Generate the indirect jump dispatcher
+    generateIndirectJumpDispatcher();
+
     // Generate a return jump table at the end of the code
-    //
     sourceOutput << 
         "// Return handler\n" <<
         "// This emulates the RTS instruction using a generated jump table\n" <<
@@ -285,7 +347,6 @@ void Translator::generateCode()
         TAB << "}\n";
     
     // Final closing block for the code() function
-    //
     sourceOutput << "}\n";
 }
 
@@ -854,29 +915,44 @@ std::string Translator::translateInstruction(InstructionNode* inst)
             result += "a.ror();";
         }
         break;
-    case JMP:
+case JMP:
+    {
+        if (inst->value.node == NULL)
         {
-            // We only care about jumping to labels
-            // Jumping to a referenced address is only used once in JumpEngine,
-            // which we reimplement in a different way
-            //
-            if (inst->value.node->type == AST_NAME)
+            result += "/* invalid jmp */";
+        }
+        else if (inst->value.node->type == AST_NAME)
+        {
+            // Direct jump to a label
+            if (strcmp(inst->value.node->value.s, "EndlessLoop") == 0)
             {
-                // Check for special case (jmp EndlessLoop)
-                //
-                if (strcmp(inst->value.node->value.s, "EndlessLoop") == 0)
-                {
-                    result += "return;";
-                }
-                else
-                {
-                    result += "goto ";
-                    result += translateExpression(inst->value.node);
-                    result += ";";
-                }
+                result += "return;";
+            }
+            else
+            {
+                result += "goto ";
+                result += translateExpression(inst->value.node);
+                result += ";";
             }
         }
-        break;
+        else if (inst->value.node->type == AST_INDIRECT)
+        {
+            // Indirect jump: jmp (address)
+            hasIndirectJumps = true;  // Mark that we need the dispatcher
+            result += "indirectJumpAddress = W(";
+            result += translateExpression(static_cast<UnaryNode*>(inst->value.node)->child);
+            result += "); goto IndirectJumpResult;";
+        }
+        else
+        {
+            // Direct jump to a computed address
+            hasIndirectJumps = true;  // Mark that we need the dispatcher
+            result += "indirectJumpAddress = ";
+            result += translateExpression(inst->value.node);
+            result += "; goto IndirectJumpResult;";
+        }
+    }
+    break;
     case JSR:
         {
             // Check for special case (jsr JumpEngine)
