@@ -670,63 +670,104 @@ class AsmToCppTranslator:
         
         storage_address = 0x8000
         data_labels_found = 0
+        pure_data_labels = 0
         
         for label in labels:
-            # Only process labels that contain ONLY data (no instructions)
             has_data = any(content["type"] == "data" for content in label["content"])
             has_instructions = any(content["type"] == "instruction" for content in label["content"])
             
-            # Skip labels that have instructions - they're code labels, not data labels
-            if not has_data or has_instructions:
-                if has_data and has_instructions:
-                    print(f"  Skipping mixed label: {label['name']} (has both data and instructions)")
+            if not has_data:
                 continue
-            
+                
             data_labels_found += 1
             label_name = label["name"].rstrip(':')
-            print(f"  Processing pure data label: {label_name}")
             
-            # Generate data array
-            loading.extend([
-                f"{self.TAB}// {label_name}\n",
-                f"{self.TAB}//\n",
-                f"{self.TAB}const uint8_t {label_name}_data[] = {{"
-            ])
-            
-            byte_count = 0
-            first_data_item = True
-            
-            for content in label["content"]:
-                if content["type"] == "data":
-                    if not first_data_item:
-                        loading.append(",")
-                    loading.append(f"\n{self.TAB}{self.TAB}")
-                    
-                    for i, value in enumerate(content["values"]):
-                        if i > 0:
-                            loading.append(", ")
-                        loading.append(self._translate_expression(value))
-                        byte_count += 1
-                    
-                    if content.get("comment"):
-                        loading.append(f" // {content['comment']}")
-                    
-                    first_data_item = False
-            
-            loading.extend([
-                f"\n{self.TAB}}};\n",
-                f"{self.TAB}writeData({label_name}, {label_name}_data, sizeof({label_name}_data));\n\n"
-            ])
-            
-            # Add pointer declarations - only for pure data labels
-            addresses.append(f"{self.TAB}uint16_t {label_name}_ptr;\n")
-            address_defines.append(f"#define {label_name} (dataPointers.{label_name}_ptr)\n")
-            address_defaults.append(f"{self.TAB}{self.TAB}this->{label_name}_ptr = 0x{storage_address:04X};\n")
-            
-            storage_address += byte_count
-            print(f"    Generated {byte_count} bytes of data")
+            if has_instructions:
+                print(f"  Skipping mixed label for defines: {label_name} (has both data and instructions - will be code label)")
+                # Generate the data but don't create a define that conflicts with code label
+                
+                # Generate data array for mixed labels but with a different name
+                data_var_name = f"{label_name}_data_section"
+                loading.extend([
+                    f"{self.TAB}// Data section of {label_name}\n",
+                    f"{self.TAB}//\n",
+                    f"{self.TAB}const uint8_t {data_var_name}[] = {{"
+                ])
+                
+                byte_count = 0
+                first_data_item = True
+                
+                for content in label["content"]:
+                    if content["type"] == "data":
+                        if not first_data_item:
+                            loading.append(",")
+                        loading.append(f"\n{self.TAB}{self.TAB}")
+                        
+                        for i, value in enumerate(content["values"]):
+                            if i > 0:
+                                loading.append(", ")
+                            loading.append(self._translate_expression(value))
+                            byte_count += 1
+                        
+                        if content.get("comment"):
+                            loading.append(f" // {content['comment']}")
+                        
+                        first_data_item = False
+                
+                loading.extend([
+                    f"\n{self.TAB}}};\n",
+                    f"{self.TAB}// Note: {label_name} is a mixed code/data label, data loaded separately\n",
+                    f"{self.TAB}writeData({label_name}_data_offset, {data_var_name}, sizeof({data_var_name}));\n\n"
+                ])
+                
+                storage_address += byte_count
+                print(f"    Generated {byte_count} bytes of data for mixed label {label_name}")
+                
+            else:
+                print(f"  Processing pure data label: {label_name}")
+                pure_data_labels += 1
+                
+                # Generate data array for pure data labels
+                loading.extend([
+                    f"{self.TAB}// {label_name}\n",
+                    f"{self.TAB}//\n",
+                    f"{self.TAB}const uint8_t {label_name}_data[] = {{"
+                ])
+                
+                byte_count = 0
+                first_data_item = True
+                
+                for content in label["content"]:
+                    if content["type"] == "data":
+                        if not first_data_item:
+                            loading.append(",")
+                        loading.append(f"\n{self.TAB}{self.TAB}")
+                        
+                        for i, value in enumerate(content["values"]):
+                            if i > 0:
+                                loading.append(", ")
+                            loading.append(self._translate_expression(value))
+                            byte_count += 1
+                        
+                        if content.get("comment"):
+                            loading.append(f" // {content['comment']}")
+                        
+                        first_data_item = False
+                
+                loading.extend([
+                    f"\n{self.TAB}}};\n",
+                    f"{self.TAB}writeData({label_name}, {label_name}_data, sizeof({label_name}_data));\n\n"
+                ])
+                
+                # Add pointer declarations and defines ONLY for pure data labels
+                addresses.append(f"{self.TAB}uint16_t {label_name}_ptr;\n")
+                address_defines.append(f"#define {label_name} (dataPointers.{label_name}_ptr)\n")
+                address_defaults.append(f"{self.TAB}{self.TAB}this->{label_name}_ptr = 0x{storage_address:04X};\n")
+                
+                storage_address += byte_count
+                print(f"    Generated {byte_count} bytes of data")
         
-        print(f"Found {data_labels_found} pure data labels")
+        print(f"Found {data_labels_found} total data labels ({pure_data_labels} pure data, {data_labels_found - pure_data_labels} mixed)")
         
         # Finalize structures
         addresses.append(f"{self.TAB}uint16_t freeSpaceAddress;\n")
@@ -876,11 +917,14 @@ class AsmToCppTranslator:
         
         # Store instructions
         elif opcode == "sta":
-            return f"writeData({self._translate_expression(operand)}, a);"
+            addr_expr = self._translate_expression(operand)
+            return f"writeData({addr_expr}, a);"
         elif opcode == "stx":
-            return f"writeData({self._translate_expression(operand)}, x);"
+            addr_expr = self._translate_expression(operand)  
+            return f"writeData({addr_expr}, x);"
         elif opcode == "sty":
-            return f"writeData({self._translate_expression(operand)}, y);"
+            addr_expr = self._translate_expression(operand)
+            return f"writeData({addr_expr}, y);"
         
         # Transfer instructions
         elif opcode == "tax":
@@ -930,13 +974,25 @@ class AsmToCppTranslator:
         
         # Increment/Decrement
         elif opcode == "inc":
-            return f"++{self._translate_operand(operand)};"
+            operand_expr = self._translate_operand(operand)
+            if operand_expr.startswith('M('):
+                # Memory location - use writeData
+                addr_part = operand_expr[2:-1]  # Remove M( and )
+                return f"writeData({addr_part}, M({addr_part}) + 1);"
+            else:
+                return f"++{operand_expr};"
         elif opcode == "inx":
             return "++x;"
         elif opcode == "iny":
             return "++y;"
         elif opcode == "dec":
-            return f"--{self._translate_operand(operand)};"
+            operand_expr = self._translate_operand(operand)
+            if operand_expr.startswith('M('):
+                # Memory location - use writeData
+                addr_part = operand_expr[2:-1]  # Remove M( and )
+                return f"writeData({addr_part}, M({addr_part}) - 1);"
+            else:
+                return f"--{operand_expr};"
         elif opcode == "dex":
             return "--x;"
         elif opcode == "dey":
@@ -969,7 +1025,14 @@ class AsmToCppTranslator:
             if operand == "EndlessLoop":
                 return "return;"
             else:
-                return f"goto {self._translate_expression(operand)};"
+                # Handle indirect jumps
+                if operand.startswith('(') and operand.endswith(')'):
+                    # Indirect jump - need to use a function call instead of goto
+                    inner_expr = operand[1:-1]
+                    translated_inner = self._translate_expression(inner_expr)
+                    return f"jumpToAddress({translated_inner});"
+                else:
+                    return f"goto {self._translate_expression(operand)};"
         
         elif opcode == "jsr":
             if operand == "JumpEngine":
@@ -1055,9 +1118,14 @@ class AsmToCppTranslator:
             translated = self._translate_expression(inner)
             return translated
         else:
-            # Memory addressing
-            translated = self._translate_expression(operand)
-            return f"M({translated})"
+            # Memory addressing - handle indexed addressing specially
+            if operand.endswith(',x') or operand.endswith(',y'):
+                # Don't wrap indexed addressing in M() for store operations
+                return self._translate_expression(operand)
+            else:
+                # Regular memory addressing
+                translated = self._translate_expression(operand)
+                return f"M({translated})"
     
     def _write_output_files(self, output_dir: str):
         """Write all output files to the specified directory."""
