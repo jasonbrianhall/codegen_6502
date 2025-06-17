@@ -672,14 +672,19 @@ class AsmToCppTranslator:
         data_labels_found = 0
         
         for label in labels:
-            # Process data labels regardless of label_type classification
+            # Only process labels that contain ONLY data (no instructions)
             has_data = any(content["type"] == "data" for content in label["content"])
-            if not has_data:
+            has_instructions = any(content["type"] == "instruction" for content in label["content"])
+            
+            # Skip labels that have instructions - they're code labels, not data labels
+            if not has_data or has_instructions:
+                if has_data and has_instructions:
+                    print(f"  Skipping mixed label: {label['name']} (has both data and instructions)")
                 continue
             
             data_labels_found += 1
             label_name = label["name"].rstrip(':')
-            print(f"  Processing data label: {label_name}")
+            print(f"  Processing pure data label: {label_name}")
             
             # Generate data array
             loading.extend([
@@ -713,7 +718,7 @@ class AsmToCppTranslator:
                 f"{self.TAB}writeData({label_name}, {label_name}_data, sizeof({label_name}_data));\n\n"
             ])
             
-            # Add pointer declarations
+            # Add pointer declarations - only for pure data labels
             addresses.append(f"{self.TAB}uint16_t {label_name}_ptr;\n")
             address_defines.append(f"#define {label_name} (dataPointers.{label_name}_ptr)\n")
             address_defaults.append(f"{self.TAB}{self.TAB}this->{label_name}_ptr = 0x{storage_address:04X};\n")
@@ -721,7 +726,7 @@ class AsmToCppTranslator:
             storage_address += byte_count
             print(f"    Generated {byte_count} bytes of data")
         
-        print(f"Found {data_labels_found} data labels")
+        print(f"Found {data_labels_found} pure data labels")
         
         # Finalize structures
         addresses.append(f"{self.TAB}uint16_t freeSpaceAddress;\n")
@@ -972,7 +977,16 @@ class AsmToCppTranslator:
                 # This would need additional context from following data
                 return "/* JSR JumpEngine - needs special handling */"
             else:
-                result = f"JSR({operand}, {self.return_label_index});"
+                # Clean up the operand - remove any addressing mode indicators
+                clean_operand = operand.strip()
+                if clean_operand.startswith('(') and clean_operand.endswith(')'):
+                    # Indirect JSR - extract the inner expression
+                    clean_operand = clean_operand[1:-1]
+                
+                # Translate any hex values in the operand
+                translated_operand = self._translate_expression(clean_operand)
+                
+                result = f"JSR({translated_operand}, {self.return_label_index});"
                 self.return_label_index += 1
                 return result
         
