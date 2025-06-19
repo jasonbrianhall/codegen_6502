@@ -222,10 +222,9 @@ class Parser:
                          TokenType.INC, TokenType.DEC, TokenType.JMP]:
             self.advance()
             operand = self.parse_instruction_expression()
-            if operand:
-                inst = InstructionNode(token.type.value, operand)
-                inst.line_number = token.line
-                return inst
+            inst = InstructionNode(token.type.value, operand)
+            inst.line_number = token.line
+            return inst
         
         # ASL/LSR/ROL/ROR can be with or without operand
         elif token.type in [TokenType.ASL, TokenType.LSR, TokenType.ROL, TokenType.ROR]:

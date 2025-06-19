@@ -79,24 +79,27 @@ class InstructionNode(AstNode):
 
 def cleanup_ast(root: RootNode):
     """Cleanup and reverse lists in the AST"""
-    for node in root.children:
-        cleanup_node(node)
+    for i, node in enumerate(root.children):
+        root.children[i] = cleanup_node(node)
 
 def cleanup_node(node: AstNode):
     """Cleanup individual AST nodes"""
     if node is None:
-        return
+        return node
     
     if node.type == AstType.AST_LIST:
         # Reverse the list
         node = reverse_list(None, node)
         cleanup_list(node)
+        return node
     elif node.type in [AstType.AST_DATA8, AstType.AST_DATA16]:
-        cleanup_node(node.value)
+        node.value = cleanup_node(node.value)
     elif node.type == AstType.AST_DECL:
-        cleanup_node(node.expression)
+        node.expression = cleanup_node(node.expression)
     elif node.type == AstType.AST_LABEL:
-        cleanup_node(node.child)
+        node.child = cleanup_node(node.child)
+    
+    return node
 
 def reverse_list(prev: Optional[ListNode], node: ListNode) -> ListNode:
     """Reverse a linked list of ListNodes"""
