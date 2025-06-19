@@ -1,5 +1,5 @@
 """
-Recursive Descent Parser for 6502 Assembly
+Recursive Descent Parser for 6502 Assembly - FIXED VERSION
 """
 
 from typing import List, Optional
@@ -119,7 +119,7 @@ class Parser:
         self.error("Expected code or section after label")
     
     def parse_code(self) -> Optional[ListNode]:
-        """Parse a code block (list of instructions and data)"""
+        """Parse a code block (list of instructions and data) - FIXED VERSION"""
         items = []
         
         while (self.current_token and 
@@ -143,16 +143,24 @@ class Parser:
         if not items:
             return None
         
-        # Create linked list in reverse order (as per original logic)
-        result = None
-        for item in reversed(items):
+        # Create linked list in forward order - maintain source code order
+        head = None
+        tail = None
+        
+        for item in items:
             list_node = ListNode()
             list_node.value = item
             item.parent = list_node
-            list_node.next = result
-            result = list_node
+            list_node.next = None
+            
+            if head is None:
+                head = list_node
+                tail = list_node
+            else:
+                tail.next = list_node
+                tail = list_node
         
-        return result
+        return head
     
     def parse_data(self) -> Optional[AstNode]:
         """Parse data declaration: .db or .dw followed by data list"""
@@ -180,7 +188,7 @@ class Parser:
         return None
     
     def parse_data_list(self) -> Optional[ListNode]:
-        """Parse a comma-separated list of expressions"""
+        """Parse a comma-separated list of expressions - FIXED VERSION"""
         expressions = []
         
         expr = self.parse_expression()
@@ -196,16 +204,24 @@ class Parser:
                 self.error("Expected expression after ','")
             expressions.append(expr)
         
-        # Create linked list in reverse order
-        result = None
-        for expr in reversed(expressions):
+        # Create linked list in forward order - maintain source code order
+        head = None
+        tail = None
+        
+        for expr in expressions:
             list_node = ListNode()
             list_node.value = expr
             expr.parent = list_node
-            list_node.next = result
-            result = list_node
+            list_node.next = None
+            
+            if head is None:
+                head = list_node
+                tail = list_node
+            else:
+                tail.next = list_node
+                tail = list_node
         
-        return result
+        return head
     
     def parse_instruction(self) -> Optional[InstructionNode]:
         """Parse a 6502 instruction"""

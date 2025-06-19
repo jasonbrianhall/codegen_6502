@@ -1,5 +1,5 @@
 """
-AST Node Classes for 6502 Assembly Code Generator
+AST Node Classes for 6502 Assembly Code Generator - FIXED VERSION
 """
 
 from enum import Enum
@@ -78,18 +78,17 @@ class InstructionNode(AstNode):
         self.value = operand
 
 def cleanup_ast(root: RootNode):
-    """Cleanup and reverse lists in the AST"""
+    """Cleanup AST - FIXED to maintain source code order"""
     for i, node in enumerate(root.children):
         root.children[i] = cleanup_node(node)
 
 def cleanup_node(node: AstNode):
-    """Cleanup individual AST nodes"""
+    """Cleanup individual AST nodes - FIXED VERSION"""
     if node is None:
         return node
     
     if node.type == AstType.AST_LIST:
-        # Reverse the list
-        node = reverse_list(None, node)
+        # Don't reverse the list - keep source code order
         cleanup_list(node)
         return node
     elif node.type in [AstType.AST_DATA8, AstType.AST_DATA16]:
@@ -101,18 +100,8 @@ def cleanup_node(node: AstNode):
     
     return node
 
-def reverse_list(prev: Optional[ListNode], node: ListNode) -> ListNode:
-    """Reverse a linked list of ListNodes"""
-    if node.next is None:
-        node.next = prev
-        return node
-    else:
-        next_node = node.next
-        node.next = prev
-        return reverse_list(node, next_node)
-
 def cleanup_list(node: Optional[ListNode]):
-    """Cleanup a list of nodes"""
+    """Cleanup a list of nodes - FIXED to not reverse"""
     while node is not None:
         cleanup_node(node.value)
         node = node.next
