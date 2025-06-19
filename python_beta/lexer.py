@@ -213,7 +213,7 @@ class Lexer:
                 continue
         
             # Names, labels, instructions, and registers
-            if char.isalpha():
+            if char.isalpha() or char == '_':
                 name = self.read_name()
             
                 # Check if it continues with ':' for labels
