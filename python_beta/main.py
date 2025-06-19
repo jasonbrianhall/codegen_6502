@@ -53,14 +53,34 @@ def write_output_files(translator: Translator, output_dir: str):
     print("  SMBConstants.hpp")
 
 def main():
-    """Main function"""
+    """Main function with CA65 support"""
     if len(sys.argv) < 3:
-        print("usage: python main.py <INPUT ASM FILE> <OUTPUT DIRECTORY> [CONFIG DIRECTORY]")
+        print("usage: python main.py <INPUT ASM FILE> <OUTPUT DIRECTORY> [CONFIG DIRECTORY] [-ca65]")
+        print("  -ca65: Use CA65 assembly format instead of original format")
+        print("Examples:")
+        print("  python main.py game.asm output_dir")
+        print("  python main.py game.asm output_dir -ca65")
+        print("  python main.py game.asm output_dir my_config -ca65")
         sys.exit(1)
     
     input_file = sys.argv[1]
     output_dir = sys.argv[2]
-    config_dir = sys.argv[3] if len(sys.argv) > 3 else None
+    
+    # Parse optional arguments
+    config_dir = None
+    is_ca65 = False
+    
+    # Check all remaining arguments
+    for i in range(3, len(sys.argv)):
+        arg = sys.argv[i]
+        if arg == "-ca65":
+            is_ca65 = True
+        elif not arg.startswith('-'):
+            config_dir = arg
+    
+    # Set default config directory based on format
+    if config_dir is None:
+        config_dir = "ca65_indirect_config" if is_ca65 else "indirect_jump_config"
     
     # Check if input file exists
     if not os.path.exists(input_file):
@@ -76,7 +96,7 @@ def main():
             input_text = f.read()
         
         # Lexical analysis
-        print("Performing lexical analysis...")
+        print(f"Performing lexical analysis ({'CA65' if is_ca65 else 'Original'} format)...")
         lexer = Lexer(input_text)
         tokens = lexer.tokenize()
         print(f"Generated {len(tokens)} tokens")
@@ -95,7 +115,9 @@ def main():
         print("Translating to C++...")
         if config_dir:
             print(f"Using config directory: {config_dir}")
-        translator = Translator(input_file, ast_root, config_dir)
+        
+        # PASS is_ca65 FLAG TO TRANSLATOR
+        translator = Translator(input_file, ast_root, config_dir, is_ca65)
         
         # Create output directory
         create_output_directory(output_dir)
@@ -105,10 +127,14 @@ def main():
         
         print("Translation completed successfully!")
         if config_dir:
-            print(f"\nIf you encounter label classification errors, edit the files in {config_dir}:")
-            print("  - data_labels.txt (for labels that should generate data pointers)")
-            print("  - code_labels.txt (for labels used in goto statements)")
-            print("  - alias_labels.txt (for simple label aliases)")
+            analyzer_script = "ca65_analyzer.py" if is_ca65 else "rom_analyzer.py"
+            print(f"\nIf you encounter indirect jump errors, run: python {analyzer_script} {input_file}")
+            print(f"Then edit the files in {config_dir}:")
+            print("  - *_targets.txt (for indirect jump targets)")
+            if not is_ca65:
+                print("  - data_labels.txt (for labels that should generate data pointers)")
+                print("  - code_labels.txt (for labels used in goto statements)")
+                print("  - alias_labels.txt (for simple label aliases)")
         
     except Exception as e:
         print(f"Error: {e}")
