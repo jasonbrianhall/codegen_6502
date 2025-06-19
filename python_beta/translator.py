@@ -716,7 +716,7 @@ class Translator:
             
                     translated = self.translate_instruction(instruction)
                     self.source_output += f"{TAB}{translated}"
-            
+                
                     if instruction.line_number != 0:
                         comment = lookup_comment(instruction.line_number)
                         if comment:
@@ -741,7 +741,7 @@ class Translator:
                       instruction.value.value.value == "$2c"):
                     # Special case: .db $2c generates a goto
                     self.skip_next_instruction = True
-                self.source_output += f"{TAB}goto Skip_{self.skip_next_instruction_index};\n"    
+                    self.source_output += f"{TAB}goto Skip_{self.skip_next_instruction_index};\n"
         
                 list_element = list_element.next
     
@@ -779,7 +779,7 @@ class Translator:
         # Get labels currently in AST
         ast_labels = set()
         for node in self.root.children:
-            if node.type == AstType.AST_LABEL:
+            if hasattr(node, 'type') and node.type == AstType.AST_LABEL:
                 label_name = node.value.rstrip(':')
                 ast_labels.add(label_name)
     
@@ -792,20 +792,20 @@ class Translator:
         # Add missing labels as empty code labels
         for label_name in sorted(missing_labels):
             empty_label = LabelNode(f"{label_name}:", None)
+            empty_label.type = AstType.AST_LABEL  # Set the type attribute
             empty_label.line_number = 0
             empty_label.label_type = self.first_pass_classifications[label_name]
-            
+        
             # Add empty content
             empty_label.child = None
-        
+            
             self.root.children.append(empty_label)
             empty_label.parent = self.root
-        
+            
             print(f"  Added missing label: {label_name}")
     
-        print(f"Total labels after recovery: {len([n for n in self.root.children if n.type == AstType.AST_LABEL])}")
+        print(f"Total labels after recovery: {len([n for n in self.root.children if hasattr(n, 'type') and n.type == AstType.AST_LABEL])}")
 
-    
     def generate_constant_declarations(self):
         """Generate constant declarations header"""
         self.constant_header_output += (
