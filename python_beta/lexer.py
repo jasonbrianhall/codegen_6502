@@ -15,6 +15,25 @@ class Lexer:
         self.column = 1
         self.tokens: List[Token] = []
         
+    def read_string(self) -> str:
+        """Read a quoted string"""
+        quote_char = self.advance()  # consume opening quote
+        string_val = quote_char  # include the quote in the token
+    
+        while self.pos < len(self.text) and self.text[self.pos] != quote_char:
+            if self.text[self.pos] == '\\':
+                # Handle escape sequences
+                string_val += self.advance()  # consume backslash
+                if self.pos < len(self.text):
+                    string_val += self.advance()  # consume escaped character
+            else:
+                string_val += self.advance()
+    
+        if self.pos < len(self.text):
+            string_val += self.advance()  # consume closing quote
+    
+        return string_val
+
     def error(self, message: str):
         raise ValueError(f"Lexical error at line {self.line}, column {self.column}: {message}")
     
@@ -108,16 +127,16 @@ class Lexer:
             if self.text[self.pos] in ' \t\r\n':
                 self.skip_whitespace()
                 continue
-            
+        
             current_line = self.line
             current_column = self.column
-            
+        
             # Comments
             if self.text[self.pos] == ';':
                 comment = self.read_comment()
                 map_comment(current_line, comment)
                 continue
-            
+        
             # Directives
             if self.text[self.pos] == '.':
                 directive = self.read_directive()
@@ -128,25 +147,32 @@ class Lexer:
                 else:
                     self.tokens.append(Token(TokenType.DIRECTIVE, directive, current_line, current_column))
                 continue
-            
+        
             # Hexadecimal constants
             if self.text[self.pos] == '$':
-                hex_const = self.read_hex_constant()
+                hex_const = self.read_hex_constant()    
                 self.tokens.append(Token(TokenType.HEXCONST, hex_const, current_line, current_column))
                 continue
-            
+        
             # Binary constants
             if self.text[self.pos] == '%':
                 bin_const = self.read_bin_constant()
                 self.tokens.append(Token(TokenType.BINCONST, bin_const, current_line, current_column))
                 continue
-            
+        
+            # ADD THIS SECTION FOR STRINGS:
+            # String literals (CA65 format)
+            if self.text[self.pos] in '"\'':
+                string_literal = self.read_string()
+                self.tokens.append(Token(TokenType.NAME, string_literal, current_line, current_column))
+                continue
+        
             # Decimal constants
             if self.text[self.pos].isdigit():
                 dec_const = self.read_dec_constant()
                 self.tokens.append(Token(TokenType.DECCONST, dec_const, current_line, current_column))
                 continue
-            
+        
             # Single character tokens
             char = self.text[self.pos]
             if char == '=':
@@ -185,17 +211,17 @@ class Lexer:
                 self.advance()
                 self.tokens.append(Token(TokenType.RPAREN, char, current_line, current_column))
                 continue
-            
+        
             # Names, labels, instructions, and registers
             if char.isalpha():
                 name = self.read_name()
-                
+            
                 # Check if it continues with ':' for labels
                 if self.pos < len(self.text) and self.text[self.pos] == ':':
                     label = name + self.advance()  # include the ':'
                     self.tokens.append(Token(TokenType.LABEL, label, current_line, current_column))
                     continue
-                
+            
                 # Check for special register names
                 if name == 'x':
                     self.tokens.append(Token(TokenType.X_REG, name, current_line, current_column))
@@ -203,20 +229,21 @@ class Lexer:
                 elif name == 'y':
                     self.tokens.append(Token(TokenType.Y_REG, name, current_line, current_column))
                     continue
-                
+            
                 # Check for instructions
                 if name.lower() in INSTRUCTION_MAP:
                     token_type = INSTRUCTION_MAP[name.lower()]
                     self.tokens.append(Token(token_type, name, current_line, current_column))
                     continue
-                
+            
                 # Otherwise it's a name
                 self.tokens.append(Token(TokenType.NAME, name, current_line, current_column))
                 continue
-            
+        
             # If we get here, it's an invalid character
             self.error(f"Invalid character: '{char}'")
-        
+    
         # Add EOF token
         self.tokens.append(Token(TokenType.EOF, "", self.line, self.column))
         return self.tokens
+
