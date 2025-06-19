@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-6502 Assembly Code Generator - Main Application
+6502 Assembly Code Generator - Main Application with Debug Parser
 
 Converts 6502 assembly code to C++ code for game engines.
 This is a Python port of the original C++ version.
@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 
 from lexer import Lexer
-from parser import Parser
+from parser import Parser  # This will use your debug parser
 from ast_nodes import cleanup_ast
 from translator import Translator
 from util import clear_comments
@@ -53,14 +53,15 @@ def write_output_files(translator: Translator, output_dir: str):
     print("  SMBConstants.hpp")
 
 def main():
-    """Main function with CA65 support"""
+    """Main function with CA65 support and debug parser"""
     if len(sys.argv) < 3:
-        print("usage: python main.py <INPUT ASM FILE> <OUTPUT DIRECTORY> [CONFIG DIRECTORY] [-ca65]")
+        print("usage: python main.py <INPUT ASM FILE> <OUTPUT DIRECTORY> [CONFIG DIRECTORY] [-ca65] [-debug]")
         print("  -ca65: Use CA65 assembly format instead of original format")
+        print("  -debug: Enable detailed debug output from parser")
         print("Examples:")
         print("  python main.py game.asm output_dir")
         print("  python main.py game.asm output_dir -ca65")
-        print("  python main.py game.asm output_dir my_config -ca65")
+        print("  python main.py game.asm output_dir my_config -ca65 -debug")
         sys.exit(1)
     
     input_file = sys.argv[1]
@@ -69,12 +70,15 @@ def main():
     # Parse optional arguments
     config_dir = None
     is_ca65 = False
+    debug_mode = False
     
     # Check all remaining arguments
     for i in range(3, len(sys.argv)):
         arg = sys.argv[i]
         if arg == "-ca65":
             is_ca65 = True
+        elif arg == "-debug":
+            debug_mode = True
         elif not arg.startswith('-'):
             config_dir = arg
     
@@ -95,17 +99,49 @@ def main():
         with open(input_file, 'r') as f:
             input_text = f.read()
         
+        print(f"Debug mode: {'ON' if debug_mode else 'OFF'}")
+        
         # Lexical analysis
         print(f"Performing lexical analysis ({'CA65' if is_ca65 else 'Original'} format)...")
         lexer = Lexer(input_text)
         tokens = lexer.tokenize()
         print(f"Generated {len(tokens)} tokens")
         
-        # Parsing
+        # Show first few tokens in debug mode
+        if debug_mode:
+            print(f"\nFirst 10 tokens:")
+            for i, token in enumerate(tokens[:10]):
+                print(f"  [{i}] {token.type.name}: '{token.value}' (line {token.line})")
+            print()
+        
+        # Parsing with debug support
         print("Parsing...")
         parser = Parser(tokens)
-        ast_root = parser.parse()
-        print(f"Parsed {len(ast_root.children)} top-level nodes")
+        
+        # Set debug mode
+        parser.debug_mode = debug_mode
+        
+        # Provide source lines for better debugging
+        source_lines = input_text.split('\n')
+        parser.set_source_lines(source_lines)
+        
+        # Parse with error recovery
+        try:
+            ast_root = parser.parse()
+            print(f"Parsed {len(ast_root.children)} top-level nodes")
+        except Exception as e:
+            print(f"Parser error: {e}")
+            if debug_mode:
+                import traceback
+                traceback.print_exc()
+            
+            # Try to continue with partial AST if available
+            if hasattr(parser, 'root') and parser.root:
+                ast_root = parser.root
+                print(f"Using partial AST with {len(ast_root.children)} nodes")
+            else:
+                print("Could not recover from parser error")
+                sys.exit(1)
         
         # Cleanup AST (reverse lists, etc.)
         print("Cleaning up AST...")
@@ -138,8 +174,9 @@ def main():
         
     except Exception as e:
         print(f"Error: {e}")
-        import traceback
-        traceback.print_exc()
+        if debug_mode:
+            import traceback
+            traceback.print_exc()
         sys.exit(1)
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 """
-Recursive Descent Parser for 6502 Assembly - FIXED VERSION
+Recursive Descent Parser for 6502 Assembly - DEBUG VERSION WITH DETAILED ERROR REPORTING
 """
 
 from typing import List, Optional
@@ -11,8 +11,60 @@ class Parser:
         self.tokens = tokens
         self.pos = 0
         self.current_token = tokens[0] if tokens else None
+        self.source_lines = []  # Will be populated with source file content
+        self.debug_mode = True
+        
+        # Try to load source file for better debugging
+        self.load_source_file()
+    
+    def load_source_file(self):
+        """Load source file content for debugging"""
+        try:
+            # Try to find the source file name from the first token or context
+            # For now, we'll just use a placeholder that can be set externally
+            pass
+        except:
+            pass
+    
+    def set_source_lines(self, lines: List[str]):
+        """Set source lines for debugging purposes"""
+        self.source_lines = lines
+    
+    def get_source_line(self, line_num: int) -> str:
+        """Get the actual source line for debugging"""
+        if self.source_lines and 1 <= line_num <= len(self.source_lines):
+            return self.source_lines[line_num - 1].strip()
+        return f"<line {line_num} not available>"
+    
+    def debug_print_token_context(self, message: str):
+        """Print detailed debugging information about current token and context"""
+        if not self.debug_mode:
+            return
+            
+        print(f"\n=== PARSER DEBUG: {message} ===")
+        
+        if not self.current_token:
+            print("Current token: None (EOF)")
+            return
+        
+        print(f"Current token: {self.current_token.type.name} = '{self.current_token.value}'")
+        print(f"Line {self.current_token.line}, Column {self.current_token.column}")
+        print(f"Source line: {self.get_source_line(self.current_token.line)}")
+        
+        # Show a few tokens around the current position for context
+        print(f"\nToken context (position {self.pos}):")
+        start = max(0, self.pos - 2)
+        end = min(len(self.tokens), self.pos + 3)
+        
+        for i in range(start, end):
+            token = self.tokens[i]
+            marker = " --> " if i == self.pos else "     "
+            print(f"{marker}[{i}] {token.type.name}: '{token.value}' (line {token.line})")
+        
+        print("=" * 50)
     
     def error(self, message: str):
+        self.debug_print_token_context(f"ERROR - {message}")
         if self.current_token:
             raise SyntaxError(f"Parse error at line {self.current_token.line}: {message}")
         else:
@@ -42,29 +94,78 @@ class Parser:
     def parse(self) -> RootNode:
         """Parse the entire program"""
         root = RootNode()
+        parse_attempts = 0
+        max_attempts = len(self.tokens) * 2  # Safety limit
         
         while self.current_token and self.current_token.type != TokenType.EOF:
-            if self.match(TokenType.DIRECTIVE):
-                self.parse_directive()
-            elif self.match(TokenType.NAME):
-                decl = self.parse_declaration()
-                if decl:
-                    root.children.append(decl)
-                    decl.parent = root
-            elif self.match(TokenType.LABEL):
-                section = self.parse_section()
-                if section:
-                    root.children.append(section)
-                    section.parent = root
-            else:
-                self.error(f"Unexpected token: {self.current_token.type.name}")
+            parse_attempts += 1
+            if parse_attempts > max_attempts:
+                self.debug_print_token_context("INFINITE LOOP DETECTED - ABORTING")
+                break
+                
+            old_pos = self.pos
+            
+            try:
+                if self.match(TokenType.DIRECTIVE):
+                    if self.debug_mode:
+                        print(f"Parsing directive at line {self.current_token.line}: {self.current_token.value}")
+                    self.parse_directive()
+                elif self.match(TokenType.NAME):
+                    if self.debug_mode:
+                        print(f"Attempting declaration at line {self.current_token.line}: {self.current_token.value}")
+                    decl = self.parse_declaration()
+                    if decl:
+                        root.children.append(decl)
+                        decl.parent = root
+                        if self.debug_mode:
+                            print(f"  -> Successfully parsed declaration: {decl.value}")
+                    else:
+                        if self.debug_mode:
+                            print(f"  -> Not a declaration, skipping NAME token")
+                elif self.match(TokenType.LABEL):
+                    if self.debug_mode:
+                        print(f"Parsing section at line {self.current_token.line}: {self.current_token.value}")
+                    section = self.parse_section()
+                    if section:
+                        root.children.append(section)
+                        section.parent = root
+                        if self.debug_mode:
+                            print(f"  -> Successfully parsed section: {section.value}")
+                else:
+                    # Unknown token - provide detailed information
+                    self.debug_print_token_context("UNKNOWN TOKEN - CANNOT PARSE")
+                    print(f"Skipping token and continuing...")
+                    self.advance()
+                
+                # Safety check: if position hasn't advanced, force advancement
+                if self.pos == old_pos and self.current_token:
+                    self.debug_print_token_context("PARSER STUCK - FORCING ADVANCE")
+                    self.advance()
+                    
+            except SyntaxError as e:
+                print(f"Parse error: {e}")
+                self.debug_print_token_context("SYNTAX ERROR - ATTEMPTING RECOVERY")
+                # Try to recover by advancing past the problematic token
+                if self.current_token:
+                    self.advance()
+                # Safety check for recovery
+                if self.pos == old_pos and self.current_token:
+                    self.advance()
         
+        print(f"\nParsing completed. Processed {parse_attempts} tokens, created {len(root.children)} root children.")
         return root
     
     def parse_directive(self):
         """Parse a directive (currently just consume it)"""
+        directive_token = self.current_token
         self.advance()  # consume directive
+        
+        if self.debug_mode:
+            print(f"  -> Directive: {directive_token.value}")
+        
         if self.current_token and self.current_token.type in [TokenType.HEXCONST, TokenType.BINCONST, TokenType.DECCONST]:
+            if self.debug_mode:
+                print(f"  -> Directive argument: {self.current_token.value}")
             self.advance()  # consume constant
     
     def parse_declaration(self) -> Optional[DeclNode]:
@@ -77,6 +178,8 @@ class Parser:
         
         if not self.match(TokenType.EQUALS):
             # This isn't a declaration, backtrack
+            if self.debug_mode:
+                print(f"  -> NAME '{name_token.value}' not followed by '=', not a declaration")
             self.pos -= 1
             self.current_token = self.tokens[self.pos]
             return None
@@ -101,6 +204,8 @@ class Parser:
         
         # Try to parse another section (nested labels)
         if self.match(TokenType.LABEL):
+            if self.debug_mode:
+                print(f"  -> Found nested label, parsing recursively")
             child_section = self.parse_section()
             if child_section:
                 label_node = LabelNode(label_token.value, child_section)
@@ -109,6 +214,8 @@ class Parser:
                 return label_node
         
         # Parse code block
+        if self.debug_mode:
+            print(f"  -> Parsing code block for label {label_token.value}")
         code = self.parse_code()
         if code:
             label_node = LabelNode(label_token.value, code)
@@ -116,29 +223,69 @@ class Parser:
             code.parent = label_node
             return label_node
         
-        self.error("Expected code or section after label")
+        # Even if no code follows, create the label node
+        if self.debug_mode:
+            print(f"  -> No code found after label, creating empty label node")
+        label_node = LabelNode(label_token.value, None)
+        label_node.line_number = label_token.line
+        return label_node
     
     def parse_code(self) -> Optional[ListNode]:
-        """Parse a code block (list of instructions and data) - FIXED VERSION"""
+        """Parse a code block (list of instructions and data) - DEBUG VERSION"""
         items = []
+        code_attempts = 0
+        max_code_attempts = 1000  # Reasonable limit for code block parsing
         
         while (self.current_token and 
                self.current_token.type not in [TokenType.EOF, TokenType.LABEL]):
+            
+            code_attempts += 1
+            if code_attempts > max_code_attempts:
+                self.debug_print_token_context("INFINITE LOOP IN PARSE_CODE - ABORTING")
+                break
+                
+            old_pos = self.pos
             
             # Try to parse instruction
             inst = self.parse_instruction()
             if inst:
                 items.append(inst)
+                if self.debug_mode and len(items) % 100 == 0:  # Progress indicator
+                    print(f"    -> Parsed {len(items)} code items so far...")
                 continue
             
             # Try to parse data
             data = self.parse_data()
             if data:
                 items.append(data)
+                if self.debug_mode and len(items) % 100 == 0:  # Progress indicator
+                    print(f"    -> Parsed {len(items)} code items so far...")
                 continue
             
-            # If we can't parse either, break
-            break
+            # If we can't parse either, provide detailed debugging info
+            if self.pos == old_pos:
+                self.debug_print_token_context("CANNOT PARSE AS INSTRUCTION OR DATA")
+                
+                # Show what instruction types we tried to match
+                if self.current_token:
+                    token_type = self.current_token.type
+                    print(f"Token type {token_type.name} is not recognized as:")
+                    print("  - Instruction types: LDA, LDX, STA, JMP, etc.")
+                    print("  - Data types: DATABYTES (.db), DATAWORDS (.dw)")
+                    print("  - End markers: LABEL, EOF")
+                    print("Forcing advance to prevent infinite loop...")
+                
+                self.advance()  # Force advancement to prevent infinite loop
+            
+            # Double-check we're making progress
+            if self.pos == old_pos:
+                self.debug_print_token_context("STILL STUCK AFTER FORCED ADVANCE")
+                if self.current_token:
+                    self.advance()
+                break
+        
+        if self.debug_mode and items:
+            print(f"  -> Parsed code block with {len(items)} items")
         
         if not items:
             return None
@@ -166,6 +313,8 @@ class Parser:
         """Parse data declaration: .db or .dw followed by data list"""
         if self.match(TokenType.DATABYTES):
             data_token = self.current_token
+            if self.debug_mode:
+                print(f"    -> Parsing .db at line {data_token.line}")
             self.advance()
             dlist = self.parse_data_list()
             if dlist:
@@ -176,6 +325,8 @@ class Parser:
                 return data_node
         elif self.match(TokenType.DATAWORDS):
             data_token = self.current_token
+            if self.debug_mode:
+                print(f"    -> Parsing .dw at line {data_token.line}")
             self.advance()
             dlist = self.parse_data_list()
             if dlist:
@@ -188,11 +339,13 @@ class Parser:
         return None
     
     def parse_data_list(self) -> Optional[ListNode]:
-        """Parse a comma-separated list of expressions - FIXED VERSION"""
+        """Parse a comma-separated list of expressions"""
         expressions = []
         
         expr = self.parse_expression()
         if not expr:
+            if self.debug_mode:
+                print(f"      -> No expression found for data list")
             return None
         
         expressions.append(expr)
@@ -201,10 +354,15 @@ class Parser:
             self.advance()  # consume ','
             expr = self.parse_expression()
             if not expr:
-                self.error("Expected expression after ','")
+                if self.debug_mode:
+                    print(f"      -> No expression after comma, ending data list")
+                break
             expressions.append(expr)
         
-        # Create linked list in forward order - maintain source code order
+        if self.debug_mode:
+            print(f"      -> Data list has {len(expressions)} expressions")
+        
+        # Create linked list in forward order
         head = None
         tail = None
         
@@ -224,7 +382,7 @@ class Parser:
         return head
     
     def parse_instruction(self) -> Optional[InstructionNode]:
-        """Parse a 6502 instruction"""
+        """Parse a 6502 instruction with debugging"""
         if not self.current_token:
             return None
         
@@ -236,6 +394,8 @@ class Parser:
                          TokenType.AND, TokenType.EOR, TokenType.ORA, TokenType.BIT,
                          TokenType.ADC, TokenType.SBC, TokenType.CMP, TokenType.CPX, TokenType.CPY,
                          TokenType.INC, TokenType.DEC, TokenType.JMP]:
+            if self.debug_mode:
+                print(f"    -> Parsing instruction {token.type.name} at line {token.line}")
             self.advance()
             operand = self.parse_instruction_expression()
             inst = InstructionNode(token.type.value, operand)
@@ -244,6 +404,8 @@ class Parser:
         
         # ASL/LSR/ROL/ROR can be with or without operand
         elif token.type in [TokenType.ASL, TokenType.LSR, TokenType.ROL, TokenType.ROR]:
+            if self.debug_mode:
+                print(f"    -> Parsing shift instruction {token.type.name} at line {token.line}")
             self.advance()
             operand = self.parse_instruction_expression()  # Optional
             inst = InstructionNode(token.type.value, operand)
@@ -253,6 +415,8 @@ class Parser:
         # Branch instructions take NAME operands
         elif token.type in [TokenType.JSR, TokenType.BCC, TokenType.BCS, TokenType.BEQ, 
                            TokenType.BMI, TokenType.BNE, TokenType.BPL, TokenType.BVC, TokenType.BVS]:
+            if self.debug_mode:
+                print(f"    -> Parsing branch/jump instruction {token.type.name} at line {token.line}")
             self.advance()
             if not self.match(TokenType.NAME):
                 self.error(f"Expected NAME after {token.type.name}")
@@ -269,6 +433,8 @@ class Parser:
                            TokenType.DEX, TokenType.DEY, TokenType.RTS, TokenType.CLC,
                            TokenType.CLD, TokenType.CLI, TokenType.CLV, TokenType.SEC,
                            TokenType.SED, TokenType.SEI, TokenType.BRK, TokenType.NOP, TokenType.RTI]:
+            if self.debug_mode:
+                print(f"    -> Parsing no-operand instruction {token.type.name} at line {token.line}")
             self.advance()
             inst = InstructionNode(token.type.value, None)
             inst.line_number = token.line
