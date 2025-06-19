@@ -18,13 +18,128 @@ LINE_SEPARATOR_COMMENT = "//----------------------------------------------------
 class FirstPassClassifier:
     """First pass classifier to determine label types from assembly text"""
     
-    def __init__(self, assembly_text: str):
+    def __init__(self, assembly_text: str, config_dir: str = None):
         self.assembly_text = assembly_text
         self.lines = assembly_text.split('\n')
         self.labels: Dict[str, LabelType] = {}
         self.label_line_map: Dict[str, int] = {}
         self.data_indicators = {'.db', '.dw', '.byte', '.word'}
         self.instruction_keywords = self._get_6502_instructions()
+        
+        # Load label classifications from config files
+        self.forced_data_labels = set()
+        self.forced_code_labels = set()
+        self.forced_alias_labels = set()
+        
+        if config_dir:
+            self._load_label_config(config_dir)
+    
+    def _load_label_config(self, config_dir: str):
+        """Load label classification from config files"""
+        import os
+        
+        # Load forced data labels
+        data_file = os.path.join(config_dir, "data_labels.txt")
+        if os.path.exists(data_file):
+            try:
+                with open(data_file, 'r') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith('#'):
+                            self.forced_data_labels.add(line)
+                print(f"Loaded {len(self.forced_data_labels)} forced DATA labels from {data_file}")
+            except Exception as e:
+                print(f"Warning: Could not load {data_file}: {e}")
+        
+        # Load forced code labels
+        code_file = os.path.join(config_dir, "code_labels.txt")
+        if os.path.exists(code_file):
+            try:
+                with open(code_file, 'r') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith('#'):
+                            self.forced_code_labels.add(line)
+                print(f"Loaded {len(self.forced_code_labels)} forced CODE labels from {code_file}")
+            except Exception as e:
+                print(f"Warning: Could not load {code_file}: {e}")
+        
+        # Load forced alias labels
+        alias_file = os.path.join(config_dir, "alias_labels.txt")
+        if os.path.exists(alias_file):
+            try:
+                with open(alias_file, 'r') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith('#'):
+                            self.forced_alias_labels.add(line)
+                print(f"Loaded {len(self.forced_alias_labels)} forced ALIAS labels from {alias_file}")
+            except Exception as e:
+                print(f"Warning: Could not load {alias_file}: {e}")
+    
+    def create_default_config_files(self, config_dir: str):
+        """Create default configuration files with examples and detected conflicts"""
+        import os
+        os.makedirs(config_dir, exist_ok=True)
+        
+        # Create data_labels.txt only if it doesn't exist
+        data_file = os.path.join(config_dir, "data_labels.txt")
+        if not os.path.exists(data_file):
+            with open(data_file, 'w') as f:
+                f.write("# Data Labels Configuration\n")
+                f.write("# One label per line - these labels will be treated as DATA (generate pointers)\n")
+                f.write("# Lines starting with # are comments\n")
+                f.write("#\n")
+                f.write("# Examples of typical data labels:\n")
+                f.write("# GameText\n")
+                f.write("# AreaAddrOffsets\n")
+                f.write("# MusicData\n")
+                f.write("# PaletteData\n")
+                f.write("#\n")
+                f.write("# Add labels here that contain lookup tables, graphics data, etc.\n")
+            print(f"Created {data_file}")
+        
+        # Create code_labels.txt only if it doesn't exist
+        code_file = os.path.join(config_dir, "code_labels.txt")
+        if not os.path.exists(code_file):
+            with open(code_file, 'w') as f:
+                f.write("# Code Labels Configuration\n")
+                f.write("# One label per line - these labels will be treated as CODE (for goto statements)\n")
+                f.write("# Lines starting with # are comments\n")
+                f.write("#\n")
+                f.write("# Add labels here that are used in goto statements but might be misclassified\n")
+                f.write("# Common examples from compilation errors:\n")
+                f.write("MoveSubs\n")
+                f.write("BlockCode\n")
+                f.write("JmpEO\n")
+                f.write("ExScrnBd\n")
+                f.write("MoveAllSpritesOffscreen\n")
+                f.write("GetBlockBufferAddr\n")
+                f.write("MovePlatformDown\n")
+                f.write("PositionPlayerOnS_Plat\n")
+                f.write("BlockBufferColli_Head\n")
+                f.write("RetYC\n")
+                f.write("SetHFAt\n")
+            print(f"Created {code_file}")
+        
+        # Create alias_labels.txt only if it doesn't exist
+        alias_file = os.path.join(config_dir, "alias_labels.txt")
+        if not os.path.exists(alias_file):
+            with open(alias_file, 'w') as f:
+                f.write("# Alias Labels Configuration\n")
+                f.write("# One label per line - these labels will be treated as ALIAS\n")
+                f.write("# Lines starting with # are comments\n")
+                f.write("#\n")
+                f.write("# Add labels here that are simple aliases to other labels\n")
+                f.write("# (Usually labels that just contain 'jmp SomeOtherLabel')\n")
+            print(f"Created {alias_file}")
+        
+        if any(not os.path.exists(f) for f in [data_file, code_file, alias_file]):
+            print(f"Config files are in {config_dir}")
+            print("Edit these files to fix label classification issues:")
+            print(f"  - {data_file}")
+            print(f"  - {code_file}")
+            print(f"  - {alias_file}")
     
     def _get_6502_instructions(self) -> Set[str]:
         """Get set of all 6502 instruction mnemonics"""
@@ -66,20 +181,32 @@ class FirstPassClassifier:
     
     def _classify_single_label(self, label_name: str, start_line: int) -> LabelType:
         """Classify a single label based on what follows it"""
-        # Look at the next several lines after the label
+        # Check forced classifications first
+        if label_name in self.forced_data_labels:
+            return LabelType.LABEL_DATA
+        elif label_name in self.forced_code_labels:
+            return LabelType.LABEL_CODE
+        elif label_name in self.forced_alias_labels:
+            return LabelType.LABEL_ALIAS
+        
+        # Fall back to automatic analysis
         content_analysis = self._analyze_content_after_label(start_line)
         
-        # Decision logic
-        if content_analysis['has_data_directives'] and not content_analysis['has_instructions']:
+        # Very strict criteria for DATA classification to prevent goto conflicts
+        if (content_analysis['has_data_directives'] and 
+            not content_analysis['has_instructions'] and
+            content_analysis['only_data_directives'] and
+            content_analysis['line_count_analyzed'] >= 3):  # Must have multiple data lines
             return LabelType.LABEL_DATA
-        elif content_analysis['has_instructions']:
-            return LabelType.LABEL_CODE
-        elif content_analysis['points_to_other_label']:
+        
+        # Check for simple aliases (labels that just point to other labels)
+        elif (content_analysis['points_to_other_label'] and 
+              not content_analysis['has_data_directives'] and
+              not content_analysis['has_instructions']):
             return LabelType.LABEL_ALIAS
-        elif content_analysis['has_data_directives']:
-            return LabelType.LABEL_DATA
+        
+        # Everything else is CODE (safer for goto statements)
         else:
-            # Default to CODE for labels that don't clearly indicate data
             return LabelType.LABEL_CODE
     
     def _analyze_content_after_label(self, start_line: int) -> Dict[str, bool]:
@@ -88,11 +215,13 @@ class FirstPassClassifier:
             'has_instructions': False,
             'has_data_directives': False,
             'points_to_other_label': False,
-            'line_count_analyzed': 0
+            'line_count_analyzed': 0,
+            'only_data_directives': True
         }
         
-        # Look at up to 10 lines after the label
-        max_lines_to_check = min(10, len(self.lines) - start_line - 1)
+        # Look at up to 30 lines after the label to get better coverage
+        max_lines_to_check = min(30, len(self.lines) - start_line - 1)
+        content_lines = 0  # Count actual content lines (not empty/comments)
         
         for i in range(1, max_lines_to_check + 1):
             line_num = start_line + i
@@ -109,23 +238,26 @@ class FirstPassClassifier:
             if re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*:', line):
                 break
             
-            analysis['line_count_analyzed'] += 1
+            content_lines += 1
+            analysis['line_count_analyzed'] = content_lines
             
             # Check for data directives
             if self._line_contains_data_directive(line):
                 analysis['has_data_directives'] = True
+            else:
+                analysis['only_data_directives'] = False
             
-            # Check for instructions
+            # Check for instructions (this has highest priority)
             if self._line_contains_instruction(line):
                 analysis['has_instructions'] = True
+                analysis['only_data_directives'] = False
+                # Found instruction - definitely code, can stop here
+                break
             
-            # Check if it points to another label (simple heuristic)
+            # Check if it points to another label
             if self._line_points_to_label(line):
                 analysis['points_to_other_label'] = True
-            
-            # If we've found clear evidence, we can stop early
-            if analysis['has_instructions'] or analysis['has_data_directives']:
-                break
+                analysis['only_data_directives'] = False
         
         return analysis
     
@@ -169,21 +301,27 @@ class FirstPassClassifier:
         return False
 
 class Translator:
-    def __init__(self, input_filename: str, ast_root_node: RootNode):
+    def __init__(self, input_filename: str, ast_root_node: RootNode, config_dir: str = None):
         self.input_filename = input_filename
         self.root = ast_root_node
         self.return_label_index = 0
         self.skip_next_instruction = False
         self.skip_next_instruction_index = 0
+        self.config_dir = config_dir
         
         # First pass classification from source text
         self.first_pass_classifications = {}
         try:
             with open(input_filename, 'r') as f:
                 source_text = f.read()
-            classifier = FirstPassClassifier(source_text)
+            classifier = FirstPassClassifier(source_text, config_dir)
             self.first_pass_classifications = classifier.classify_all_labels()
             print(f"First pass classified {len(self.first_pass_classifications)} labels")
+            
+            # Create default config files if they don't exist
+            if config_dir:
+                classifier.create_default_config_files(config_dir)
+                
         except Exception as e:
             print(f"Warning: Could not perform first pass classification: {e}")
         
@@ -216,6 +354,14 @@ class Translator:
     def classify_labels(self):
         """Classify labels as code, data, or alias using first pass + AST analysis"""
         print("Classifying labels using first pass + AST analysis...")
+        
+        # Debug: Show some first pass results
+        print(f"First pass found {len(self.first_pass_classifications)} labels")
+        code_count = sum(1 for t in self.first_pass_classifications.values() if t == LabelType.LABEL_CODE)
+        data_count = sum(1 for t in self.first_pass_classifications.values() if t == LabelType.LABEL_DATA)
+        alias_count = sum(1 for t in self.first_pass_classifications.values() if t == LabelType.LABEL_ALIAS)
+        print(f"First pass classification: {code_count} CODE, {data_count} DATA, {alias_count} ALIAS")
+        
         i = 0
         while i < len(self.root.children):
             node = self.root.children[i]
@@ -245,7 +391,8 @@ class Translator:
             label_name = label.value.rstrip(':')
             if label_name in self.first_pass_classifications:
                 label.label_type = self.first_pass_classifications[label_name]
-                print(f"  {label.value} -> {label.label_type.name} (first pass)")
+                if label.label_type == LabelType.LABEL_DATA:
+                    print(f"  {label.value} -> {label.label_type.name} (first pass - DATA)")
             else:
                 # Fall back to AST analysis
                 label.label_type = self.analyze_label_content_ast(label)
@@ -450,16 +597,28 @@ class Translator:
                 list_element = label.child
                 byte_count = 0
                 
-                while list_element is not None:
+                # Check if we have a list to process
+                if not list_element or list_element.type != AstType.AST_LIST:
+                    print(f"Skipping {label_name} - no list child found")
+                    continue
+                
+                # Process the list
+                current_item = list_element
+                while current_item is not None:
                     loading += f"\n{TAB}{TAB}"
                     
-                    data_item = list_element.value
-                    if data_item.type != AstType.AST_DATA8:
-                        break
+                    data_item = current_item.value
+                    if not data_item or data_item.type != AstType.AST_DATA8:
+                        # Try to move to next item if this isn't data
+                        current_item = current_item.next
+                        continue
                     
+                    # Process the data list
                     data_list_element = data_item.value
+                    line_has_data = False
                     while data_list_element is not None:
                         loading += self.translate_expression(data_list_element.value)
+                        line_has_data = True
                         
                         if data_list_element.next is not None:
                             loading += ", "
@@ -467,11 +626,15 @@ class Translator:
                         byte_count += 1
                         data_list_element = data_list_element.next
                     
-                    if (list_element.next is not None and 
-                        list_element.next.value.type != AstType.AST_DATA16):
-                        loading += ","
-                    elif list_element.next is not None:
-                        break  # End at data16 (interrupt vectors)
+                    # Only add comma if we had data and there's more coming
+                    if line_has_data and current_item.next is not None:
+                        next_item = current_item.next
+                        if (next_item and next_item.value and 
+                            next_item.value.type == AstType.AST_DATA8):
+                            loading += ","
+                        elif (next_item and next_item.value and 
+                              next_item.value.type == AstType.AST_DATA16):
+                            break  # End at data16 (interrupt vectors)
                     
                     # Add comments
                     if data_item.line_number != 0:
@@ -479,7 +642,12 @@ class Translator:
                         if comment:
                             loading += f" // {comment[1:]}"  # Strip ';'
                     
-                    list_element = list_element.next
+                    current_item = current_item.next
+                
+                if byte_count == 0:
+                    # Skip labels with no actual data
+                    print(f"Skipping {label_name} - no data bytes found")
+                    continue
                 
                 loading += f"\n{TAB}}};\n"
                 loading += f"{TAB}writeData({label_name}, {label_name}_data, sizeof({label_name}_data));\n\n"

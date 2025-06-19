@@ -55,11 +55,12 @@ def write_output_files(translator: Translator, output_dir: str):
 def main():
     """Main function"""
     if len(sys.argv) < 3:
-        print("usage: python main.py <INPUT ASM FILE> <OUTPUT DIRECTORY>")
+        print("usage: python main.py <INPUT ASM FILE> <OUTPUT DIRECTORY> [CONFIG DIRECTORY]")
         sys.exit(1)
     
     input_file = sys.argv[1]
     output_dir = sys.argv[2]
+    config_dir = sys.argv[3] if len(sys.argv) > 3 else None
     
     # Check if input file exists
     if not os.path.exists(input_file):
@@ -78,11 +79,13 @@ def main():
         print("Performing lexical analysis...")
         lexer = Lexer(input_text)
         tokens = lexer.tokenize()
+        print(f"Generated {len(tokens)} tokens")
         
         # Parsing
         print("Parsing...")
         parser = Parser(tokens)
         ast_root = parser.parse()
+        print(f"Parsed {len(ast_root.children)} top-level nodes")
         
         # Cleanup AST (reverse lists, etc.)
         print("Cleaning up AST...")
@@ -90,7 +93,9 @@ def main():
         
         # Translation
         print("Translating to C++...")
-        translator = Translator(input_file, ast_root)
+        if config_dir:
+            print(f"Using config directory: {config_dir}")
+        translator = Translator(input_file, ast_root, config_dir)
         
         # Create output directory
         create_output_directory(output_dir)
@@ -99,9 +104,16 @@ def main():
         write_output_files(translator, output_dir)
         
         print("Translation completed successfully!")
+        if config_dir:
+            print(f"\nIf you encounter label classification errors, edit the files in {config_dir}:")
+            print("  - data_labels.txt (for labels that should generate data pointers)")
+            print("  - code_labels.txt (for labels used in goto statements)")
+            print("  - alias_labels.txt (for simple label aliases)")
         
     except Exception as e:
         print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 if __name__ == "__main__":
