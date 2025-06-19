@@ -653,7 +653,16 @@ class Translator:
         return LabelType.LABEL_CODE
     
     def generate_code(self):
-        """Generate the main C++ code"""
+        """Generate the main C++ code with CA65-aware vector names"""
+        
+        # Use different entry point names based on format
+        if self.is_ca65:
+            reset_label = "Reset"
+            nmi_label = "NMI"
+        else:
+            reset_label = "Start"
+            nmi_label = "NonMaskableInterrupt"
+        
         self.source_output += (
             "void SMBEngine::code(int mode)\n"
             "{\n"
@@ -661,9 +670,9 @@ class Translator:
             f"{TAB}{{\n"
             f"{TAB}case 0:\n"
             f"{TAB}{TAB}loadConstantData();\n"
-            f"{TAB}{TAB}goto Start;\n"
+            f"{TAB}{TAB}goto {reset_label};\n"
             f"{TAB}case 1:\n"
-            f"{TAB}{TAB}goto NonMaskableInterrupt;\n"
+            f"{TAB}{TAB}goto {nmi_label};\n"
             f"{TAB}}}\n\n"
         )
         
