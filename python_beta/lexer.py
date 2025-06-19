@@ -227,8 +227,6 @@ class Lexer:
                     
                     # FILTER OUT CA65 ADDRESSING MODE DIRECTIVES
                     if label in ['z:', 'a:']:
-                        if self.debug_mode:
-                            print(f"Filtered CA65 directive: {label} at line {current_line}")
                         continue  # Skip creating token
                     
                     self.tokens.append(Token(TokenType.LABEL, label, current_line, current_column))
