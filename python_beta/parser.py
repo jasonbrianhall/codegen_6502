@@ -92,68 +92,127 @@ class Parser:
         return self.current_token and self.current_token.type == token_type
     
     def parse(self) -> RootNode:
-        """Parse the entire program"""
+        """Enhanced parser with better label recovery"""
         root = RootNode()
         parse_attempts = 0
-        max_attempts = len(self.tokens) * 2  # Safety limit
-        
+        max_attempts = len(self.tokens) * 2
+    
         while self.current_token and self.current_token.type != TokenType.EOF:
             parse_attempts += 1
             if parse_attempts > max_attempts:
-                self.debug_print_token_context("INFINITE LOOP DETECTED - ABORTING")
                 break
-                
-            old_pos = self.pos
             
+            old_pos = self.pos
+        
             try:
                 if self.match(TokenType.DIRECTIVE):
-                    if self.debug_mode:
-                        print(f"Parsing directive at line {self.current_token.line}: {self.current_token.value}")
                     self.parse_directive()
+                
                 elif self.match(TokenType.NAME):
-                    if self.debug_mode:
-                        print(f"Attempting declaration at line {self.current_token.line}: {self.current_token.value}")
                     decl = self.parse_declaration()
                     if decl:
                         root.children.append(decl)
                         decl.parent = root
-                        if self.debug_mode:
-                            print(f"  -> Successfully parsed declaration: {decl.value}")
                     else:
-                        if self.debug_mode:
-                            print(f"  -> Not a declaration, skipping NAME token")
+                        # If not a declaration, might be a missed label
+                        # Check if next token is colon
+                        if (self.pos < len(self.tokens) - 1 and 
+                            self.tokens[self.pos + 1].type == TokenType.COLON):
+                            # Create label from NAME + COLON
+                            name_token = self.current_token
+                            self.advance()  # consume NAME    
+                            self.advance()  # consume COLON
+                        
+                            label = LabelNode(f"{name_token.value}:", None)
+                            label.line_number = name_token.line
+                        
+                            # Try to parse content after label
+                            content = self.parse_label_content()
+                            if content:
+                                label.child = content
+                                content.parent = label
+                        
+                            root.children.append(label)
+                            label.parent = root
+                            print(f"Recovered missed label: {name_token.value}")
+                        else:
+                            # Skip unknown NAME token
+                            self.advance()
+                        
                 elif self.match(TokenType.LABEL):
-                    if self.debug_mode:
-                        print(f"Parsing section at line {self.current_token.line}: {self.current_token.value}")
                     section = self.parse_section()
                     if section:
                         root.children.append(section)
                         section.parent = root
-                        if self.debug_mode:
-                            print(f"  -> Successfully parsed section: {section.value}")
+                    else:
+                        # Create empty label if parsing failed
+                        label_token = self.current_token
+                        empty_label = LabelNode(label_token.value, None)
+                        empty_label.line_number = label_token.line
+                        root.children.append(empty_label)
+                        empty_label.parent = root
+                        self.advance()
+                        print(f"Created empty label: {label_token.value}")
+                    
                 else:
-                    # Unknown token - provide detailed information
-                    self.debug_print_token_context("UNKNOWN TOKEN - CANNOT PARSE")
-                    print(f"Skipping token and continuing...")
+                    # Unknown token - skip it
+                    if self.current_token:
+                        print(f"Skipping unknown token: {self.current_token.type} '{self.current_token.value}' at line {self.current_token.line}")
                     self.advance()
                 
-                # Safety check: if position hasn't advanced, force advancement
-                if self.pos == old_pos and self.current_token:
-                    self.debug_print_token_context("PARSER STUCK - FORCING ADVANCE")
-                    self.advance()
-                    
-            except SyntaxError as e:
-                print(f"Parse error: {e}")
-                self.debug_print_token_context("SYNTAX ERROR - ATTEMPTING RECOVERY")
-                # Try to recover by advancing past the problematic token
-                if self.current_token:
-                    self.advance()
-                # Safety check for recovery
+                # Safety: ensure we always advance
                 if self.pos == old_pos and self.current_token:
                     self.advance()
-        
-        print(f"\nParsing completed. Processed {parse_attempts} tokens, created {len(root.children)} root children.")
+                
+            except Exception as e:
+                print(f"Parse error at line {self.current_token.line if self.current_token else 'EOF'}: {e}")
+                # Skip to next likely parsing point
+                while (self.current_token and 
+                       self.current_token.type not in [TokenType.LABEL, TokenType.DIRECTIVE, TokenType.EOF]):
+                    self.advance()
+    
+        print(f"Parser created {len(root.children)} root children")
         return root
+
+    def parse_label_content(self):
+        """Parse content after a label with better error recovery"""
+        content_list = None
+        last_item = None
+    
+        while (self.current_token and 
+               self.current_token.type not in [TokenType.LABEL, TokenType.EOF]):
+        
+            try:
+                item = None
+            
+                if self.match(TokenType.INSTRUCTION):
+                    item = self.parse_instruction()
+                elif self.match(TokenType.DATA8):
+                    item = self.parse_data8()
+                elif self.match(TokenType.DATA16):
+                    item = self.parse_data16()
+                else:
+                    # Unknown content - skip
+                    self.advance()
+                    continue
+                
+                if item:
+                    # Add to list
+                    list_node = ListNode(item)
+                    if content_list is None:
+                        content_list = list_node
+                        last_item = list_node
+                    else:
+                        last_item.next = list_node
+                        last_item = list_node
+                    
+            except Exception as e:
+                print(f"Error parsing label content: {e}")
+                # Skip this item and continue
+                self.advance()
+                continue
+    
+        return content_list
     
     def parse_directive(self):
         """Parse a directive (currently just consume it)"""

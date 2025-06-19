@@ -653,8 +653,8 @@ class Translator:
         return LabelType.LABEL_CODE
     
     def generate_code(self):
-        """Generate the main C++ code with CA65-aware vector names"""
-        
+        """Generate the main C++ code - FIXED to generate ALL labels"""
+
         # Use different entry point names based on format
         if self.is_ca65:
             reset_label = "Reset"
@@ -662,7 +662,7 @@ class Translator:
         else:
             reset_label = "Start"
             nmi_label = "NonMaskableInterrupt"
-        
+
         self.source_output += (
             "void SMBEngine::code(int mode)\n"
             "{\n"
@@ -675,84 +675,136 @@ class Translator:
             f"{TAB}{TAB}goto {nmi_label};\n"
             f"{TAB}}}\n\n"
         )
-        
-        # Generate code for each code label
+
+        # GENERATE CODE FOR **ALL** LABELS - NO FILTERING!
+        labels_generated = 0
+
         for node in self.root.children:
             if node.type != AstType.AST_LABEL:
                 continue
-            
+    
             label = node
-            if label.label_type != LabelType.LABEL_CODE:
-                continue
-            
+            label_name = label.value.rstrip(':')
+        
+            # Generate ALL labels regardless of type
+            print(f"Generating label: {label_name} (type: {getattr(label, 'label_type', 'UNKNOWN')})")
+            labels_generated += 1
+    
             # Output C++ label
             self.source_output += f"\n{label.value}"
-            
+    
             # Add comment if available
             if label.line_number != 0:
                 comment = lookup_comment(label.line_number)
                 if comment:
                     self.source_output += f" // {comment[1:]}"  # Skip ';'
-            
+    
             self.source_output += "\n"
-            
-            # Translate each instruction in the label
+    
+            # Translate each instruction/data in the label
             list_element = label.child
+            instruction_count = 0
+    
             while list_element is not None:
                 instruction = list_element.value
-                if instruction.type == AstType.AST_INSTRUCTION:
+            
+                if instruction and instruction.type == AstType.AST_INSTRUCTION:
+                    instruction_count += 1
+            
                     # Set parent reference for JSR JumpEngine handling
                     instruction.parent = list_element
-                    
+            
                     translated = self.translate_instruction(instruction)
                     self.source_output += f"{TAB}{translated}"
-                    
+            
                     if instruction.line_number != 0:
                         comment = lookup_comment(instruction.line_number)
                         if comment:
                             self.source_output += f" // {comment[1:]}"  # Skip ';'
-                    
+            
                     # Add line separator after return statements
                     if instruction.code == TokenType.RTS.value:
                         self.source_output += f"\n\n{LINE_SEPARATOR_COMMENT}"
                     else:
                         self.source_output += "\n"
-                    
+            
                     if self.skip_next_instruction:
                         # Add skip label for .db $2c handling
                         self.source_output += f"Skip_{self.skip_next_instruction_index}:\n"
                         self.skip_next_instruction_index += 1
                         self.skip_next_instruction = False
-                
-                elif (instruction.type == AstType.AST_DATA8 and 
+        
+                elif (instruction and instruction.type == AstType.AST_DATA8 and 
                       hasattr(instruction, 'value') and
                       hasattr(instruction.value, 'value') and
                       hasattr(instruction.value.value, 'value') and
                       instruction.value.value.value == "$2c"):
                     # Special case: .db $2c generates a goto
                     self.skip_next_instruction = True
-                    self.source_output += f"{TAB}goto Skip_{self.skip_next_instruction_index};\n"
-                
-                list_element = list_element.next
+                self.source_output += f"{TAB}goto Skip_{self.skip_next_instruction_index};\n"    
         
+                list_element = list_element.next
+    
+            if instruction_count == 0:
+                # Empty label - add a comment
+                self.source_output += f"{TAB}// Empty label\n"
+
+        print(f"\nCode generation complete:")
+        print(f"  Generated {labels_generated} labels")
+
         # Generate return jump table
         self.source_output += (
-            "// Return handler\n"
+            "\n// Return handler\n"
             "// This emulates the RTS instruction using a generated jump table\n"
             "//\n"
             "Return:\n"
             f"{TAB}switch (popReturnIndex())\n"
             f"{TAB}{{\n"
         )
-        
+
         for i in range(self.return_label_index):
             self.source_output += (
                 f"{TAB}case {i}:\n"
                 f"{TAB}{TAB}goto Return_{i};\n"
             )
-        
+
         self.source_output += f"{TAB}}}\n"
         self.source_output += "}\n"
+
+    def add_missing_labels(self):
+        """Add labels that were found by first pass but missing from AST"""
+        if not self.first_pass_classifications:
+            return
+        
+        # Get labels currently in AST
+        ast_labels = set()
+        for node in self.root.children:
+            if node.type == AstType.AST_LABEL:
+                label_name = node.value.rstrip(':')
+                ast_labels.add(label_name)
+    
+        # Find missing labels
+        first_pass_labels = set(self.first_pass_classifications.keys())
+        missing_labels = first_pass_labels - ast_labels
+    
+        print(f"Found {len(missing_labels)} missing labels, adding them...")
+    
+        # Add missing labels as empty code labels
+        for label_name in sorted(missing_labels):
+            empty_label = LabelNode(f"{label_name}:", None)
+            empty_label.line_number = 0
+            empty_label.label_type = self.first_pass_classifications[label_name]
+            
+            # Add empty content
+            empty_label.child = None
+        
+            self.root.children.append(empty_label)
+            empty_label.parent = self.root
+        
+            print(f"  Added missing label: {label_name}")
+    
+        print(f"Total labels after recovery: {len([n for n in self.root.children if n.type == AstType.AST_LABEL])}")
+
     
     def generate_constant_declarations(self):
         """Generate constant declarations header"""
@@ -944,13 +996,16 @@ class Translator:
         """Main translation method"""
         # Index empty lines
         self.index_empty_lines()
-        
+    
+        # Add missing labels that weren't parsed
+        self.add_missing_labels()
+    
         # Classify labels
         self.classify_labels()
-        
+    
         # Add required headers
         self.source_output += "#include \"SMB.hpp\"\n\n"
-        
+    
         # Generate outputs
         self.generate_constant_declarations()
         self.generate_data_declarations()
