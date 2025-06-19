@@ -81,11 +81,16 @@ class Lexer:
         return directive
     
     def read_label(self) -> str:
-        """Read a label (alphanumeric + underscore ending with ':')"""
+        """Read a label, filtering out CA65 addressing mode directives"""
         label = ""
         while (self.pos < len(self.text) and 
                (self.text[self.pos].isalnum() or self.text[self.pos] in '_:')):
             label += self.advance()
+        
+        # Filter out CA65 addressing mode directives
+        if label in ['z:', 'a:']:
+            return None  # Don't create a token for these
+        
         return label
     
     def read_name(self) -> str:
@@ -219,9 +224,16 @@ class Lexer:
                 # Check if it continues with ':' for labels
                 if self.pos < len(self.text) and self.text[self.pos] == ':':
                     label = name + self.advance()  # include the ':'
+                    
+                    # FILTER OUT CA65 ADDRESSING MODE DIRECTIVES
+                    if label in ['z:', 'a:']:
+                        if self.debug_mode:
+                            print(f"Filtered CA65 directive: {label} at line {current_line}")
+                        continue  # Skip creating token
+                    
                     self.tokens.append(Token(TokenType.LABEL, label, current_line, current_column))
                     continue
-            
+
                 # Check for special register names
                 if name == 'x':
                     self.tokens.append(Token(TokenType.X_REG, name, current_line, current_column))

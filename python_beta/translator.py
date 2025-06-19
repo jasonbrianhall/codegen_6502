@@ -1183,13 +1183,13 @@ class Translator:
         elif code == TokenType.SEC.value:
             return "c = 1;"
         elif code == TokenType.SED.value:
-            raise NotImplementedError("SED instruction not implemented")
+            return "d = 1;"  # Set decimal flag
         elif code == TokenType.SEI.value:
             return "/* sei */"
         
         # System instructions
         elif code == TokenType.BRK.value:
-            raise NotImplementedError("BRK instruction not implemented")
+            return "return;"
         elif code == TokenType.NOP.value:
             return "; // nop"
         elif code == TokenType.RTI.value:
