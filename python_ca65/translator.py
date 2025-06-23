@@ -657,14 +657,13 @@ class Translator:
                 else:
                     break
             
-            # Use first pass classification if available, otherwise analyze AST
+            # Use first pass classification if available
             label_name = label.value.rstrip(':')
             if label_name in self.first_pass_classifications:
                 label.label_type = self.first_pass_classifications[label_name]
-                if label.label_type == LabelType.LABEL_DATA:
-                    print(f"  {label.value} -> {label.label_type.name} (first pass - DATA)")
+                print(f"  {label.value} -> {label.label_type.name} (first pass)")
             else:
-                # Fall back to AST analysis
+                # Fall back to AST analysis only if first pass didn't find it
                 label.label_type = self.analyze_label_content_ast(label)
                 print(f"  {label.value} -> {label.label_type.name} (AST fallback)")
             
@@ -708,7 +707,7 @@ class Translator:
         return LabelType.LABEL_CODE
     
     def generate_code(self):
-        """Generate the main C++ code with proper label handling"""
+        """Generate the main C++ code with proper label handling - SIMPLIFIED"""
         
         # First, collect all actual labels from the AST
         actual_labels = {}  # label_name -> node
@@ -764,74 +763,57 @@ class Translator:
             self.source_output += f"{TAB}return;\n"
             print(f"Generated stub for missing label: {missing_label} -> {clean_label}")
         
-        # Generate stubs for required entry points if they don't exist
-        required_labels = [reset_label, nmi_label]
-        for req_label in required_labels:
-            if req_label not in actual_labels and req_label not in missing_labels:
-                clean_req_label = self._clean_label_name(req_label)
-                self.source_output += f"\n{clean_req_label}:\n"
-                self.source_output += f"{TAB}// Stub for required entry point\n"
-                self.source_output += f"{TAB}return;\n"
-                print(f"Generated stub for required entry point: {req_label} -> {clean_req_label}")
-        
         # Collect all labels to avoid duplicates
         seen_labels = set()
         
-        # Generate code for each code label
+        # Generate code for ALL labels that exist in the AST
+        # Skip only pure DATA labels (those that only contain .db/.dw directives)
         for node in self.root.children:
             if node.type != AstType.AST_LABEL:
                 continue
             
             label = node
-            if not hasattr(label, 'label_type') or label.label_type != LabelType.LABEL_CODE:
-                continue
+            label_name = label.value.rstrip(':')
             
             # Avoid duplicate labels
-            label_name = label.value.rstrip(':')
             if label_name in seen_labels:
                 print(f"Warning: Skipping duplicate label {label_name}")
                 continue
             seen_labels.add(label_name)
+            
+            # Skip ONLY pure data labels (those that contain only data directives)
+            try:
+                if (hasattr(label, 'label_type') and 
+                    label.label_type == LabelType.LABEL_DATA and
+                    not self._label_has_any_instructions(label)):
+                    print(f"Skipping pure DATA label: {label_name}")
+                    continue
+            except Exception as e:
+                print(f"Warning: Error checking label type for {label_name}: {e}")
+                # Continue processing the label anyway
             
             # Output C++ label with cleaned name
             clean_label_name = self._clean_label_name(label_name)
             self.source_output += f"\n{clean_label_name}:\n"
             
             # Add comment if available
-            if hasattr(label, 'line_number') and label.line_number != 0:
-                comment = lookup_comment(label.line_number)
-                if comment:
-                    self.source_output += f"    // {comment[1:]}\n"  # Skip ';'
+            try:
+                if hasattr(label, 'line_number') and label.line_number != 0:
+                    comment = lookup_comment(label.line_number)
+                    if comment:
+                        self.source_output += f"    // {comment[1:]}\n"  # Skip ';'
+            except Exception as e:
+                print(f"Warning: Error adding comment for {label_name}: {e}")
+            
+            print(f"Generated label: {label_name} -> {clean_label_name}")
             
             # Translate each instruction in the label
-            list_element = label.child
-            while list_element is not None:
-                instruction = list_element.value
-                if instruction and instruction.type == AstType.AST_INSTRUCTION:
-                    # Set parent reference for JSR JumpEngine handling
-                    instruction.parent = list_element
-                    
-                    translated = self.translate_instruction(instruction)
-                    self.source_output += f"{TAB}{translated}"
-                    
-                    if hasattr(instruction, 'line_number') and instruction.line_number != 0:
-                        comment = lookup_comment(instruction.line_number)
-                        if comment:
-                            self.source_output += f" // {comment[1:]}"  # Skip ';'
-                    
-                    # Add line separator after return statements
-                    if instruction.code == TokenType.RTS.value:
-                        self.source_output += f"\n\n{LINE_SEPARATOR_COMMENT}"
-                    else:
-                        self.source_output += "\n"
-                    
-                    if self.skip_next_instruction:
-                        # Add skip label for .db $2c handling
-                        self.source_output += f"Skip_{self.skip_next_instruction_index}:\n"
-                        self.skip_next_instruction_index += 1
-                        self.skip_next_instruction = False
-                
-                list_element = list_element.next
+            try:
+                self._generate_label_code(label)
+            except Exception as e:
+                print(f"Error generating code for label {label_name}: {e}")
+                self.source_output += f"{TAB}// Error generating code: {e}\n"
+                self.source_output += f"{TAB}return;\n"
         
         # Generate return jump table
         self.source_output += (
@@ -851,6 +833,93 @@ class Translator:
         
         self.source_output += f"{TAB}}}\n"
         self.source_output += "}\n"
+    
+    def _label_has_any_instructions(self, label_node) -> bool:
+        """Check if a label contains any instructions (not just data)"""
+        try:
+            child = label_node.child
+            
+            # If child is None or not a proper AST node, assume it has instructions to be safe
+            if not child or not hasattr(child, 'type'):
+                return True
+            
+            # If it has a list, check for any instructions
+            if child.type == AstType.AST_LIST:
+                current = child
+                while current:
+                    try:
+                        if (current.value and 
+                            hasattr(current.value, 'type') and 
+                            current.value.type == AstType.AST_INSTRUCTION):
+                            return True
+                        current = current.next if hasattr(current, 'next') else None
+                    except:
+                        current = None
+            
+            # Default: assume it might have instructions to be safe
+            return True
+        except Exception as e:
+            print(f"Warning: Error checking label instructions: {e}")
+            # Default: assume it has instructions to be safe
+            return True
+    
+    def _generate_label_code(self, label_node):
+        """Generate code for a label's instructions"""
+        try:
+            list_element = label_node.child
+            
+            # If child is None or not a proper AST node, generate empty label
+            if not list_element or not hasattr(list_element, 'type'):
+                self.source_output += f"{TAB}// Empty label or no content\n"
+                self.source_output += f"{TAB}return;\n"
+                return
+            
+            while list_element is not None:
+                try:
+                    instruction = list_element.value
+                    if instruction and hasattr(instruction, 'type') and instruction.type == AstType.AST_INSTRUCTION:
+                        # Set parent reference for JSR JumpEngine handling
+                        instruction.parent = list_element
+                        
+                        translated = self.translate_instruction(instruction)
+                        self.source_output += f"{TAB}{translated}"
+                        
+                        if hasattr(instruction, 'line_number') and instruction.line_number != 0:
+                            comment = lookup_comment(instruction.line_number)
+                            if comment:
+                                self.source_output += f" // {comment[1:]}"  # Skip ';'
+                        
+                        # Add line separator after return statements
+                        if instruction.code == TokenType.RTS.value:
+                            self.source_output += f"\n\n{LINE_SEPARATOR_COMMENT}"
+                        else:
+                            self.source_output += "\n"
+                        
+                        if self.skip_next_instruction:
+                            # Add skip label for .db $2c handling
+                            self.source_output += f"Skip_{self.skip_next_instruction_index}:\n"
+                            self.skip_next_instruction_index += 1
+                            self.skip_next_instruction = False
+                    elif instruction and hasattr(instruction, 'type'):
+                        # Handle other types of content (data, etc.) but don't crash
+                        self.source_output += f"{TAB}// Non-instruction content: {instruction.type}\n"
+                    
+                except Exception as e:
+                    # If anything goes wrong with this instruction, skip it
+                    print(f"Warning: Error processing instruction in label: {e}")
+                    self.source_output += f"{TAB}// Error processing instruction: {e}\n"
+                
+                # Move to next element safely
+                try:
+                    list_element = list_element.next if hasattr(list_element, 'next') else None
+                except:
+                    break
+                    
+        except Exception as e:
+            # If the whole thing fails, generate an empty label
+            print(f"Warning: Error generating code for label: {e}")
+            self.source_output += f"{TAB}// Error generating label code: {e}\n"
+            self.source_output += f"{TAB}return;\n"
     
     def _collect_all_referenced_labels(self, referenced_labels):
         """Collect all labels referenced in branches/jumps"""
@@ -1173,7 +1242,7 @@ class Translator:
             raise ValueError(f"Unknown expression type: {expr.type}")
     
     def translate_instruction(self, inst: InstructionNode) -> str:
-        """Fixed translate_instruction method"""
+        """Translate a 6502 instruction to C++"""
         code = inst.code
         
         # Load instructions
@@ -1228,9 +1297,9 @@ class Translator:
         
         # Arithmetic instructions
         elif code == TokenType.ADC.value:
-            return f"adc({self.translate_operand(inst.value)});"  # FIXED: use function call
+            return f"a += {self.translate_operand(inst.value)};"
         elif code == TokenType.SBC.value:
-            return f"sbc({self.translate_operand(inst.value)});"  # FIXED: use function call
+            return f"a -= {self.translate_operand(inst.value)};"
         
         # Compare instructions
         elif code == TokenType.CMP.value:
@@ -1240,70 +1309,68 @@ class Translator:
         elif code == TokenType.CPY.value:
             return f"compare(y, {self.translate_operand(inst.value)});"
         
-        # Increment/decrement - FIXED
+        # Increment/decrement - FIXED: Back to original simple style
         elif code == TokenType.INC.value:
-            return f"inc({self.translate_expression(inst.value)});"
+            return f"++{self.translate_operand(inst.value)};"
         elif code == TokenType.INX.value:
-            return "inc_x();"  # FIXED: use function call
+            return "++x;"
         elif code == TokenType.INY.value:
-            return "inc_y();"  # FIXED: use function call
+            return "++y;"
         elif code == TokenType.DEC.value:
-            return f"dec({self.translate_expression(inst.value)});"
+            return f"--{self.translate_operand(inst.value)};"
         elif code == TokenType.DEX.value:
-            return "dec_x();"  # FIXED: use function call
+            return "--x;"
         elif code == TokenType.DEY.value:
-            return "dec_y();"  # FIXED: use function call
+            return "--y;"
         
-        # Shift instructions - FIXED
+        # Shift instructions - FIXED: Back to original simple style
         elif code == TokenType.ASL.value:
             if inst.value is None:
-                return "asl_a();"
+                return "a <<= 1;"
             elif (hasattr(inst.value, 'type') and 
                   inst.value.type == AstType.AST_NAME and 
                   inst.value.value == "a"):
-                return "asl_a();"
+                return "a <<= 1;"
             else:
-                return f"asl({self.translate_expression(inst.value)});"
+                return f"{self.translate_operand(inst.value)} <<= 1;"
+        
         elif code == TokenType.LSR.value:
             if inst.value is None:
-                # No operand - accumulator mode
-                return "lsr_a();"
+                return "a >>= 1;"
             elif (hasattr(inst.value, 'type') and 
                   inst.value.type == AstType.AST_NAME and 
                   inst.value.value == "a"):
-                # Explicit accumulator reference
-                return "lsr_a();"
+                return "a >>= 1;"
             else:
-                # Memory operand
-                return f"lsr({self.translate_expression(inst.value)});"
+                return f"{self.translate_operand(inst.value)} >>= 1;"
+        
         elif code == TokenType.ROL.value:
             if inst.value is None:
-                return "rol_a();"
+                return "a.rol();"
             elif (hasattr(inst.value, 'type') and 
                   inst.value.type == AstType.AST_NAME and 
                   inst.value.value == "a"):
-                return "rol_a();"
+                return "a.rol();"
             else:
-                return f"rol({self.translate_expression(inst.value)});"
+                return f"{self.translate_operand(inst.value)}.rol();"
+        
         elif code == TokenType.ROR.value:
             if inst.value is None:
-                return "ror_a();"
+                return "a.ror();"
             elif (hasattr(inst.value, 'type') and 
                   inst.value.type == AstType.AST_NAME and 
                   inst.value.value == "a"):
-                return "ror_a();"
+                return "a.ror();"
             else:
-                return f"ror({self.translate_expression(inst.value)});"
+                return f"{self.translate_operand(inst.value)}.ror();"
         
         # Jump instructions
         elif code == TokenType.JMP.value:
             if hasattr(inst.value, 'type') and inst.value.type == AstType.AST_NAME:
-                target = self.translate_expression(inst.value)
-                clean_target = self._clean_label_name(target)
-                if target == "EndlessLoop":
+                if inst.value.value == "EndlessLoop":
                     return "return;"
                 else:
-                    return f"goto {clean_target};"
+                    return f"goto {self.translate_expression(inst.value)};"
             elif hasattr(inst.value, 'type') and inst.value.type == AstType.AST_INDIRECT:
                 return self.indirect_jump_translator.translate_indirect_jump(inst)
             return "/* jmp (complex) */"
@@ -1313,16 +1380,15 @@ class Translator:
                 return f"switch (a) {{ /* JumpEngine entries */ }}"
             else:
                 # Regular JSR with return label
-                clean_target = self._clean_label_name(inst.value)
                 return_label = f"Return_{self.return_label_index}"
-                result = f"pushReturnIndex({self.return_label_index});\n{TAB}goto {clean_target};\n{return_label}:"
+                result = f"pushReturnIndex({self.return_label_index});\n{TAB}goto {inst.value};\n{return_label}:"
                 self.return_label_index += 1
                 return result
         
         elif code == TokenType.RTS.value:
             return "goto Return;"
         
-        # Branch instructions - FIXED to use clean labels
+        # Branch instructions
         elif code == TokenType.BCC.value:
             return self.translate_branch("!c", inst.value)
         elif code == TokenType.BCS.value:
