@@ -14,7 +14,9 @@
 ;Nintendo for creating this game and the NES, without which this disassembly would
 ;only be theory.
 
-.segment "HEADER"
+;Assembles with x816.
+
+Header:
       .db "NES", $1A         ; Magic bytes
       .db $02                ; 2 × 16KB PRG-ROM banks
       .db $01                ; 1 × 8KB CHR-ROM bank
@@ -23,8 +25,6 @@
       .db $00                ; PRG-RAM size (0 = default)
       .db $00                ; Region (0 = NTSC)
       .db $00, $00, $00, $00, $00, $00, $00, $00  ; Unused padding
-
-;Assembles with x816.
 
 ;-------------------------------------------------------------------------------------
 ;DEFINES
@@ -16361,7 +16361,7 @@ BrickShatterEnvData:
       .dw Start
       .dw $fff0  ;unused
 
-.segment "CHARS"
+CHRGraphics:
       .db $03, $0f, $1f, $1f, $1c, $24, $26, $66, $00, $00, $00, $00, $1f, $3f, $3f, $7f
       .db $e0, $c0, $80, $fc, $80, $c0, $00, $20, $00, $20, $60, $00, $f0, $fc, $fe, $fe
       .db $60, $70, $18, $07, $0f, $1f, $3f, $7f, $7f, $7f, $1f, $07, $00, $1e, $3f, $7f
