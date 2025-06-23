@@ -20,196 +20,196 @@
 
 ;-------------------------------[ Defines ]-----------------------------------
 
-CodePtr                 EQU     $0C
-JoyFirst                EQU     $12
-JoyStatus               EQU     $14
-JoyRetrig               EQU     $16
-RetrigDelay             EQU     $18
-NMIStatus               EQU     $1A
-PPUDataPending          EQU     $1B
-PalDataPending          EQU     $1C
-GameMode                EQU     $1D     ; 0 = Game is playing
+CodePtr                 =     $0C
+JoyFirst                =     $12
+JoyStatus               =     $14
+JoyRetrig               =     $16
+RetrigDelay             =     $18
+NMIStatus               =     $1A
+PPUDataPending          =     $1B
+PalDataPending          =     $1C
+GameMode                =     $1D     ; 0 = Game is playing
                                         ; 1 = At title / password screen
-MainRoutine             EQU     $1E
-TitleRoutine            EQU     $1F
-NextRoutine             EQU     $20
-CurrentBank             EQU     $23
-SwitchPending           EQU     $24
-TimerDelay              EQU     $29
-Timer                   EQU     $2A
-FrameCount              EQU     $2D     ; number of CPU frames executed
+MainRoutine             =     $1E
+TitleRoutine            =     $1F
+NextRoutine             =     $20
+CurrentBank             =     $23
+SwitchPending           =     $24
+TimerDelay              =     $29
+Timer                   =     $2A
+FrameCount              =     $2D     ; number of CPU frames executed
                                         ; (overflows every 256 frames)
-GamePaused              EQU     $31
-RoomPtr                 EQU     $33
-StructPtr               EQU     $35
+GamePaused              =     $31
+RoomPtr                 =     $33
+StructPtr               =     $35
 
-WRAMWorkPtr             EQU     $37
-WRAMPtr                 EQU     $39
-RoomPtrTable            EQU     $3B
-StructPtrTable          EQU     $3D
-MacroPtr                EQU     $3F
-EnemyAnimPtr            EQU     $47
-ScrollDir               EQU     $49     ; 0 = Up
+WRAMWorkPtr             =     $37
+WRAMPtr                 =     $39
+RoomPtrTable            =     $3B
+StructPtrTable          =     $3D
+MacroPtr                =     $3F
+EnemyAnimPtr            =     $47
+ScrollDir               =     $49     ; 0 = Up
                                         ; 1 = Down
                                         ; 2 = Left
                                         ; 3 = Right
 
-PageIndex               EQU     $4B
-SamusDir                EQU     $4D     ; 0 = Right
+PageIndex               =     $4B
+SamusDir                =     $4D     ; 0 = Right
                                         ; 1 = Left
-SamusDoorDir            EQU     $4E     ; direction Samus passed through door
-MapPosY                 EQU     $4F
-MapPosX                 EQU     $50
-SamusScrX               EQU     $51
-SamusScrY               EQU     $52
-WalkSoundDelay          EQU     $53
-IsSamus                 EQU     $55
-DoorStatus              EQU     $56
-DoorDelay               EQU     $59
-RoomNumber              EQU     $5A
-SpritePagePos           EQU     $5B
-ObjectPal               EQU     $67
-RoomPal                 EQU     $68
-TempX                   EQU     $69
-TempY                   EQU     $6A
-SamusBlink              EQU     $70
-PalToggle               EQU     $76
-ScrollY                 EQU     $FC
-ScrollX                 EQU     $FD
-PPUCNT1ZP               EQU     $FE
-PPUCNT0ZP               EQU     $FF
-HealthLo                EQU     $0106   ; lower health digit in upper 4 bits
-HealthHi                EQU     $0107   ; upper health digit in lower 4 bits
+SamusDoorDir            =     $4E     ; direction Samus passed through door
+MapPosY                 =     $4F
+MapPosX                 =     $50
+SamusScrX               =     $51
+SamusScrY               =     $52
+WalkSoundDelay          =     $53
+IsSamus                 =     $55
+DoorStatus              =     $56
+DoorDelay               =     $59
+RoomNumber              =     $5A
+SpritePagePos           =     $5B
+ObjectPal               =     $67
+RoomPal                 =     $68
+TempX                   =     $69
+TempY                   =     $6A
+SamusBlink              =     $70
+PalToggle               =     $76
+ScrollY                 =     $FC
+ScrollX                 =     $FD
+PPUCNT1ZP               =     $FE
+PPUCNT0ZP               =     $FF
+HealthLo                =     $0106   ; lower health digit in upper 4 bits
+HealthHi                =     $0107   ; upper health digit in lower 4 bits
                                         ; # of full tanks in upper 4 bits
-EndTimerLo              EQU     $010A
-EndTimerHi              EQU     $010B
-MissileToggle           EQU     $010E   ; 0 = fire bullets, 1 = fire missiles
+EndTimerLo              =     $010A
+EndTimerHi              =     $010B
+MissileToggle           =     $010E   ; 0 = fire bullets, 1 = fire missiles
 
-SpriteRAM               EQU     $0200
+SpriteRAM               =     $0200
 
-ObjAction               EQU     $0300
-ObjRadY                 EQU     $0301
-ObjRadX                 EQU     $0302
-AnimFrame               EQU     $0303
-AnimDelay               EQU     $0304
-AnimResetIndex          EQU     $0305
-AnimIndex               EQU     $0306
-SamusOnElevator         EQU     $0307   ; 1 = Samus is standing on elevator
-ObjectHi                EQU     $030C
-ObjectY                 EQU     $030D
-ObjectX                 EQU     $030E
+ObjAction               =     $0300
+ObjRadY                 =     $0301
+ObjRadX                 =     $0302
+AnimFrame               =     $0303
+AnimDelay               =     $0304
+AnimResetIndex          =     $0305
+AnimIndex               =     $0306
+SamusOnElevator         =     $0307   ; 1 = Samus is standing on elevator
+ObjectHi                =     $030C
+ObjectY                 =     $030D
+ObjectX                 =     $030E
 
 ; Tile respawning
 
-TileRoutine             EQU     $0500
-TileAnimFrame           EQU     $0503
-TileAnimDelay           EQU     $0504
-TileAnimIndex           EQU     $0506
-TileDelay               EQU     $0507
-TileWRAMLo              EQU     $0508
-TileWRAMHi              EQU     $0509
-TileType                EQU     $050A
+TileRoutine             =     $0500
+TileAnimFrame           =     $0503
+TileAnimDelay           =     $0504
+TileAnimIndex           =     $0506
+TileDelay               =     $0507
+TileWRAMLo              =     $0508
+TileWRAMHi              =     $0509
+TileType                =     $050A
 
-PPUStrIndex             EQU     $07A0
-PPUDataString           EQU     $07A1
+PPUStrIndex             =     $07A0
+PPUDataString           =     $07A1
 
 ; bitmask defs used for SamusGear
 
-gr_BOMBS                EQU     %00000001
-gr_HIGHJUMP             EQU     %00000010
-gr_LONGBEAM             EQU     %00000100
-gr_SCREWATTACK          EQU     %00001000
-gr_MARUMARI             EQU     %00010000
-gr_VARIA                EQU     %00100000
-gr_WAVEBEAM             EQU     %01000000
-gr_ICEBEAM              EQU     %10000000
+gr_BOMBS                =     %00000001
+gr_HIGHJUMP             =     %00000010
+gr_LONGBEAM             =     %00000100
+gr_SCREWATTACK          =     %00001000
+gr_MARUMARI             =     %00010000
+gr_VARIA                =     %00100000
+gr_WAVEBEAM             =     %01000000
+gr_ICEBEAM              =     %10000000
 
 ; Samus action handlers
 
-sa_Stand                EQU     0
-sa_Run                  EQU     1
-sa_Jump                 EQU     2
-sa_Roll                 EQU     3
-sa_PntUp                EQU     4
-sa_Door                 EQU     5
-sa_PntJump              EQU     6
-sa_Dead                 EQU     7
-sa_Dead2                EQU     8
-sa_Elevator             EQU     9
+sa_Stand                =     0
+sa_Run                  =     1
+sa_Jump                 =     2
+sa_Roll                 =     3
+sa_PntUp                =     4
+sa_Door                 =     5
+sa_PntJump              =     6
+sa_Dead                 =     7
+sa_Dead2                =     8
+sa_Elevator             =     9
 
 ; Animations
 
-an_SamusRun             EQU     $00
-an_SamusFront           EQU     $04
-an_SamusStand           EQU     $07
-an_SamusJump            EQU     $0C
-an_SamusSalto           EQU     $0E
-an_SamusRunJump         EQU     $13
-an_SamusRoll            EQU     $16
-an_Bullet               EQU     $1B
-an_SamusFireJump        EQU     $20
-an_SamusFireRun         EQU     $22
-an_SamusPntUp           EQU     $27
-an_Explode              EQU     $32
-an_SamusJumpPntUp       EQU     $35
-an_SamusRunPntUp        EQU     $37
-an_WaveBeam             EQU     $7D
-an_BombTick             EQU     $7F
-an_BombExplode          EQU     $82
-an_MissileLeft          EQU     $8B
-an_MissileRight         EQU     $8D
-an_MissileExplode       EQU     $91
+an_SamusRun             =     $00
+an_SamusFront           =     $04
+an_SamusStand           =     $07
+an_SamusJump            =     $0C
+an_SamusSalto           =     $0E
+an_SamusRunJump         =     $13
+an_SamusRoll            =     $16
+an_Bullet               =     $1B
+an_SamusFireJump        =     $20
+an_SamusFireRun         =     $22
+an_SamusPntUp           =     $27
+an_Explode              =     $32
+an_SamusJumpPntUp       =     $35
+an_SamusRunPntUp        =     $37
+an_WaveBeam             =     $7D
+an_BombTick             =     $7F
+an_BombExplode          =     $82
+an_MissileLeft          =     $8B
+an_MissileRight         =     $8D
+an_MissileExplode       =     $91
 
 ; Weapon action handlers
 
-wa_RegularBeam          EQU     1
-wa_WaveBeam             EQU     2
-wa_IceBeam              EQU     3
-wa_BulletExplode        EQU     4
-wa_LayBomb              EQU     8
-wa_BombCount            EQU     9
-wa_BombExplode          EQU     10
-wa_Missile              EQU     11
+wa_RegularBeam          =     1
+wa_WaveBeam             =     2
+wa_IceBeam              =     3
+wa_BulletExplode        =     4
+wa_LayBomb              =     8
+wa_BombCount            =     9
+wa_BombExplode          =     10
+wa_Missile              =     11
 
-TankCount               EQU     $6877   ; number of energy tanks
-SamusGear               EQU     $6878
-MissileCount            EQU     $6879
-MaxMissiles             EQU     $687A
-SamusAge                EQU     $687D
-JustInBailey            EQU     $69B3   ; 1 = Samus is without suit
+TankCount               =     $6877   ; number of energy tanks
+SamusGear               =     $6878
+MissileCount            =     $6879
+MaxMissiles             =     $687A
+SamusAge                =     $687D
+JustInBailey            =     $69B3   ; 1 = Samus is without suit
 
-PPUControl0             EQU     $2000
-PPUControl1             EQU     $2001
-PPUStatus               EQU     $2002
-SPRAddress              EQU     $2003
-SPRIOReg                EQU     $2004
-PPUScroll               EQU     $2005
-PPUAddress              EQU     $2006
-PPUIOReg                EQU     $2007
-SPRDMAReg               EQU     $4014
-CPUJoyPad               EQU     $4016
+PPUControl0             =     $2000
+PPUControl1             =     $2001
+PPUStatus               =     $2002
+SPRAddress              =     $2003
+SPRIOReg                =     $2004
+PPUScroll               =     $2005
+PPUAddress              =     $2006
+PPUIOReg                =     $2007
+SPRDMAReg               =     $4014
+CPUJoyPad               =     $4016
 
-MMC1Reg0                EQU     $8000
-MMC1Reg1                EQU     $A000
-MMC1Reg2                EQU     $C000
-MMC1Reg3                EQU     $E000
+MMC1Reg0                =     $8000
+MMC1Reg1                =     $A000
+MMC1Reg2                =     $C000
+MMC1Reg3                =     $E000
 
-FramePtrTable           EQU     $860B
-PlacePtrTable           EQU     $86DF
+FramePtrTable           =     $860B
+PlacePtrTable           =     $86DF
 
 ; Joy pad defs
 
-btn_RIGHT               EQU     %00000001
-btn_LEFT                EQU     %00000010
-btn_DOWN                EQU     %00000100
-btn_UP                  EQU     %00001000
-btn_START               EQU     %00010000
-btn_SELECT              EQU     %00100000
-btn_B                   EQU     %01000000       ; FIRE
-btn_A                   EQU     %10000000       ; JUMP
+btn_RIGHT               =     %00000001
+btn_LEFT                =     %00000010
+btn_DOWN                =     %00000100
+btn_UP                  =     %00001000
+btn_START               =     %00010000
+btn_SELECT              =     %00100000
+btn_B                   =     %01000000       ; FIRE
+btn_A                   =     %10000000       ; JUMP
 
-modePlay                EQU     0
-modeTitle               EQU     1
+modePlay                =     0
+modeTitle               =     1
 
 ;----------------------------------[ Code ]-----------------------------------
 
@@ -601,7 +601,7 @@ LC1BC:  ldy #$02
 ; TimerDelay is decremented every frame. When it hits zero, $2A, $2B and $2C are
 ; decremented if they aren't already zero. The program can then check
 ; these variables (it usually just checks $2C) to determine when it's time
-; to "move on". This is used for the various sequences of the intro screen,
+; to "move on". This is used for the various s=ences of the intro screen,
 ; when the game is started, when Samus takes a special item, and when GAME
 ; OVER is displayed, to mention a few examples.
 
@@ -1732,7 +1732,7 @@ LC81D:  ldy #$01
         bne Exit14      ; exit if not
         ldy EndTimerHi
         iny
-        bne Exit14      ; sorry, can't quit if this is during escape sequence
+        bne Exit14      ; sorry, can't quit if this is during escape s=ence
         sta GamePaused
         inc MainRoutine ; password display
         Exit14:
@@ -3192,7 +3192,7 @@ LD38E:  lda MissileToggle
         bcc +           ; if ScreenY < $84, don't scroll
         jsr ScrollDown  ; otherwise, attempt to scroll
 +       ldy ObjectY
-        cpy #239        ; wrap-around required?
+        cpy #239        ; wrap-around r=ired?
         bne +
         jsr ToggleSamusHi       ; toggle 9th bit of Samus' Y coord
         ldy #$FF        ; ObjectY will now be 0
@@ -3207,7 +3207,7 @@ LD38E:  lda MissileToggle
         bcs +           ; if ScreenY >= $64, don't scroll
         jsr ScrollUp    ; otherwise, attempt to scroll
 +       ldy ObjectY
-        bne +           ; wraparound required? (branch if not)
+        bne +           ; wraparound r=ired? (branch if not)
         jsr ToggleSamusHi       ; toggle 9th bit of Samus' Y coord
         ldy #240        ; ObjectY will now be 239
 +       dey
@@ -4988,7 +4988,7 @@ Table10 .db $00
         jsr SPRWriteDigit
         ldy EndTimerHi
         iny
-        bne ++          ; branch if Samus is in escape sequence
+        bne ++          ; branch if Samus is in escape s=ence
         ldy MaxMissiles
         beq +           ; don't show missile count if Samus has no containers
 ; display 3-digit missile count
@@ -5010,7 +5010,7 @@ Table10 .db $00
         bcs +++
         sta $0211,x     ; erase right half of missile
         bne +++         ; branch always
-; display 3-digit end sequence timer
+; display 3-digit end s=ence timer
 ++      lda EndTimerHi
         jsr Adiv16      ; upper timer digit
         jsr SPRWriteDigit
@@ -5618,7 +5618,7 @@ LE571:  ldx ScrollDir
         lda ScrollY
         and #$07        ; compare value = 0 if ScrollDir = down, else 7
         cmp Table11,x
-        bne -           ; exit if not equal (no nametable update)
+        bne -           ; exit if not =al (no nametable update)
 LE57C:  ldx ScrollDir
         cpx $4A
         bne -
@@ -5841,7 +5841,7 @@ LE701:  ldx ScrollDir
         lda ScrollX
         and #$07        ; keep lower 3 bits
         cmp Table02-2,x ; compare value = 0 if ScrollDir = right, else 7
-        bne -           ; exit if not equal (no nametable update)
+        bne -           ; exit if not =al (no nametable update)
 LE70C:  ldx ScrollDir
         cpx $4A
         bne -
@@ -6826,7 +6826,7 @@ Exit11: rts
         sta $01
         ldy #$00
         lda ($00),y     ; load map Ypos of item
-        cmp MapPosY     ; does it equal Samus' Ypos on map?
+        cmp MapPosY     ; does it =al Samus' Ypos on map?
         beq +           ; if yes, check Xpos too
         bcs Exit11      ; exit if Ypos > MapPosY
         iny
@@ -6846,7 +6846,7 @@ Exit11: rts
         ScanItemX:
         ldy #$00
         lda ($00),y     ; load map Xpos of object
-        cmp MapPosX     ; does it equal Samus' Xpos on map?
+        cmp MapPosX     ; does it =al Samus' Xpos on map?
         beq +           ; if so, then load object
         bcs Exit11      ; exit if A > MapPosX
         iny
