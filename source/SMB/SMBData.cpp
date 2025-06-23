@@ -2533,13 +2533,6 @@ void SMBEngine::loadConstantData()
     };
     writeData(BowserIdentities, BowserIdentities_data, sizeof(BowserIdentities_data));
 
-    // ResidualXSpdData
-    //
-    const uint8_t ResidualXSpdData_data[] = {
-        0x18, 0xe8
-    };
-    writeData(ResidualXSpdData, ResidualXSpdData_data, sizeof(ResidualXSpdData_data));
-
     // KickedShellXSpdData
     //
     const uint8_t KickedShellXSpdData_data[] = {
@@ -3094,13 +3087,6 @@ void SMBEngine::loadConstantData()
         0x20, LOBYTE(WinLevelMusData), HIBYTE(WinLevelMusData), 0x3d, 0x21
     };
     writeData(EndOfLevelMusHdr, EndOfLevelMusHdr_data, sizeof(EndOfLevelMusHdr_data));
-
-    // ResidualHeaderData
-    //
-    const uint8_t ResidualHeaderData_data[] = {
-        0x20, 0xc4, 0xfc, 0x3f, 0x1d
-    };
-    writeData(ResidualHeaderData, ResidualHeaderData_data, sizeof(ResidualHeaderData_data));
 
     // UndergroundMusHdr
     //

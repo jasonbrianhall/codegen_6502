@@ -50,7 +50,9 @@ WBootCheck: // check each score digit in the top score
     y = WarmBootOffset; // if passed both, load warm boot pointer
 
 ColdBoot: // clear memory using pointer in Y
-    JSR(InitializeMemory, 0);
+    pushReturnIndex(0);
+    goto InitializeMemory;
+Return_0:
     writeData(SND_DELTA_REG + 1, a); // reset delta counter load register
     writeData(OperMode, a); // reset primary mode of operation
     a = 0xa5; // set warm boot flag
@@ -60,12 +62,18 @@ ColdBoot: // clear memory using pointer in Y
     writeData(SND_MASTERCTRL_REG, a); // enable all sound channels except dmc
     a = BOOST_BINARY(00000110);
     writeData(PPU_CTRL_REG2, a); // turn off clipping for OAM and background
-    JSR(MoveAllSpritesOffscreen, 1);
-    JSR(InitializeNameTables, 2); // initialize both name tables
+    pushReturnIndex(1);
+    goto MoveAllSpritesOffscreen;
+Return_1:
+    pushReturnIndex(2);
+    goto InitializeNameTables;
+Return_2: // initialize both name tables
     ++M(DisableScreenFlag); // set flag to disable screen output
     a = M(Mirror_PPU_CTRL_REG1);
     a |= BOOST_BINARY(10000000); // enable NMIs
-    JSR(WritePPUReg1, 3);
+    pushReturnIndex(3);
+    goto WritePPUReg1;
+Return_3:
 
 EndlessLoop: // endless loop, need I say more?
     return;
@@ -90,7 +98,9 @@ ScreenOff: // save bits for later but not in register at the moment
     writeData(PPU_CTRL_REG2, a);
     x = M(PPU_STATUS); // reset flip-flop and reset scroll registers to zero
     a = 0x00;
-    JSR(InitScroll, 4);
+    pushReturnIndex(4);
+    goto InitScroll;
+Return_4:
     writeData(PPU_SPR_ADDR, a); // reset spr-ram address register
     a = 0x02; // perform spr-ram DMA access on $0200-$02ff
     writeData(SPR_DMA, a);
@@ -99,7 +109,9 @@ ScreenOff: // save bits for later but not in register at the moment
     writeData(0x00, a);
     a = M(VRAM_AddrTable_High + x);
     writeData(0x01, a);
-    JSR(UpdateScreen, 5); // update screen with buffer contents
+    pushReturnIndex(5);
+    goto UpdateScreen;
+Return_5: // update screen with buffer contents
     y = 0x00;
     x = M(VRAM_Buffer_AddrCtrl); // check for usage of $0341
     compare(x, 0x06);
@@ -115,10 +127,18 @@ InitBuffer:
     writeData(VRAM_Buffer_AddrCtrl, a); // reinit address control to $0301
     a = M(Mirror_PPU_CTRL_REG2); // copy mirror of $2001 to register
     writeData(PPU_CTRL_REG2, a);
-    JSR(SoundEngine, 6); // play sound
-    JSR(ReadJoypads, 7); // read joypads
-    JSR(PauseRoutine, 8); // handle pause
-    JSR(UpdateTopScore, 9);
+    pushReturnIndex(6);
+    goto SoundEngine;
+Return_6: // play sound
+    pushReturnIndex(7);
+    goto ReadJoypads;
+Return_7: // read joypads
+    pushReturnIndex(8);
+    goto PauseRoutine;
+Return_8: // handle pause
+    pushReturnIndex(9);
+    goto UpdateTopScore;
+Return_9:
     a = M(GamePauseStatus); // check for pause status
     a >>= 1;
     if (c)
@@ -186,8 +206,12 @@ Sprite0Clr: // wait for sprite 0 flag to clear, which will
     a >>= 1;
     if (c)
         goto Sprite0Hit;
-    JSR(MoveSpritesOffscreen, 10);
-    JSR(SpriteShuffler, 11);
+    pushReturnIndex(10);
+    goto MoveSpritesOffscreen;
+Return_10:
+    pushReturnIndex(11);
+    goto SpriteShuffler;
+Return_11:
 
 Sprite0Hit: // do sprite #0 hit detection
     a = M(PPU_STATUS);
@@ -213,7 +237,9 @@ SkipSprite0: // set scroll registers from variables
     a >>= 1;
     if (c)
         goto SkipMainOper;
-    JSR(OperModeExecutionTree, 12); // otherwise do one of many, many possible subroutines
+    pushReturnIndex(12);
+    goto OperModeExecutionTree;
+Return_12: // otherwise do one of many, many possible subroutines
 
 SkipMainOper: // reset flip-flop
     a = M(PPU_STATUS);
@@ -404,7 +430,9 @@ ChkSelect: // check to see if the select button was pressed
     if (!z)
         goto ChkWorldSel; // if demo timer not expired, branch to check world selection
     writeData(SelectTimer, a); // set controller bits here if running demo
-    JSR(DemoEngine, 13); // run through the demo actions
+    pushReturnIndex(13);
+    goto DemoEngine;
+Return_13: // run through the demo actions
     if (c)
         goto ResetTitle; // if carry flag set, demo over, thus branch
     goto RunDemo; // otherwise, run game engine for demo
@@ -435,7 +463,9 @@ SelectBLogic: // if select or B pressed, check demo timer one last time
     a = M(NumberOfPlayers); // if no, must have been the select button, therefore
     a ^= BOOST_BINARY(00000001); // change number of players and draw icon accordingly
     writeData(NumberOfPlayers, a);
-    JSR(DrawMushroomIcon, 14);
+    pushReturnIndex(14);
+    goto DrawMushroomIcon;
+Return_14:
     goto NullJoypad;
 
 IncWorldSel: // increment world select number
@@ -444,7 +474,9 @@ IncWorldSel: // increment world select number
     a = x;
     a &= BOOST_BINARY(00000111); // mask out higher bits
     writeData(WorldSelectNumber, a); // store as current world select number
-    JSR(GoContinue, 15);
+    pushReturnIndex(15);
+    goto GoContinue;
+Return_15:
 
 UpdateShroom: // write template for world select in vram buffer
     a = M(WSelectBufferTemplate + x);
@@ -462,7 +494,9 @@ NullJoypad: // clear joypad bits for player 1
     writeData(SavedJoypad1Bits, a);
 
 RunDemo: // run game engine
-    JSR(GameCoreRoutine, 16);
+    pushReturnIndex(16);
+    goto GameCoreRoutine;
+Return_16:
     a = M(GameEngineSubroutine); // check to see if we're running lose life routine
     compare(a, 0x06);
     if (!z)
@@ -486,10 +520,14 @@ ChkContinue: // if timer for demo has expired, reset modes
     if (!c)
         goto StartWorld1; // if not, don't load continue function's world number
     a = M(ContinueWorld); // load previously saved world number for secret
-    JSR(GoContinue, 17); // continue function when pressing A + start
+    pushReturnIndex(17);
+    goto GoContinue;
+Return_17: // continue function when pressing A + start
 
 StartWorld1:
-    JSR(LoadAreaPointer, 18);
+    pushReturnIndex(18);
+    goto LoadAreaPointer;
+Return_18:
     ++M(Hidden1UpFlag); // set 1-up box flag for both players
     ++M(OffScr_Hidden1UpFlag);
     ++M(FetchNewGameTimerFlag); // set fetch new game timer flag
@@ -570,16 +608,22 @@ DemoOver:
 //------------------------------------------------------------------------
 
 VictoryMode:
-    JSR(VictoryModeSubroutines, 19); // run victory mode subroutines
+    pushReturnIndex(19);
+    goto VictoryModeSubroutines;
+Return_19: // run victory mode subroutines
     a = M(OperMode_Task); // get current task of victory mode
     if (z)
         goto AutoPlayer; // if on bridge collapse, skip enemy processing
     x = 0x00;
     writeData(ObjectOffset, x); // otherwise reset enemy object offset 
-    JSR(EnemiesAndLoopsCore, 20); // and run enemy code
+    pushReturnIndex(20);
+    goto EnemiesAndLoopsCore;
+Return_20: // and run enemy code
 
 AutoPlayer: // get player's relative coordinates
-    JSR(RelativePlayerPosition, 21);
+    pushReturnIndex(21);
+    goto RelativePlayerPosition;
+Return_21:
     goto PlayerGfxHandler; // draw the player, then leave
 
 VictoryModeSubroutines:
@@ -624,7 +668,9 @@ PerformWalk: // otherwise increment value and Y
 
 DontWalk: // put contents of Y in A and
     a = y;
-    JSR(AutoControlPlayer, 22); // use A to move player to the right or not
+    pushReturnIndex(22);
+    goto AutoControlPlayer;
+Return_22: // use A to move player to the right or not
     a = M(ScreenLeft_PageLoc); // check page location of left side of screen
     compare(a, M(DestinationPageLoc)); // against set value here
     if (z)
@@ -636,8 +682,12 @@ DontWalk: // put contents of Y in A and
     a = 0x01; // set 1 pixel per frame
     a += 0x00; // add carry from previous addition
     y = a; // use as scroll amount
-    JSR(ScrollScreen, 23); // do sub to scroll the screen
-    JSR(UpdScrollVar, 24); // do another sub to update screen and scroll variables
+    pushReturnIndex(23);
+    goto ScrollScreen;
+Return_23: // do sub to scroll the screen
+    pushReturnIndex(24);
+    goto UpdScrollVar;
+Return_24: // do another sub to update screen and scroll variables
     ++M(VictoryWalkControl); // increment value to stay in this routine
 
 ExitVWalk: // load value set here
@@ -748,7 +798,9 @@ PlayerEndWorld:
     writeData(LevelNumber, a); // and level number control to start at area 1
     writeData(OperMode_Task, a); // initialize secondary mode of operation
     ++M(WorldNumber); // increment world number to move onto the next world
-    JSR(LoadAreaPointer, 25); // get area address offset for the next area
+    pushReturnIndex(25);
+    goto LoadAreaPointer;
+Return_25: // get area address offset for the next area
     ++M(FetchNewGameTimerFlag); // set flag to load game timer from header
     a = GameModeValue;
     writeData(OperMode, a); // set mode of operation to game mode
@@ -768,7 +820,9 @@ EndChkBButton:
     writeData(WorldSelectEnableFlag, a);
     a = 0xff; // remove onscreen player's lives
     writeData(NumberofLives, a);
-    JSR(TerminateGame, 26); // do sub to continue other player or end game
+    pushReturnIndex(26);
+    goto TerminateGame;
+Return_26: // do sub to continue other player or end game
 
 EndExitTwo: // leave
     goto Return;
@@ -817,7 +871,9 @@ LoadNumTiles: // load point value here
     a = M(ScoreUpdateData + y); // load again and this time
     a &= BOOST_BINARY(00001111); // mask out the high nybble
     writeData(DigitModifier + x, a); // store as amount to add to the digit
-    JSR(AddToScore, 27); // update the score accordingly
+    pushReturnIndex(27);
+    goto AddToScore;
+Return_27: // update the score accordingly
 
 ChkTallEnemy: // get OAM data offset for enemy object
     y = M(Enemy_SprDataOffset + x);
@@ -861,7 +917,9 @@ FloateyPart: // get vertical coordinate for
 SetupNumSpr: // get vertical coordinate
     a = M(FloateyNum_Y_Pos + x);
     a -= 0x08; // subtract eight and dump into the
-    JSR(DumpTwoSpr, 28); // left and right sprite's Y coordinates
+    pushReturnIndex(28);
+    goto DumpTwoSpr;
+Return_28: // left and right sprite's Y coordinates
     a = M(FloateyNum_X_Pos + x); // get horizontal coordinate
     writeData(Sprite_X_Position + y, a); // store into X coordinate of left sprite
     c = 0;
@@ -919,8 +977,12 @@ ScreenRoutines:
     }
 
 InitScreen:
-    JSR(MoveAllSpritesOffscreen, 29); // initialize all sprites including sprite #0
-    JSR(InitializeNameTables, 30); // and erase both name and attribute tables
+    pushReturnIndex(29);
+    goto MoveAllSpritesOffscreen;
+Return_29: // initialize all sprites including sprite #0
+    pushReturnIndex(30);
+    goto InitializeNameTables;
+Return_30: // and erase both name and attribute tables
     a = M(OperMode);
     if (z)
         goto NextSubtask; // if mode still 0, do not load
@@ -936,7 +998,9 @@ SetupIntermediate:
     writeData(PlayerStatus, a); // and player status to not fiery
     a = 0x02; // this is the ONLY time background color control
     writeData(BackgroundColorCtrl, a); // is set to less than 4
-    JSR(GetPlayerColors, 31);
+    pushReturnIndex(31);
+    goto GetPlayerColors;
+Return_31:
     pla(); // we only execute this routine for
     writeData(PlayerStatus, a); // the intermediate lives display
     pla(); // and once we're done, we return bg
@@ -1032,11 +1096,15 @@ NoAltPal: // now onto the next task
 
 WriteTopStatusLine:
     a = 0x00; // select main status bar
-    JSR(WriteGameText, 32); // output it
+    pushReturnIndex(32);
+    goto WriteGameText;
+Return_32: // output it
     goto IncSubtask; // onto the next task
 
 WriteBottomStatusLine:
-    JSR(GetSBNybbles, 33); // write player's score and coin tally to screen
+    pushReturnIndex(33);
+    goto GetSBNybbles;
+Return_33: // write player's score and coin tally to screen
     x = M(VRAM_Buffer1_Offset);
     a = 0x20; // write address for world-area number on screen
     writeData(VRAM_Buffer1 + x, a);
@@ -1094,12 +1162,18 @@ DisplayIntermediate:
         goto NoInter; // and jump to specific task, otherwise
 
 PlayerInter: // put player in appropriate place for
-    JSR(DrawPlayer_Intermediate, 34);
+    pushReturnIndex(34);
+    goto DrawPlayer_Intermediate;
+Return_34:
     a = 0x01; // lives display, then output lives display to buffer
 
 OutputInter:
-    JSR(WriteGameText, 35);
-    JSR(ResetScreenTimer, 36);
+    pushReturnIndex(35);
+    goto WriteGameText;
+Return_35:
+    pushReturnIndex(36);
+    goto ResetScreenTimer;
+Return_36:
     a = 0x00;
     writeData(DisableScreenFlag, a); // reenable screen output
     goto Return;
@@ -1110,7 +1184,9 @@ GameOverInter: // set screen timer
     a = 0x12;
     writeData(ScreenTimer, a);
     a = 0x03; // output game over screen to buffer
-    JSR(WriteGameText, 37);
+    pushReturnIndex(37);
+    goto WriteGameText;
+Return_37:
     goto IncModeTask_B;
 
 NoInter: // set for specific task and leave
@@ -1124,7 +1200,9 @@ AreaParserTaskControl:
     ++M(DisableScreenFlag); // turn off screen
 
 TaskLoop: // render column set of current area
-    JSR(AreaParserTaskHandler, 38);
+    pushReturnIndex(38);
+    goto AreaParserTaskHandler;
+Return_38:
     a = M(AreaParserTaskNum); // check number of tasks
     if (!z)
         goto TaskLoop; // if tasks still not all done, do another one
@@ -1185,7 +1263,9 @@ TScrClear:
     --x;
     if (!z)
         goto TScrClear;
-    JSR(DrawMushroomIcon, 39); // draw player select icon
+    pushReturnIndex(39);
+    goto DrawMushroomIcon;
+Return_39: // draw player select icon
 
 IncSubtask: // move onto next task
     ++M(ScreenRoutineTask);
@@ -1195,7 +1275,9 @@ IncSubtask: // move onto next task
 
 WriteTopScore:
     a = 0xfa; // run display routine to display top score on title
-    JSR(UpdateNumber, 40);
+    pushReturnIndex(40);
+    goto UpdateNumber;
+Return_40:
 
 IncModeTask_B: // move onto next mode
     ++M(OperMode_Task);
@@ -1326,7 +1408,9 @@ ResetSpritesAndScreenTimer:
     a = M(ScreenTimer); // check if screen timer has expired
     if (!z)
         goto NoReset; // if not, branch to leave
-    JSR(MoveAllSpritesOffscreen, 41); // otherwise reset sprites now
+    pushReturnIndex(41);
+    goto MoveAllSpritesOffscreen;
+Return_41: // otherwise reset sprites now
 
 ResetScreenTimer:
     a = 0x07; // reset timer again
@@ -1567,7 +1651,9 @@ RemoveCoin_Axe:
     a = 0x04; // otherwise load offset for blank metatile used in water
 
 WriteBlankMT: // do a sub to write blank metatile to vram buffer
-    JSR(PutBlockMetatile, 42);
+    pushReturnIndex(42);
+    goto PutBlockMetatile;
+Return_42:
     a = 0x06;
     writeData(VRAM_Buffer_AddrCtrl, a); // set vram address controller to $0341 and leave
     goto Return;
@@ -1575,7 +1661,9 @@ WriteBlankMT: // do a sub to write blank metatile to vram buffer
 //------------------------------------------------------------------------
 
 ReplaceBlockMetatile:
-    JSR(WriteBlockMetatile, 43); // write metatile to vram buffer to replace block object
+    pushReturnIndex(43);
+    goto WriteBlockMetatile;
+Return_43: // write metatile to vram buffer to replace block object
     ++M(Block_ResidualCounter); // increment unused counter (residual code)
     --M(Block_RepFlag + x); // decrement flag (residual code)
     goto Return; // leave
@@ -1610,7 +1698,9 @@ UseBOffset: // put Y in A
     a = y;
     y = M(VRAM_Buffer1_Offset); // get vram buffer offset
     ++y; // move onto next byte
-    JSR(PutBlockMetatile, 44); // get appropriate block data and write to vram buffer
+    pushReturnIndex(44);
+    goto PutBlockMetatile;
+Return_44: // get appropriate block data and write to vram buffer
 
 MoveVOffset: // decrement vram buffer offset
     --y;
@@ -1695,16 +1785,20 @@ JumpEngine:
     ++y; // it will return to the execution before the sub
     a = M(W(0x04) + y); // that called this routine
     writeData(0x07, a);
-     // jump to the address we loaded
+    /* jmp (complex) */ // jump to the address we loaded
 
 InitializeNameTables:
     a = M(PPU_STATUS); // reset flip-flop
     a = M(Mirror_PPU_CTRL_REG1); // load mirror of ppu reg $2000
     a |= BOOST_BINARY(00010000); // set sprites for first 4k and background for second 4k
     a &= BOOST_BINARY(11110000); // clear rest of lower nybble, leave higher alone
-    JSR(WritePPUReg1, 45);
+    pushReturnIndex(45);
+    goto WritePPUReg1;
+Return_45:
     a = 0x24; // set vram address to start of name table 1
-    JSR(WriteNTAddr, 46);
+    pushReturnIndex(46);
+    goto WriteNTAddr;
+Return_46:
     a = 0x20; // and then set it to name table 0
 
 WriteNTAddr:
@@ -1743,7 +1837,9 @@ ReadJoypads:
     a >>= 1;
     x = a; // start with joypad 1's port
     writeData(JOYPAD_PORT, a);
-    JSR(ReadPortBits, 47);
+    pushReturnIndex(47);
+    goto ReadPortBits;
+Return_47:
     ++x; // increment for joypad 2's port
 
 ReadPortBits:
@@ -1797,7 +1893,9 @@ WriteBufferToScreen:
     a &= BOOST_BINARY(11111011); // only increment by 1
 
 SetupWrites: // write to register
-    JSR(WritePPUReg1, 48);
+    pushReturnIndex(48);
+    goto WritePPUReg1;
+Return_48:
     pla(); // pull from stack and shift to left again
     a <<= 1;
     if (!c)
@@ -1858,7 +1956,9 @@ WritePPUReg1:
 
 PrintStatusBarNumbers:
     writeData(0x00, a); // store player-specific offset
-    JSR(OutputNumbers, 49); // use first nybble to print the coin display
+    pushReturnIndex(49);
+    goto OutputNumbers;
+Return_49: // use first nybble to print the coin display
     a = M(0x00); // move high nybble to low
     a >>= 1; // and print to score display
     a >>= 1;
@@ -1969,7 +2069,9 @@ CarryOne: // subtract ten from our digit to make it a
 
 UpdateTopScore:
     x = 0x05; // start with mario's score
-    JSR(TopScoreCheck, 50);
+    pushReturnIndex(50);
+    goto TopScoreCheck;
+Return_50:
     x = 0x0b; // now do luigi's score
 
 TopScoreCheck:
@@ -2004,7 +2106,9 @@ NoTopSc:
 
 InitializeGame:
     y = 0x6f; // clear all memory as in initialization procedure,
-    JSR(InitializeMemory, 51); // but this time, clear only as far as $076f
+    pushReturnIndex(51);
+    goto InitializeMemory;
+Return_51: // but this time, clear only as far as $076f
     y = 0x1f;
 
 ClrSndLoop: // clear out memory used
@@ -2014,11 +2118,15 @@ ClrSndLoop: // clear out memory used
         goto ClrSndLoop;
     a = 0x18; // set demo timer
     writeData(DemoTimer, a);
-    JSR(LoadAreaPointer, 52);
+    pushReturnIndex(52);
+    goto LoadAreaPointer;
+Return_52:
 
 InitializeArea:
     y = 0x4b; // clear all memory again, only as far as $074b
-    JSR(InitializeMemory, 53); // this is only necessary if branching from
+    pushReturnIndex(53);
+    goto InitializeMemory;
+Return_53: // this is only necessary if branching from
     x = 0x21;
     a = 0x00;
 
@@ -2037,7 +2145,9 @@ StartPage: // set as value here
     writeData(ScreenLeft_PageLoc, a);
     writeData(CurrentPageLoc, a); // also set as current page
     writeData(BackloadingFlag, a); // set flag here if halfway page or saved entry page number found
-    JSR(GetScreenPosition, 54); // get pixel coordinates for screen borders
+    pushReturnIndex(54);
+    goto GetScreenPosition;
+Return_54: // get pixel coordinates for screen borders
     y = 0x20; // if on odd numbered page, use $2480 as start of rendering
     a &= BOOST_BINARY(00000001); // otherwise use $2080, this address used later as name table
     if (z)
@@ -2058,7 +2168,9 @@ SetInitNTHigh: // store name table address
     --M(AreaObjectLength + 2);
     a = 0x0b; // set value for renderer to update 12 column sets
     writeData(ColumnSets, a); // 12 column sets = 24 metatile columns = 1 1/2 screens
-    JSR(GetAreaDataAddrs, 55); // get enemy and level addresses and load header
+    pushReturnIndex(55);
+    goto GetAreaDataAddrs;
+Return_55: // get enemy and level addresses and load header
     a = M(PrimaryHardMode); // check to see if primary hard mode has been activated
     if (!z)
         goto SetSecHard; // if so, activate the secondary no matter where we're at
@@ -2121,7 +2233,9 @@ ClearVRLoop: // clear buffer at $0300-$03ff
     a &= 0x01; // mask out all but LSB of page location
     a.ror(); // rotate LSB of page location into carry then onto mirror
     M(Mirror_PPU_CTRL_REG1).rol(); // this is to set the proper PPU name table
-    JSR(GetAreaMusic, 56); // load proper music into queue
+    pushReturnIndex(56);
+    goto GetAreaMusic;
+Return_56: // load proper music into queue
     a = 0x38; // load sprite shuffle amounts to be used later
     writeData(SprShuffleAmt + 2, a);
     a = 0x48;
@@ -2144,8 +2258,12 @@ ISpr0Loop:
     --y;
     if (!n)
         goto ISpr0Loop;
-    JSR(DoNothing2, 57); // these jsrs doesn't do anything useful
-    JSR(DoNothing1, 58);
+    pushReturnIndex(57);
+    goto DoNothing2;
+Return_57: // these jsrs doesn't do anything useful
+    pushReturnIndex(58);
+    goto DoNothing1;
+Return_58:
     ++M(Sprite0HitDetectFlag); // set sprite #0 check flag
     ++M(OperMode_Task); // increment to next task
     goto Return;
@@ -2252,7 +2370,9 @@ SetStPos: // load appropriate horizontal position
     writeData(Player_Y_Position, a); // or value that overwrote $0710 as offset for vertical
     a = M(PlayerBGPriorityData + x);
     writeData(Player_SprAttrib, a); // set player sprite attributes using offset in X
-    JSR(GetPlayerColors, 59); // get appropriate player palette
+    pushReturnIndex(59);
+    goto GetPlayerColors;
+Return_59: // get appropriate player palette
     y = M(GameTimerSetting); // get timer control value from header
     if (z)
         goto ChkOverR; // if set to zero, branch (do not use dummy byte for this)
@@ -2275,18 +2395,24 @@ ChkOverR: // if controller bits not set, branch to skip this part
     a = 0x03; // set player state to climbing
     writeData(Player_State, a);
     x = 0x00; // set offset for first slot, for block object
-    JSR(InitBlock_XY_Pos, 60);
+    pushReturnIndex(60);
+    goto InitBlock_XY_Pos;
+Return_60:
     a = 0xf0; // set vertical coordinate for block object
     writeData(Block_Y_Position, a);
     x = 0x05; // set offset in X for last enemy object buffer slot
     y = 0x00; // set offset in Y for object coordinates used earlier
-    JSR(Setup_Vine, 61); // do a sub to grow vine
+    pushReturnIndex(61);
+    goto Setup_Vine;
+Return_61: // do a sub to grow vine
 
 ChkSwimE: // if level not water-type,
     y = M(AreaType);
     if (!z)
         goto SetPESub; // skip this subroutine
-    JSR(SetupBubble, 62); // otherwise, execute sub to set up air bubbles
+    pushReturnIndex(62);
+    goto SetupBubble;
+Return_62: // otherwise, execute sub to set up air bubbles
 
 SetPESub: // set to run player entrance subroutine
     a = 0x07;
@@ -2345,7 +2471,9 @@ MaskHPNyb: // mask out all but lower nybble
 
 SetHalfway: // store as halfway page for player
     writeData(HalfwayPage, a);
-    JSR(TransposePlayers, 63); // switch players around if 2-player game
+    pushReturnIndex(63);
+    goto TransposePlayers;
+Return_63: // switch players around if 2-player game
     goto ContinueGame; // continue the game
 
 GameOverMode:
@@ -2386,7 +2514,9 @@ RunGameOver:
 TerminateGame:
     a = Silence; // silence music
     writeData(EventMusicQueue, a);
-    JSR(TransposePlayers, 64); // check if other player can keep
+    pushReturnIndex(64);
+    goto TransposePlayers;
+Return_64: // check if other player can keep
     if (!c)
         goto ContinueGame; // going, and do so if possible
     a = M(WorldNumber); // otherwise put world number of current
@@ -2401,7 +2531,9 @@ TerminateGame:
 //------------------------------------------------------------------------
 
 ContinueGame:
-    JSR(LoadAreaPointer, 65); // update level pointer with
+    pushReturnIndex(65);
+    goto LoadAreaPointer;
+Return_65: // update level pointer with
     a = 0x01; // actual world and area numbers, then
     writeData(PlayerSize, a); // reset player's size, status, and
     ++M(FetchNewGameTimerFlag); // set game timer flag to reload
@@ -2467,11 +2599,15 @@ AreaParserTaskHandler:
 DoAPTasks:
     --y;
     a = y;
-    JSR(AreaParserTasks, 66);
+    pushReturnIndex(66);
+    goto AreaParserTasks;
+Return_66:
     --M(AreaParserTaskNum); // if all tasks not complete do not
     if (!z)
         goto SkipATRender; // render attribute table yet
-    JSR(RenderAttributeTables, 67);
+    pushReturnIndex(67);
+    goto RenderAttributeTables;
+Return_67:
 
 SkipATRender:
     goto Return;
@@ -2521,7 +2657,9 @@ AreaParserCore:
     a = M(BackloadingFlag); // check to see if we are starting right of start
     if (z)
         goto RenderSceneryTerrain; // if not, go ahead and render background, foreground and terrain
-    JSR(ProcessAreaData, 68); // otherwise skip ahead and load level data
+    pushReturnIndex(68);
+    goto ProcessAreaData;
+Return_68: // otherwise skip ahead and load level data
 
 RenderSceneryTerrain:
     x = 0x0c;
@@ -2682,9 +2820,13 @@ EndUChk: // increment bitmasks offset in Y
         goto TerrLoop; // unconditional branch, use Y to load next byte
 
 RendBBuf: // do the area data loading routine now
-    JSR(ProcessAreaData, 69);
+    pushReturnIndex(69);
+    goto ProcessAreaData;
+Return_69:
     a = M(BlockBufferColumnPos);
-    JSR(GetBlockBufferAddr, 70); // get block buffer address from where we're at
+    pushReturnIndex(70);
+    goto GetBlockBufferAddr;
+Return_70: // get block buffer address from where we're at
     x = 0x00;
     y = 0x00; // init index regs and start at beginning of smaller buffer
 
@@ -2781,14 +2923,18 @@ CheckRear: // check to see if current page of level object is
         goto SetBehind; // if so branch
 
 RdyDecode: // do sub and do not turn on flag
-    JSR(DecodeAreaData, 71);
+    pushReturnIndex(71);
+    goto DecodeAreaData;
+Return_71:
     goto ChkLength;
 
 SetBehind: // turn on flag if object is behind renderer
     ++M(BehindAreaParserFlag);
 
 NextAObj: // increment buffer offset and move on
-    JSR(IncAreaObjOffset, 72);
+    pushReturnIndex(72);
+    goto IncAreaObjOffset;
+Return_72:
 
 ChkLength: // get buffer offset
     x = M(ObjectOffset);
@@ -2973,7 +3119,9 @@ BackColC: // get first byte again
 StrAObj: // if so, load area obj offset and store in buffer
     a = M(AreaDataOffset);
     writeData(AreaObjOffsetBuffer + x, a);
-    JSR(IncAreaObjOffset, 73); // do sub to increment to next object data
+    pushReturnIndex(73);
+    goto IncAreaObjOffset;
+Return_73: // do sub to increment to next object data
 
 RunAObj: // get stored value and add offset to it
     a = M(0x00);
@@ -3130,9 +3278,13 @@ ScrollLockObject_Warp:
 WarpNum:
     a = x;
     writeData(WarpZoneControl, a); // store number here to be used by warp zone routine
-    JSR(WriteGameText, 74); // print text and warp zone numbers
+    pushReturnIndex(74);
+    goto WriteGameText;
+Return_74: // print text and warp zone numbers
     a = PiranhaPlant;
-    JSR(KillEnemies, 75); // load identifier for piranha plants and do sub
+    pushReturnIndex(75);
+    goto KillEnemies;
+Return_75: // load identifier for piranha plants and do sub
 
 ScrollLockObject:
     a = M(ScrollLock); // invert scroll lock to turn it on
@@ -3195,7 +3347,9 @@ AreaStyleObject:
     }
 
 TreeLedge:
-    JSR(GetLrgObjAttrib, 76); // get row and length of green ledge
+    pushReturnIndex(76);
+    goto GetLrgObjAttrib;
+Return_76: // get row and length of green ledge
     a = M(AreaObjectLength + x); // check length counter for expiration
     if (z)
         goto EndTreeL;
@@ -3222,7 +3376,9 @@ EndTreeL: // render end of tree ledge
     goto NoUnder;
 
 MushroomLedge:
-    JSR(ChkLrgObjLength, 77); // get shroom dimensions
+    pushReturnIndex(77);
+    goto ChkLrgObjLength;
+Return_77: // get shroom dimensions
     writeData(0x06, y); // store length here for now
     if (!c)
         goto EndMushL;
@@ -3261,7 +3417,9 @@ NoUnder: // load row of ledge
     goto RenderUnderPart;
 
 PulleyRopeObject:
-    JSR(ChkLrgObjLength, 78); // get length of pulley/rope object
+    pushReturnIndex(78);
+    goto ChkLrgObjLength;
+Return_78: // get length of pulley/rope object
     y = 0x00; // initialize metatile offset
     if (c)
         goto RenderPul; // if starting, render left pulley
@@ -3281,10 +3439,14 @@ MushLExit: // and leave
 //------------------------------------------------------------------------
 
 CastleObject:
-    JSR(GetLrgObjAttrib, 79); // save lower nybble as starting row
+    pushReturnIndex(79);
+    goto GetLrgObjAttrib;
+Return_79: // save lower nybble as starting row
     writeData(0x07, y); // if starting row is above $0a, game will crash!!!
     y = 0x04;
-    JSR(ChkLrgObjFixedLength, 80); // load length of castle if not already loaded
+    pushReturnIndex(80);
+    goto ChkLrgObjFixedLength;
+Return_80: // load length of castle if not already loaded
     a = x;
     pha(); // save obj buffer offset to stack
     y = M(AreaObjectLength + x); // use current length as offset for castle data
@@ -3330,9 +3492,13 @@ NotTall: // if not tall castle, check to see if we're at the third column
     compare(a, 0x02);
     if (!z)
         goto ExitCastle; // if we aren't and the castle is tall, don't create flag yet
-    JSR(GetAreaObjXPosition, 81); // otherwise, obtain and save horizontal pixel coordinate
+    pushReturnIndex(81);
+    goto GetAreaObjXPosition;
+Return_81: // otherwise, obtain and save horizontal pixel coordinate
     pha();
-    JSR(FindEmptyEnemySlot, 82); // find an empty place on the enemy object buffer
+    pushReturnIndex(82);
+    goto FindEmptyEnemySlot;
+Return_82: // find an empty place on the enemy object buffer
     pla();
     writeData(Enemy_X_Position + x, a); // then write horizontal coordinate for star flag
     a = M(CurrentPageLoc);
@@ -3358,7 +3524,9 @@ ExitCastle:
 //------------------------------------------------------------------------
 
 WaterPipe:
-    JSR(GetLrgObjAttrib, 83); // get row and lower nybble
+    pushReturnIndex(83);
+    goto GetLrgObjAttrib;
+Return_83: // get row and lower nybble
     y = M(AreaObjectLength + x); // get length (residual code, water pipe is 1 col thick)
     x = M(0x07); // get row
     a = 0x6b;
@@ -3371,9 +3539,13 @@ WaterPipe:
 
 IntroPipe:
     y = 0x03; // check if length set, if not set, set it
-    JSR(ChkLrgObjFixedLength, 84);
+    pushReturnIndex(84);
+    goto ChkLrgObjFixedLength;
+Return_84:
     y = 0x0a; // set fixed value and render the sideways part
-    JSR(RenderSidewaysPipe, 85);
+    pushReturnIndex(85);
+    goto RenderSidewaysPipe;
+Return_85:
     if (c)
         goto NoBlankP; // if carry flag set, not time to draw vertical pipe part
     x = 0x06; // blank everything above the vertical pipe part
@@ -3394,8 +3566,12 @@ NoBlankP:
 
 ExitPipe:
     y = 0x03; // check if length set, if not set, set it
-    JSR(ChkLrgObjFixedLength, 86);
-    JSR(GetLrgObjAttrib, 87); // get vertical length, then plow on through RenderSidewaysPipe
+    pushReturnIndex(86);
+    goto ChkLrgObjFixedLength;
+Return_86:
+    pushReturnIndex(87);
+    goto GetLrgObjAttrib;
+Return_87: // get vertical length, then plow on through RenderSidewaysPipe
 
 RenderSidewaysPipe:
     --y; // decrement twice to make room for shaft at bottom
@@ -3411,7 +3587,9 @@ RenderSidewaysPipe:
         goto DrawSidePart; // if found, do not draw the vertical pipe shaft
     x = 0x00;
     y = M(0x05); // init buffer offset and get vertical length
-    JSR(RenderUnderPart, 88); // and render vertical shaft using tile number in A
+    pushReturnIndex(88);
+    goto RenderUnderPart;
+Return_88: // and render vertical shaft using tile number in A
     c = 0; // clear carry flag to be used by IntroPipe
 
 DrawSidePart: // render side pipe part at the bottom
@@ -3425,7 +3603,9 @@ DrawSidePart: // render side pipe part at the bottom
 //------------------------------------------------------------------------
 
 VerticalPipe:
-    JSR(GetPipeHeight, 89);
+    pushReturnIndex(89);
+    goto GetPipeHeight;
+Return_89:
     a = M(0x00); // check to see if value was nullified earlier
     if (z)
         goto WarpPipe; // (if d3, the usage control bit of second byte, was set)
@@ -3444,10 +3624,14 @@ WarpPipe: // save value in stack
     y = M(AreaObjectLength + x); // if on second column of pipe, branch
     if (z)
         goto DrawPipe; // (because we only need to do this once)
-    JSR(FindEmptyEnemySlot, 90); // check for an empty moving data buffer space
+    pushReturnIndex(90);
+    goto FindEmptyEnemySlot;
+Return_90: // check for an empty moving data buffer space
     if (c)
         goto DrawPipe; // if not found, too many enemies, thus skip
-    JSR(GetAreaObjXPosition, 91); // get horizontal pixel coordinate
+    pushReturnIndex(91);
+    goto GetAreaObjXPosition;
+Return_91: // get horizontal pixel coordinate
     c = 0;
     a += 0x08; // add eight to put the piranha plant in the center
     writeData(Enemy_X_Position + x, a); // store as enemy's horizontal coordinate
@@ -3457,11 +3641,15 @@ WarpPipe: // save value in stack
     a = 0x01;
     writeData(Enemy_Y_HighPos + x, a);
     writeData(Enemy_Flag + x, a); // activate enemy flag
-    JSR(GetAreaObjYPosition, 92); // get piranha plant's vertical coordinate and store here
+    pushReturnIndex(92);
+    goto GetAreaObjYPosition;
+Return_92: // get piranha plant's vertical coordinate and store here
     writeData(Enemy_Y_Position + x, a);
     a = PiranhaPlant; // write piranha plant's value into buffer
     writeData(Enemy_ID + x, a);
-    JSR(InitPiranhaPlant, 93);
+    pushReturnIndex(93);
+    goto InitPiranhaPlant;
+Return_93:
 
 DrawPipe: // get value saved earlier and use as Y
     pla();
@@ -3477,8 +3665,12 @@ DrawPipe: // get value saved earlier and use as Y
 
 GetPipeHeight:
     y = 0x01; // check for length loaded, if not, load
-    JSR(ChkLrgObjFixedLength, 94); // pipe length of 2 (horizontal)
-    JSR(GetLrgObjAttrib, 95);
+    pushReturnIndex(94);
+    goto ChkLrgObjFixedLength;
+Return_94: // pipe length of 2 (horizontal)
+    pushReturnIndex(95);
+    goto GetLrgObjAttrib;
+Return_95:
     a = y; // get saved lower nybble as height
     a &= 0x07; // save only the three lower bits as
     writeData(0x06, a); // vertical length, then load Y with
@@ -3506,7 +3698,9 @@ ExitEmptyChk: // if all values nonzero, carry flag is set
 //------------------------------------------------------------------------
 
 Hole_Water:
-    JSR(ChkLrgObjLength, 96); // get low nybble and save as length
+    pushReturnIndex(96);
+    goto ChkLrgObjLength;
+Return_96: // get low nybble and save as length
     a = 0x86; // render waves
     writeData(MetatileBuffer + 10, a);
     x = 0x0b;
@@ -3522,7 +3716,9 @@ QuestionBlockRow_Low:
     a = 0x07; // start on the eighth row
 Skip_1:
     pha(); // save whatever row to the stack for now
-    JSR(ChkLrgObjLength, 97); // get low nybble and save as length
+    pushReturnIndex(97);
+    goto ChkLrgObjLength;
+Return_97: // get low nybble and save as length
     pla();
     x = a; // render question boxes with coins
     a = 0xc0;
@@ -3544,7 +3740,9 @@ Bridge_Low:
     a = 0x09; // start on the tenth row
 Skip_3:
     pha(); // save whatever row to the stack for now
-    JSR(ChkLrgObjLength, 98); // get low nybble and save as length
+    pushReturnIndex(98);
+    goto ChkLrgObjLength;
+Return_98: // get low nybble and save as length
     pla();
     x = a; // render bridge railing
     a = 0x0b;
@@ -3555,7 +3753,9 @@ Skip_3:
     goto RenderUnderPart;
 
 FlagBalls_Residual:
-    JSR(GetLrgObjAttrib, 99); // get low nybble from object byte
+    pushReturnIndex(99);
+    goto GetLrgObjAttrib;
+Return_99: // get low nybble from object byte
     x = 0x02; // render flag balls on third row from top
     a = 0x6d; // of screen downwards based on low nybble
     goto RenderUnderPart;
@@ -3566,10 +3766,14 @@ FlagpoleObject:
     x = 0x01; // now render the flagpole shaft
     y = 0x08;
     a = 0x25;
-    JSR(RenderUnderPart, 100);
+    pushReturnIndex(100);
+    goto RenderUnderPart;
+Return_100:
     a = 0x61; // render solid block at the bottom
     writeData(MetatileBuffer + 10, a);
-    JSR(GetAreaObjXPosition, 101);
+    pushReturnIndex(101);
+    goto GetAreaObjXPosition;
+Return_101:
     c = 1; // get pixel coordinate of where the flagpole is,
     a -= 0x08; // subtract eight pixels and use as horizontal
     writeData(Enemy_X_Position + 5, a); // coordinate for the flag
@@ -3598,10 +3802,14 @@ BalancePlatRope:
     x = 0x01; // blank out all from second row to the bottom
     y = 0x0f; // with blank used for balance platform rope
     a = 0x44;
-    JSR(RenderUnderPart, 102);
+    pushReturnIndex(102);
+    goto RenderUnderPart;
+Return_102:
     pla(); // get back object buffer offset
     x = a;
-    JSR(GetLrgObjAttrib, 103); // get vertical length from lower nybble
+    pushReturnIndex(103);
+    goto GetLrgObjAttrib;
+Return_103: // get vertical length from lower nybble
     x = 0x01;
 
 DrawRope: // render the actual rope
@@ -3615,7 +3823,9 @@ RowOfCoins:
 
 CastleBridgeObj:
     y = 0x0c; // load length of 13 columns
-    JSR(ChkLrgObjFixedLength, 104);
+    pushReturnIndex(104);
+    goto ChkLrgObjFixedLength;
+Return_104:
     goto ChainObj;
 
 AxeObj:
@@ -3629,7 +3839,9 @@ ChainObj:
     goto ColObj;
 
 EmptyBlock:
-    JSR(GetLrgObjAttrib, 105); // get row location
+    pushReturnIndex(105);
+    goto GetLrgObjAttrib;
+Return_105: // get row location
     x = M(0x07);
     a = 0xc4;
 
@@ -3654,7 +3866,9 @@ RowOfSolidBlocks:
 
 GetRow: // store metatile here
     pha();
-    JSR(ChkLrgObjLength, 106); // get row number, load length
+    pushReturnIndex(106);
+    goto ChkLrgObjLength;
+Return_106: // get row number, load length
 
 DrawRow:
     x = M(0x07);
@@ -3673,13 +3887,17 @@ ColumnOfSolidBlocks:
 
 GetRow2: // save metatile to stack for now
     pha();
-    JSR(GetLrgObjAttrib, 107); // get length and row
+    pushReturnIndex(107);
+    goto GetLrgObjAttrib;
+Return_107: // get length and row
     pla(); // restore metatile
     x = M(0x07); // get starting row
     goto RenderUnderPart; // now render the column
 
 BulletBillCannon:
-    JSR(GetLrgObjAttrib, 108); // get row and length of bullet bill cannon
+    pushReturnIndex(108);
+    goto GetLrgObjAttrib;
+Return_108: // get row and length of bullet bill cannon
     x = M(0x07); // start at first row
     a = 0x64; // render bullet bill cannon
     writeData(MetatileBuffer + x, a);
@@ -3694,15 +3912,21 @@ BulletBillCannon:
     if (n)
         goto SetupCannon;
     a = 0x66; // if not, render bottom until length expires
-    JSR(RenderUnderPart, 109);
+    pushReturnIndex(109);
+    goto RenderUnderPart;
+Return_109:
 
 SetupCannon: // get offset for data used by cannons and whirlpools
     x = M(Cannon_Offset);
-    JSR(GetAreaObjYPosition, 110); // get proper vertical coordinate for cannon
+    pushReturnIndex(110);
+    goto GetAreaObjYPosition;
+Return_110: // get proper vertical coordinate for cannon
     writeData(Cannon_Y_Position + x, a); // and store it here
     a = M(CurrentPageLoc);
     writeData(Cannon_PageLoc + x, a); // store page number for cannon here
-    JSR(GetAreaObjXPosition, 111); // get proper horizontal coordinate for cannon
+    pushReturnIndex(111);
+    goto GetAreaObjXPosition;
+Return_111: // get proper horizontal coordinate for cannon
     writeData(Cannon_X_Position + x, a); // and store it here
     ++x;
     compare(x, 0x06); // increment and check offset
@@ -3717,7 +3941,9 @@ StrCOffset: // save new offset and leave
 //------------------------------------------------------------------------
 
 StaircaseObject:
-    JSR(ChkLrgObjLength, 112); // check and load length
+    pushReturnIndex(112);
+    goto ChkLrgObjLength;
+Return_112: // check and load length
     if (!c)
         goto NextStair; // if length already loaded, skip init part
     a = 0x09; // start past the end for the bottom
@@ -3733,13 +3959,21 @@ NextStair: // move onto next step (or first if starting)
     goto RenderUnderPart;
 
 Jumpspring:
-    JSR(GetLrgObjAttrib, 113);
-    JSR(FindEmptyEnemySlot, 114); // find empty space in enemy object buffer
-    JSR(GetAreaObjXPosition, 115); // get horizontal coordinate for jumpspring
+    pushReturnIndex(113);
+    goto GetLrgObjAttrib;
+Return_113:
+    pushReturnIndex(114);
+    goto FindEmptyEnemySlot;
+Return_114: // find empty space in enemy object buffer
+    pushReturnIndex(115);
+    goto GetAreaObjXPosition;
+Return_115: // get horizontal coordinate for jumpspring
     writeData(Enemy_X_Position + x, a); // and store
     a = M(CurrentPageLoc); // store page location of jumpspring
     writeData(Enemy_PageLoc + x, a);
-    JSR(GetAreaObjYPosition, 116); // get vertical coordinate for jumpspring
+    pushReturnIndex(116);
+    goto GetAreaObjYPosition;
+Return_116: // get vertical coordinate for jumpspring
     writeData(Enemy_Y_Position + x, a); // and store
     writeData(Jumpspring_FixedYPos + x, a); // store as permanent coordinate here
     a = JumpspringObject;
@@ -3765,7 +3999,9 @@ Hidden1UpBlock:
     goto BrickWithItem; // jump to code shared with unbreakable bricks
 
 QuestionBlock:
-    JSR(GetAreaObjectID, 117); // get value from level decoder routine
+    pushReturnIndex(117);
+    goto GetAreaObjectID;
+Return_117: // get value from level decoder routine
     goto DrawQBlk; // go to render it
 
 BrickWithCoins:
@@ -3773,7 +4009,9 @@ BrickWithCoins:
     writeData(BrickCoinTimerFlag, a);
 
 BrickWithItem:
-    JSR(GetAreaObjectID, 118); // save area object ID
+    pushReturnIndex(118);
+    goto GetAreaObjectID;
+Return_118: // save area object ID
     writeData(0x07, y);
     a = 0x00; // load default adder for bricks with lines
     y = M(AreaType); // check level type for ground level
@@ -3790,7 +4028,9 @@ BWithL: // add object ID to adder
 DrawQBlk: // get appropriate metatile for brick (question block
     a = M(BrickQBlockMetatiles + y);
     pha(); // if branched to here from question block routine)
-    JSR(GetLrgObjAttrib, 119); // get row from location byte
+    pushReturnIndex(119);
+    goto GetLrgObjAttrib;
+Return_119: // get row from location byte
     goto DrawRow; // now render the object
 
 GetAreaObjectID:
@@ -3805,14 +4045,18 @@ ExitDecBlock:
 //------------------------------------------------------------------------
 
 Hole_Empty:
-    JSR(ChkLrgObjLength, 120); // get lower nybble and save as length
+    pushReturnIndex(120);
+    goto ChkLrgObjLength;
+Return_120: // get lower nybble and save as length
     if (!c)
         goto NoWhirlP; // skip this part if length already loaded
     a = M(AreaType); // check for water type level
     if (!z)
         goto NoWhirlP; // if not water type, skip this part
     x = M(Whirlpool_Offset); // get offset for data used by cannons and whirlpools
-    JSR(GetAreaObjXPosition, 121); // get proper vertical coordinate of where we're at
+    pushReturnIndex(121);
+    goto GetAreaObjXPosition;
+Return_121: // get proper vertical coordinate of where we're at
     c = 1;
     a -= 0x10; // subtract 16 pixels
     writeData(Whirlpool_LeftExtent + x, a); // store as left extent of whirlpool
@@ -3885,7 +4129,9 @@ ExitUPartR:
 //------------------------------------------------------------------------
 
 ChkLrgObjLength:
-    JSR(GetLrgObjAttrib, 122); // get row location and size (length if branched to from here)
+    pushReturnIndex(122);
+    goto GetLrgObjAttrib;
+Return_122: // get row location and size (length if branched to from here)
 
 ChkLrgObjFixedLength:
     a = M(AreaObjectLength + x); // check for set length counter
@@ -3955,7 +4201,9 @@ GetBlockBufferAddr:
 //------------------------------------------------------------------------
 
 LoadAreaPointer:
-    JSR(FindAreaPointer, 123); // find it and store it here
+    pushReturnIndex(123);
+    goto FindAreaPointer;
+Return_123: // find it and store it here
     writeData(AreaPointer, a);
 
 GetAreaType: // mask out all but d6 and d5
@@ -3982,7 +4230,9 @@ FindAreaPointer:
 
 GetAreaDataAddrs:
     a = M(AreaPointer); // use 2 MSB for Y
-    JSR(GetAreaType, 124);
+    pushReturnIndex(124);
+    goto GetAreaType;
+Return_124:
     y = a;
     a = M(AreaPointer); // mask out all but 5 LSB
     a &= BOOST_BINARY(00011111);
@@ -4086,7 +4336,9 @@ GameCoreRoutine:
     x = M(CurrentPlayer); // get which player is on the screen
     a = M(SavedJoypadBits + x); // use appropriate player's controller bits
     writeData(SavedJoypadBits, a); // as the master controller bits
-    JSR(GameRoutines, 125); // execute one of many possible subs
+    pushReturnIndex(125);
+    goto GameRoutines;
+Return_125: // execute one of many possible subs
     a = M(OperMode_Task); // check major task of operating mode
     compare(a, 0x03); // if we are supposed to be here,
     if (c)
@@ -4096,33 +4348,63 @@ GameCoreRoutine:
 //------------------------------------------------------------------------
 
 GameEngine:
-    JSR(ProcFireball_Bubble, 126); // process fireballs and air bubbles
+    pushReturnIndex(126);
+    goto ProcFireball_Bubble;
+Return_126: // process fireballs and air bubbles
     x = 0x00;
 
 ProcELoop: // put incremented offset in X as enemy object offset
     writeData(ObjectOffset, x);
-    JSR(EnemiesAndLoopsCore, 127); // process enemy objects
-    JSR(FloateyNumbersRoutine, 128); // process floatey numbers
+    pushReturnIndex(127);
+    goto EnemiesAndLoopsCore;
+Return_127: // process enemy objects
+    pushReturnIndex(128);
+    goto FloateyNumbersRoutine;
+Return_128: // process floatey numbers
     ++x;
     compare(x, 0x06); // do these two subroutines until the whole buffer is done
     if (!z)
         goto ProcELoop;
-    JSR(GetPlayerOffscreenBits, 129); // get offscreen bits for player object
-    JSR(RelativePlayerPosition, 130); // get relative coordinates for player object
-    JSR(PlayerGfxHandler, 131); // draw the player
-    JSR(BlockObjMT_Updater, 132); // replace block objects with metatiles if necessary
+    pushReturnIndex(129);
+    goto GetPlayerOffscreenBits;
+Return_129: // get offscreen bits for player object
+    pushReturnIndex(130);
+    goto RelativePlayerPosition;
+Return_130: // get relative coordinates for player object
+    pushReturnIndex(131);
+    goto PlayerGfxHandler;
+Return_131: // draw the player
+    pushReturnIndex(132);
+    goto BlockObjMT_Updater;
+Return_132: // replace block objects with metatiles if necessary
     x = 0x01;
     writeData(ObjectOffset, x); // set offset for second
-    JSR(BlockObjectsCore, 133); // process second block object
+    pushReturnIndex(133);
+    goto BlockObjectsCore;
+Return_133: // process second block object
     --x;
     writeData(ObjectOffset, x); // set offset for first
-    JSR(BlockObjectsCore, 134); // process first block object
-    JSR(MiscObjectsCore, 135); // process misc objects (hammer, jumping coins)
-    JSR(ProcessCannons, 136); // process bullet bill cannons
-    JSR(ProcessWhirlpools, 137); // process whirlpools
-    JSR(FlagpoleRoutine, 138); // process the flagpole
-    JSR(RunGameTimer, 139); // count down the game timer
-    JSR(ColorRotation, 140); // cycle one of the background colors
+    pushReturnIndex(134);
+    goto BlockObjectsCore;
+Return_134: // process first block object
+    pushReturnIndex(135);
+    goto MiscObjectsCore;
+Return_135: // process misc objects (hammer, jumping coins)
+    pushReturnIndex(136);
+    goto ProcessCannons;
+Return_136: // process bullet bill cannons
+    pushReturnIndex(137);
+    goto ProcessWhirlpools;
+Return_137: // process whirlpools
+    pushReturnIndex(138);
+    goto FlagpoleRoutine;
+Return_138: // process the flagpole
+    pushReturnIndex(139);
+    goto RunGameTimer;
+Return_139: // count down the game timer
+    pushReturnIndex(140);
+    goto ColorRotation;
+Return_140: // cycle one of the background colors
     a = M(Player_Y_HighPos);
     compare(a, 0x02); // if player is below the screen, don't bother with the music
     if (!n)
@@ -4136,7 +4418,9 @@ ProcELoop: // put incremented offset in X as enemy object offset
     a = M(IntervalTimerControl); // if interval timer not yet expired,
     if (!z)
         goto NoChgMus; // branch ahead, don't bother with the music
-    JSR(GetAreaMusic, 141); // to re-attain appropriate level music
+    pushReturnIndex(141);
+    goto GetAreaMusic;
+Return_141: // to re-attain appropriate level music
 
 NoChgMus: // get invincibility timer
     y = M(StarInvincibleTimer);
@@ -4149,11 +4433,15 @@ NoChgMus: // get invincibility timer
 
 CycleTwo: // if branched here, divide by 2 to cycle every other frame
     a >>= 1;
-    JSR(CyclePlayerPalette, 142); // do sub to cycle the palette (note: shares fire flower code)
+    pushReturnIndex(142);
+    goto CyclePlayerPalette;
+Return_142: // do sub to cycle the palette (note: shares fire flower code)
     goto SaveAB; // then skip this sub to finish up the game engine
 
 ClrPlrPal: // do sub to clear player's palette bits in attributes
-    JSR(ResetPalStar, 143);
+    pushReturnIndex(143);
+    goto ResetPalStar;
+Return_143:
 
 SaveAB: // save current A and B button
     a = M(A_B_Buttons);
@@ -4180,7 +4468,9 @@ UpdScrollVar:
     writeData(VRAM_Buffer2_Offset, a); // level graphics buffer at $0341-$035f
 
 RunParser: // update the name table with more level graphics
-    JSR(AreaParserTaskHandler, 144);
+    pushReturnIndex(144);
+    goto AreaParserTaskHandler;
+Return_144:
 
 ExitEng: // and after all that, we're finally done!
     goto Return;
@@ -4239,7 +4529,9 @@ ScrollScreen:
     a &= BOOST_BINARY(11111110); // save all bits except d0
     a |= M(0x00); // get saved bit here and save in PPU register 1
     writeData(Mirror_PPU_CTRL_REG1, a); // mirror to be used to set name table later
-    JSR(GetScreenPosition, 145); // figure out where the right side is
+    pushReturnIndex(145);
+    goto GetScreenPosition;
+Return_145: // figure out where the right side is
     a = 0x08;
     writeData(ScrollIntervalTimer, a); // set scroll timer (residual, not used elsewhere)
     goto ChkPOffscr; // skip this part
@@ -4250,7 +4542,9 @@ InitScrlAmt:
 
 ChkPOffscr: // set X for player offset
     x = 0x00;
-    JSR(GetXOffscreenBits, 146); // get horizontal offscreen bits for player
+    pushReturnIndex(146);
+    goto GetXOffscreenBits;
+Return_146: // get horizontal offscreen bits for player
     writeData(0x00, a); // save them here
     y = 0x00; // load default offset (left side)
     a <<= 1; // if d7 of offscreen bits are set,
@@ -4354,7 +4648,9 @@ ChkBehPipe: // check for sprite attributes
     goto AutoControlPlayer; // force player to walk to the right
 
 IntroEntr: // execute sub to move player to the right
-    JSR(EnterSidePipe, 147);
+    pushReturnIndex(147);
+    goto EnterSidePipe;
+Return_147:
     --M(ChangeAreaTimer); // decrement timer for change of area
     if (!z)
         goto ExitEntr; // branch to exit if not yet expired
@@ -4366,7 +4662,9 @@ EntrMode2: // if controller override bits set here,
     if (!z)
         goto VineEntr; // branch to enter with vine
     a = 0xff; // otherwise, set value here then execute sub
-    JSR(MovePlayerYAxis, 148); // to move player upwards (note $ff = -1)
+    pushReturnIndex(148);
+    goto MovePlayerYAxis;
+Return_148: // to move player upwards (note $ff = -1)
     a = M(Player_Y_Position); // check to see if player is at a specific coordinate
     compare(a, 0x91); // if player risen to a certain point (this requires pipes
     if (!c)
@@ -4394,7 +4692,9 @@ VineEntr:
 
 OffVine: // set collision detection disable flag
     writeData(DisableCollisionDet, y);
-    JSR(AutoControlPlayer, 149); // use contents of A to move player up or right, execute sub
+    pushReturnIndex(149);
+    goto AutoControlPlayer;
+Return_149: // use contents of A to move player up or right, execute sub
     a = M(Player_X_Position);
     compare(a, 0x48); // check player's horizontal position
     if (!c)
@@ -4463,7 +4763,9 @@ SaveJoyp: // otherwise store A and B buttons in $0a
     writeData(Up_Down_Buttons, a); // nullify directional bits
 
 SizeChk: // run movement subroutines
-    JSR(PlayerMovementSubs, 150);
+    pushReturnIndex(150);
+    goto PlayerMovementSubs;
+Return_150:
     y = 0x01; // is player small?
     a = M(PlayerSize);
     if (!z)
@@ -4488,12 +4790,22 @@ SetMoveDir: // set moving direction
     writeData(Player_MovingDir, a);
 
 PlayerSubs: // move the screen if necessary
-    JSR(ScrollHandler, 151);
-    JSR(GetPlayerOffscreenBits, 152); // get player's offscreen bits
-    JSR(RelativePlayerPosition, 153); // get coordinates relative to the screen
+    pushReturnIndex(151);
+    goto ScrollHandler;
+Return_151:
+    pushReturnIndex(152);
+    goto GetPlayerOffscreenBits;
+Return_152: // get player's offscreen bits
+    pushReturnIndex(153);
+    goto RelativePlayerPosition;
+Return_153: // get coordinates relative to the screen
     x = 0x00; // set offset for player object
-    JSR(BoundingBoxCore, 154); // get player's bounding box coordinates
-    JSR(PlayerBGCollision, 155); // do collision detection and process
+    pushReturnIndex(154);
+    goto BoundingBoxCore;
+Return_154: // get player's bounding box coordinates
+    pushReturnIndex(155);
+    goto PlayerBGCollision;
+Return_155: // do collision detection and process
     a = M(Player_Y_Position);
     compare(a, 0x40); // check to see if player is higher than 64th pixel
     if (!c)
@@ -4567,7 +4879,9 @@ ExitCtrl: // leave
 CloudExit:
     a = 0x00;
     writeData(JoypadOverride, a); // clear controller override bits if any are set
-    JSR(SetEntr, 156); // do sub to set secondary mode
+    pushReturnIndex(156);
+    goto SetEntr;
+Return_156: // do sub to set secondary mode
     ++M(AltEntranceControl); // set mode of entry to 3
     goto Return;
 
@@ -4596,8 +4910,12 @@ SetEntr: // set starting position to override
 
 VerticalPipeEntry:
     a = 0x01; // set 1 as movement amount
-    JSR(MovePlayerYAxis, 157); // do sub to move player downwards
-    JSR(ScrollHandler, 158); // do sub to scroll screen with saved force if necessary
+    pushReturnIndex(157);
+    goto MovePlayerYAxis;
+Return_157: // do sub to move player downwards
+    pushReturnIndex(158);
+    goto ScrollHandler;
+Return_158: // do sub to scroll screen with saved force if necessary
     y = 0x00; // load default mode of entry
     a = M(WarpZoneControl); // check warp zone control variable/flag
     if (!z)
@@ -4619,7 +4937,9 @@ MovePlayerYAxis:
 //------------------------------------------------------------------------
 
 SideExitPipeEntry:
-    JSR(EnterSidePipe, 159); // execute sub to move player to the right
+    pushReturnIndex(159);
+    goto EnterSidePipe;
+Return_159: // execute sub to move player to the right
     y = 0x02;
 
 ChgAreaPipe: // decrement timer for change of area
@@ -4652,7 +4972,9 @@ EnterSidePipe:
 
 RightPipe: // use contents of Y to
     a = y;
-    JSR(AutoControlPlayer, 160); // execute player control routine with ctrl bits nulled
+    pushReturnIndex(160);
+    goto AutoControlPlayer;
+Return_160: // execute player control routine with ctrl bits nulled
     goto Return;
 
 //------------------------------------------------------------------------
@@ -4668,7 +4990,9 @@ EndChgSize: // check again for another specific moment
     compare(a, 0xc4);
     if (!z)
         goto ExitChgSize; // and branch to leave if before or after that point
-    JSR(DonePlayerTask, 161); // otherwise do sub to init timer control and set routine
+    pushReturnIndex(161);
+    goto DonePlayerTask;
+Return_161: // otherwise do sub to init timer control and set routine
 
 ExitChgSize: // and then leave
     goto Return;
@@ -4741,7 +5065,9 @@ CyclePlayerPalette:
 //------------------------------------------------------------------------
 
 ResetPalFireFlower:
-    JSR(DonePlayerTask, 162); // do sub to init timer control and run player control routine
+    pushReturnIndex(162);
+    goto DonePlayerTask;
+Return_162: // do sub to init timer control and run player control routine
 
 ResetPalStar:
     a = M(Player_SprAttrib); // get player attributes
@@ -4782,7 +5108,9 @@ NoFPObj: // increment to next routine (this may
 
 PlayerEndLevel:
     a = 0x01; // force player to walk to the right
-    JSR(AutoControlPlayer, 163);
+    pushReturnIndex(163);
+    goto AutoControlPlayer;
+Return_163:
     a = M(Player_Y_Position); // check player's vertical position
     compare(a, 0xae);
     if (!c)
@@ -4828,9 +5156,13 @@ RdyNextA:
 
 NextArea: // increment area number used for address loader
     ++M(AreaNumber);
-    JSR(LoadAreaPointer, 164); // get new level pointer
+    pushReturnIndex(164);
+    goto LoadAreaPointer;
+Return_164: // get new level pointer
     ++M(FetchNewGameTimerFlag); // set flag to load new game timer
-    JSR(ChgAreaMode, 165); // do sub to set secondary mode, disable screen and sprite 0
+    pushReturnIndex(165);
+    goto ChgAreaMode;
+Return_165: // do sub to set secondary mode, disable screen and sprite 0
     writeData(HalfwayPage, a); // reset halfway page to 0 (beginning)
     a = Silence;
     writeData(EventMusicQueue, a); // silence music and leave
@@ -4855,7 +5187,9 @@ SetCrouch: // store value in crouch flag
     writeData(CrouchingFlag, a);
 
 ProcMove: // run sub related to jumping and swimming
-    JSR(PlayerPhysicsSub, 166);
+    pushReturnIndex(166);
+    goto PlayerPhysicsSub;
+Return_166:
     a = M(PlayerChangeSizeFlag); // if growing/shrinking flag set,
     if (!z)
         goto NoMoveSub; // branch to leave
@@ -4885,15 +5219,21 @@ NoMoveSub:
 //------------------------------------------------------------------------
 
 OnGroundStateSub:
-    JSR(GetPlayerAnimSpeed, 167); // do a sub to set animation frame timing
+    pushReturnIndex(167);
+    goto GetPlayerAnimSpeed;
+Return_167: // do a sub to set animation frame timing
     a = M(Left_Right_Buttons);
     if (z)
         goto GndMove; // if left/right controller bits not set, skip instruction
     writeData(PlayerFacingDir, a); // otherwise set new facing direction
 
 GndMove: // do a sub to impose friction on player's walk/run
-    JSR(ImposeFriction, 168);
-    JSR(MovePlayerHorizontally, 169); // do another sub to move player horizontally
+    pushReturnIndex(168);
+    goto ImposeFriction;
+Return_168:
+    pushReturnIndex(169);
+    goto MovePlayerHorizontally;
+Return_169: // do another sub to move player horizontally
     writeData(Player_X_Scroll, a); // set returned value as player's movement speed for scroll
     goto Return;
 
@@ -4928,7 +5268,9 @@ ProcSwim: // if swimming flag not set,
     a = M(SwimmingFlag);
     if (z)
         goto LRAir; // branch ahead to last part
-    JSR(GetPlayerAnimSpeed, 170); // do a sub to get animation frame timing
+    pushReturnIndex(170);
+    goto GetPlayerAnimSpeed;
+Return_170: // do a sub to get animation frame timing
     a = M(Player_Y_Position);
     compare(a, 0x14); // check vertical position against preset value
     if (c)
@@ -4946,10 +5288,14 @@ LRAir: // check left/right controller bits (check for jumping/falling)
     a = M(Left_Right_Buttons);
     if (z)
         goto JSMove; // if not pressing any, skip
-    JSR(ImposeFriction, 171); // otherwise process horizontal movement
+    pushReturnIndex(171);
+    goto ImposeFriction;
+Return_171: // otherwise process horizontal movement
 
 JSMove: // do a sub to move player horizontally
-    JSR(MovePlayerHorizontally, 172);
+    pushReturnIndex(172);
+    goto MovePlayerHorizontally;
+Return_172:
     writeData(Player_X_Scroll, a); // set player's speed here, to be used for scroll later
     a = M(GameEngineSubroutine);
     compare(a, 0x0b); // check for specific routine selected
@@ -5387,9 +5733,13 @@ ProcFireball_Bubble:
 
 ProcFireballs:
     x = 0x00;
-    JSR(FireballObjCore, 173); // process first fireball object
+    pushReturnIndex(173);
+    goto FireballObjCore;
+Return_173: // process first fireball object
     x = 0x01;
-    JSR(FireballObjCore, 174); // process second fireball object, then do air bubbles
+    pushReturnIndex(174);
+    goto FireballObjCore;
+Return_174: // process second fireball object, then do air bubbles
 
 ProcAirBubbles:
     a = M(AreaType); // if not water type level, skip the rest of this
@@ -5399,10 +5749,18 @@ ProcAirBubbles:
 
 BublLoop: // store offset
     writeData(ObjectOffset, x);
-    JSR(BubbleCheck, 175); // check timers and coordinates, create air bubble
-    JSR(RelativeBubblePosition, 176); // get relative coordinates
-    JSR(GetBubbleOffscreenBits, 177); // get offscreen information
-    JSR(DrawBubble, 178); // draw the air bubble
+    pushReturnIndex(175);
+    goto BubbleCheck;
+Return_175: // check timers and coordinates, create air bubble
+    pushReturnIndex(176);
+    goto RelativeBubblePosition;
+Return_176: // get relative coordinates
+    pushReturnIndex(177);
+    goto GetBubbleOffscreenBits;
+Return_177: // get offscreen information
+    pushReturnIndex(178);
+    goto DrawBubble;
+Return_178: // draw the air bubble
     --x;
     if (!n)
         goto BublLoop; // do this until all three are handled
@@ -5454,18 +5812,32 @@ RunFB: // add 7 to offset to use
     a = 0x03; // set maximum speed here
     writeData(0x02, a);
     a = 0x00;
-    JSR(ImposeGravity, 179); // do sub here to impose gravity on fireball and move vertically
-    JSR(MoveObjectHorizontally, 180); // do another sub to move it horizontally
+    pushReturnIndex(179);
+    goto ImposeGravity;
+Return_179: // do sub here to impose gravity on fireball and move vertically
+    pushReturnIndex(180);
+    goto MoveObjectHorizontally;
+Return_180: // do another sub to move it horizontally
     x = M(ObjectOffset); // return fireball offset to X
-    JSR(RelativeFireballPosition, 181); // get relative coordinates
-    JSR(GetFireballOffscreenBits, 182); // get offscreen information
-    JSR(GetFireballBoundBox, 183); // get bounding box coordinates
-    JSR(FireballBGCollision, 184); // do fireball to background collision detection
+    pushReturnIndex(181);
+    goto RelativeFireballPosition;
+Return_181: // get relative coordinates
+    pushReturnIndex(182);
+    goto GetFireballOffscreenBits;
+Return_182: // get offscreen information
+    pushReturnIndex(183);
+    goto GetFireballBoundBox;
+Return_183: // get bounding box coordinates
+    pushReturnIndex(184);
+    goto FireballBGCollision;
+Return_184: // do fireball to background collision detection
     a = M(FBall_OffscreenBits); // get fireball offscreen bits
     a &= BOOST_BINARY(11001100); // mask out certain bits
     if (!z)
         goto EraseFB; // if any bits still set, branch to kill fireball
-    JSR(FireballEnemyCollision, 185); // do fireball to enemy collision detection and deal with collisions
+    pushReturnIndex(185);
+    goto FireballEnemyCollision;
+Return_185: // do fireball to enemy collision detection and deal with collisions
     goto DrawFireball; // draw fireball appropriately and leave
 
 EraseFB: // erase fireball state
@@ -5478,7 +5850,9 @@ NoFBall: // leave
 //------------------------------------------------------------------------
 
 FireballExplosion:
-    JSR(RelativeFireballPosition, 186);
+    pushReturnIndex(186);
+    goto RelativeFireballPosition;
+Return_186:
     goto DrawExplosion_Fireball;
 
 BubbleCheck:
@@ -5579,13 +5953,17 @@ ResGTCtrl: // reset game timer control
     y = 0x23; // set offset for last digit
     a = 0xff; // set value to decrement game timer digit
     writeData(DigitModifier + 5, a);
-    JSR(DigitsMathRoutine, 187); // do sub to decrement game timer slowly
+    pushReturnIndex(187);
+    goto DigitsMathRoutine;
+Return_187: // do sub to decrement game timer slowly
     a = 0xa4; // set status nybbles to update game timer display
     goto PrintStatusBarNumbers; // do sub to update the display
 
 TimeUpOn: // init player status (note A will always be zero here)
     writeData(PlayerStatus, a);
-    JSR(ForceInjury, 188); // do sub to kill the player (note player is small here)
+    pushReturnIndex(188);
+    goto ForceInjury;
+Return_188: // do sub to kill the player (note player is small here)
     ++M(GameTimerExpiredFlag); // set game timer expiration flag
 
 ExGTimer: // leave
@@ -5750,14 +6128,22 @@ GiveFPScr: // get score offset from earlier (when player touched flagpole)
     a = M(FlagpoleScoreMods + y); // get amount to award player points
     x = M(FlagpoleScoreDigits + y); // get digit with which to award points
     writeData(DigitModifier + x, a); // store in digit modifier
-    JSR(AddToScore, 189); // do sub to award player points depending on height of collision
+    pushReturnIndex(189);
+    goto AddToScore;
+Return_189: // do sub to award player points depending on height of collision
     a = 0x05;
     writeData(GameEngineSubroutine, a); // set to run end-of-level subroutine on next frame
 
 FPGfx: // get offscreen information
-    JSR(GetEnemyOffscreenBits, 190);
-    JSR(RelativeEnemyPosition, 191); // get relative coordinates
-    JSR(FlagpoleGfxHandler, 192); // draw flagpole flag and floatey number
+    pushReturnIndex(190);
+    goto GetEnemyOffscreenBits;
+Return_190:
+    pushReturnIndex(191);
+    goto RelativeEnemyPosition;
+Return_191: // get relative coordinates
+    pushReturnIndex(192);
+    goto FlagpoleGfxHandler;
+Return_192: // draw flagpole flag and floatey number
 
 ExitFlagP:
     goto Return;
@@ -5765,7 +6151,9 @@ ExitFlagP:
 //------------------------------------------------------------------------
 
 JumpspringHandler:
-    JSR(GetEnemyOffscreenBits, 193); // get offscreen information
+    pushReturnIndex(193);
+    goto GetEnemyOffscreenBits;
+Return_193: // get offscreen information
     a = M(TimerControl); // check master timer control
     if (!z)
         goto DrawJSpr; // branch to last section if set
@@ -5814,9 +6202,15 @@ BounceJS: // check frame control offset again
     writeData(JumpspringAnimCtrl, a); // initialize jumpspring frame control
 
 DrawJSpr: // get jumpspring's relative coordinates
-    JSR(RelativeEnemyPosition, 194);
-    JSR(EnemyGfxHandler, 195); // draw jumpspring
-    JSR(OffscreenBoundsCheck, 196); // check to see if we need to kill it
+    pushReturnIndex(194);
+    goto RelativeEnemyPosition;
+Return_194:
+    pushReturnIndex(195);
+    goto EnemyGfxHandler;
+Return_195: // draw jumpspring
+    pushReturnIndex(196);
+    goto OffscreenBoundsCheck;
+Return_196: // check to see if we need to kill it
     a = M(JumpspringAnimCtrl); // if frame control at zero, don't bother
     if (z)
         goto ExJSpring; // trying to animate it, just leave
@@ -5883,12 +6277,18 @@ RunVSubs: // if vine still very small,
     compare(a, 0x08); // branch to leave
     if (!c)
         goto ExitVH;
-    JSR(RelativeEnemyPosition, 197); // get relative coordinates of vine,
-    JSR(GetEnemyOffscreenBits, 198); // and any offscreen bits
+    pushReturnIndex(197);
+    goto RelativeEnemyPosition;
+Return_197: // get relative coordinates of vine,
+    pushReturnIndex(198);
+    goto GetEnemyOffscreenBits;
+Return_198: // and any offscreen bits
     y = 0x00; // initialize offset used in draw vine sub
 
 VDrawLoop: // draw vine
-    JSR(DrawVine, 199);
+    pushReturnIndex(199);
+    goto DrawVine;
+Return_199:
     ++y; // increment offset
     compare(y, M(VineFlagOffset)); // if offset in Y and offset here
     if (!z)
@@ -5901,7 +6301,9 @@ VDrawLoop: // draw vine
 
 KillVine: // get enemy object offset for this vine object
     x = M(VineObjOffset + y);
-    JSR(EraseEnemyObject, 200); // kill this vine object
+    pushReturnIndex(200);
+    goto EraseEnemyObject;
+Return_200: // kill this vine object
     --y; // decrement Y
     if (!n)
         goto KillVine; // if any vine objects left, loop back to kill it
@@ -5916,7 +6318,9 @@ WrCMTile: // check vine height
     x = 0x06; // set offset in X to last enemy slot
     a = 0x01; // set A to obtain horizontal in $04, but we don't care
     y = 0x1b; // set Y to offset to get block at ($04, $10) of coordinates
-    JSR(BlockBufferCollision, 201); // do a sub to get block buffer address set, return contents
+    pushReturnIndex(201);
+    goto BlockBufferCollision;
+Return_201: // do a sub to get block buffer address set, return contents
     y = M(0x02);
     compare(y, 0xd0); // if vertical high nybble offset beyond extent of
     if (c)
@@ -5991,12 +6395,18 @@ Chk_BB: // check enemy identifier for bullet bill (cannon variant)
     compare(a, BulletBill_CannonVar);
     if (!z)
         goto Next3Slt; // if not found, branch to get next slot
-    JSR(OffscreenBoundsCheck, 202); // otherwise, check to see if it went offscreen
+    pushReturnIndex(202);
+    goto OffscreenBoundsCheck;
+Return_202: // otherwise, check to see if it went offscreen
     a = M(Enemy_Flag + x); // check enemy buffer flag
     if (z)
         goto Next3Slt; // if not set, branch to get next slot
-    JSR(GetEnemyOffscreenBits, 203); // otherwise, get offscreen information
-    JSR(BulletBillHandler, 204); // then do sub to handle bullet bill
+    pushReturnIndex(203);
+    goto GetEnemyOffscreenBits;
+Return_203: // otherwise, get offscreen information
+    pushReturnIndex(204);
+    goto BulletBillHandler;
+Return_204: // then do sub to handle bullet bill
 
 Next3Slt: // move onto next slot
     --x;
@@ -6021,7 +6431,9 @@ BulletBillHandler:
     if (z)
         goto KillBB; // if so, branch to kill this object
     y = 0x01; // set to move right by default
-    JSR(PlayerEnemyDiff, 205); // get horizontal difference between player and bullet bill
+    pushReturnIndex(205);
+    goto PlayerEnemyDiff;
+Return_205: // get horizontal difference between player and bullet bill
     if (n)
         goto SetupBB; // if enemy to the left of player, branch
     ++y; // otherwise increment to move left
@@ -6048,20 +6460,34 @@ ChkDSte: // check enemy state for d5 set
     a &= BOOST_BINARY(00100000);
     if (z)
         goto BBFly; // if not set, skip to move horizontally
-    JSR(MoveD_EnemyVertically, 206); // otherwise do sub to move bullet bill vertically
+    pushReturnIndex(206);
+    goto MoveD_EnemyVertically;
+Return_206: // otherwise do sub to move bullet bill vertically
 
 BBFly: // do sub to move bullet bill horizontally
-    JSR(MoveEnemyHorizontally, 207);
+    pushReturnIndex(207);
+    goto MoveEnemyHorizontally;
+Return_207:
 
 RunBBSubs: // get offscreen information
-    JSR(GetEnemyOffscreenBits, 208);
-    JSR(RelativeEnemyPosition, 209); // get relative coordinates
-    JSR(GetEnemyBoundBox, 210); // get bounding box coordinates
-    JSR(PlayerEnemyCollision, 211); // handle player to enemy collisions
+    pushReturnIndex(208);
+    goto GetEnemyOffscreenBits;
+Return_208:
+    pushReturnIndex(209);
+    goto RelativeEnemyPosition;
+Return_209: // get relative coordinates
+    pushReturnIndex(210);
+    goto GetEnemyBoundBox;
+Return_210: // get bounding box coordinates
+    pushReturnIndex(211);
+    goto PlayerEnemyCollision;
+Return_211: // handle player to enemy collisions
     goto EnemyGfxHandler; // draw the bullet bill and leave
 
 KillBB: // kill bullet bill and leave
-    JSR(EraseEnemyObject, 212);
+    pushReturnIndex(212);
+    goto EraseEnemyObject;
+Return_212:
     goto Return;
 
 //------------------------------------------------------------------------
@@ -6125,8 +6551,12 @@ ProcHammerObj:
     a = 0x04;
     writeData(0x02, a); // set maximum vertical speed
     a = 0x00; // set A to impose gravity on hammer
-    JSR(ImposeGravity, 213); // do sub to impose gravity on hammer and move vertically
-    JSR(MoveObjectHorizontally, 214); // do sub to move it horizontally
+    pushReturnIndex(213);
+    goto ImposeGravity;
+Return_213: // do sub to impose gravity on hammer and move vertically
+    pushReturnIndex(214);
+    goto MoveObjectHorizontally;
+Return_214: // do sub to move it horizontally
     x = M(ObjectOffset); // get original misc object offset
     goto RunAllH; // branch to essential subroutines
 
@@ -6161,19 +6591,31 @@ SetHPos: // decrement hammer's state
         goto RunHSubs; // unconditional branch to skip first routine
 
 RunAllH: // handle collisions
-    JSR(PlayerHammerCollision, 215);
+    pushReturnIndex(215);
+    goto PlayerHammerCollision;
+Return_215:
 
 RunHSubs: // get offscreen information
-    JSR(GetMiscOffscreenBits, 216);
-    JSR(RelativeMiscPosition, 217); // get relative coordinates
-    JSR(GetMiscBoundBox, 218); // get bounding box coordinates
-    JSR(DrawHammer, 219); // draw the hammer
+    pushReturnIndex(216);
+    goto GetMiscOffscreenBits;
+Return_216:
+    pushReturnIndex(217);
+    goto RelativeMiscPosition;
+Return_217: // get relative coordinates
+    pushReturnIndex(218);
+    goto GetMiscBoundBox;
+Return_218: // get bounding box coordinates
+    pushReturnIndex(219);
+    goto DrawHammer;
+Return_219: // draw the hammer
     goto Return; // and we are done here
 
 //------------------------------------------------------------------------
 
 CoinBlock:
-    JSR(FindEmptyMiscSlot, 220); // set offset for empty or last misc object buffer slot
+    pushReturnIndex(220);
+    goto FindEmptyMiscSlot;
+Return_220: // set offset for empty or last misc object buffer slot
     a = M(Block_PageLoc + x); // get page location of block object
     writeData(Misc_PageLoc + y, a); // store as page location of misc object
     a = M(Block_X_Position + x); // get horizontal coordinate of block object
@@ -6185,7 +6627,9 @@ CoinBlock:
     goto JCoinC; // jump to rest of code as applies to this misc object
 
 SetupJumpCoin:
-    JSR(FindEmptyMiscSlot, 221); // set offset for empty or last misc object buffer slot
+    pushReturnIndex(221);
+    goto FindEmptyMiscSlot;
+Return_221: // set offset for empty or last misc object buffer slot
     a = M(Block_PageLoc2 + x); // get page location saved earlier
     writeData(Misc_PageLoc + y, a); // and save as page location for misc object
     a = M(0x06); // get low byte of block buffer offset
@@ -6207,7 +6651,9 @@ JCoinC:
     writeData(Misc_State + y, a); // set state for misc object
     writeData(Square2SoundQueue, a); // load coin grab sound
     writeData(ObjectOffset, x); // store current control bit as misc object offset 
-    JSR(GiveOneCoin, 222); // update coin tally on the screen and coin amount variable
+    pushReturnIndex(222);
+    goto GiveOneCoin;
+Return_222: // update coin tally on the screen and coin amount variable
     ++M(CoinTallyFor1Ups); // increment coin tally used to activate 1-up block flag
     goto Return;
 
@@ -6243,7 +6689,9 @@ MiscLoop: // store misc object offset here
     a <<= 1; // otherwise shift d7 into carry
     if (!c)
         goto ProcJumpCoin; // if d7 not set, jumping coin, thus skip to rest of code here
-    JSR(ProcHammerObj, 223); // otherwise go to process hammer,
+    pushReturnIndex(223);
+    goto ProcHammerObj;
+Return_223: // otherwise go to process hammer,
     goto MiscLoopBack; // then check next slot
 
 ProcJumpCoin:
@@ -6279,7 +6727,9 @@ JCoinRun:
     a >>= 1; // divide by 2 and set
     writeData(0x01, a); // as upward movement amount (apparently residual)
     a = 0x00; // set A to impose gravity on jumping coin
-    JSR(ImposeGravity, 224); // do sub to move coin vertically and impose gravity on it
+    pushReturnIndex(224);
+    goto ImposeGravity;
+Return_224: // do sub to move coin vertically and impose gravity on it
     x = M(ObjectOffset); // get original misc object offset
     a = M(Misc_Y_Speed + x); // check vertical speed
     compare(a, 0x05);
@@ -6288,10 +6738,18 @@ JCoinRun:
     ++M(Misc_State + x); // otherwise increment state to change to floatey number
 
 RunJCSubs: // get relative coordinates
-    JSR(RelativeMiscPosition, 225);
-    JSR(GetMiscOffscreenBits, 226); // get offscreen information
-    JSR(GetMiscBoundBox, 227); // get bounding box coordinates (why?)
-    JSR(JCoinGfxHandler, 228); // draw the coin or floatey number
+    pushReturnIndex(225);
+    goto RelativeMiscPosition;
+Return_225:
+    pushReturnIndex(226);
+    goto GetMiscOffscreenBits;
+Return_226: // get offscreen information
+    pushReturnIndex(227);
+    goto GetMiscBoundBox;
+Return_227: // get bounding box coordinates (why?)
+    pushReturnIndex(228);
+    goto JCoinGfxHandler;
+Return_228: // draw the coin or floatey number
 
 MiscLoopBack:
     --x; // decrement misc object offset
@@ -6306,7 +6764,9 @@ GiveOneCoin:
     writeData(DigitModifier + 5, a); // to the current player's coin tally
     x = M(CurrentPlayer); // get current player on the screen
     y = M(CoinTallyOffsets + x); // get offset for player's coin tally
-    JSR(DigitsMathRoutine, 229); // update the coin tally
+    pushReturnIndex(229);
+    goto DigitsMathRoutine;
+Return_229: // update the coin tally
     ++M(CoinTally); // increment onscreen player's coin amount
     a = M(CoinTally);
     compare(a, 100); // does player have 100 coins yet?
@@ -6325,14 +6785,18 @@ CoinPoints:
 AddToScore:
     x = M(CurrentPlayer); // get current player
     y = M(ScoreOffsets + x); // get offset for player's score
-    JSR(DigitsMathRoutine, 230); // update the score internally with value in digit modifier
+    pushReturnIndex(230);
+    goto DigitsMathRoutine;
+Return_230: // update the score internally with value in digit modifier
 
 GetSBNybbles:
     y = M(CurrentPlayer); // get current player
     a = M(StatusBarNybbles + y); // get nybbles based on player, use to update score and coins
 
 UpdateNumber:
-    JSR(PrintStatusBarNumbers, 231); // print status bar numbers based on nybbles, whatever they be
+    pushReturnIndex(231);
+    goto PrintStatusBarNumbers;
+Return_231: // print status bar numbers based on nybbles, whatever they be
     y = M(VRAM_Buffer1_Offset);
     a = M(VRAM_Buffer1 - 6 + y); // check highest digit of score
     if (!z)
@@ -6409,13 +6873,21 @@ PowerUpObjHandler:
     compare(a, 0x02);
     if (!z)
         goto RunPUSubs; // if not star, branch elsewhere to skip movement
-    JSR(MoveJumpingEnemy, 232); // otherwise impose gravity on star power-up and make it jump
-    JSR(EnemyJump, 233); // note that green paratroopa shares the same code here 
+    pushReturnIndex(232);
+    goto MoveJumpingEnemy;
+Return_232: // otherwise impose gravity on star power-up and make it jump
+    pushReturnIndex(233);
+    goto EnemyJump;
+Return_233: // note that green paratroopa shares the same code here 
     goto RunPUSubs; // then jump to other power-up subroutines
 
 ShroomM: // do sub to make mushrooms move
-    JSR(MoveNormalEnemy, 234);
-    JSR(EnemyToBGCollisionDet, 235); // deal with collisions
+    pushReturnIndex(234);
+    goto MoveNormalEnemy;
+Return_234:
+    pushReturnIndex(235);
+    goto EnemyToBGCollisionDet;
+Return_235: // deal with collisions
     goto RunPUSubs; // run the other subroutines
 
 GrowThePowerUp:
@@ -6445,12 +6917,24 @@ ChkPUSte: // check power-up object's state
         goto ExitPUp; // if not, don't even bother running these routines
 
 RunPUSubs: // get coordinates relative to screen
-    JSR(RelativeEnemyPosition, 236);
-    JSR(GetEnemyOffscreenBits, 237); // get offscreen bits
-    JSR(GetEnemyBoundBox, 238); // get bounding box coordinates
-    JSR(DrawPowerUp, 239); // draw the power-up object
-    JSR(PlayerEnemyCollision, 240); // check for collision with player
-    JSR(OffscreenBoundsCheck, 241); // check to see if it went offscreen
+    pushReturnIndex(236);
+    goto RelativeEnemyPosition;
+Return_236:
+    pushReturnIndex(237);
+    goto GetEnemyOffscreenBits;
+Return_237: // get offscreen bits
+    pushReturnIndex(238);
+    goto GetEnemyBoundBox;
+Return_238: // get bounding box coordinates
+    pushReturnIndex(239);
+    goto DrawPowerUp;
+Return_239: // draw the power-up object
+    pushReturnIndex(240);
+    goto PlayerEnemyCollision;
+Return_240: // check for collision with player
+    pushReturnIndex(241);
+    goto OffscreenBoundsCheck;
+Return_241: // check to see if it went offscreen
 
 ExitPUp: // and we're done
     goto Return;
@@ -6468,7 +6952,9 @@ PlayerHeadCollision:
 
 DBlockSte: // store into block object buffer
     writeData(Block_State + x, a);
-    JSR(DestroyBlockMetatile, 242); // store blank metatile in vram buffer to write to name table
+    pushReturnIndex(242);
+    goto DestroyBlockMetatile;
+Return_242: // store blank metatile in vram buffer to write to name table
     x = M(SprDataOffset_Ctrl); // load offset control bit
     a = M(0x02); // get vertical high nybble offset used in block buffer routine
     writeData(Block_Orig_YPos + x, a); // set as vertical coordinate for block object
@@ -6476,7 +6962,9 @@ DBlockSte: // store into block object buffer
     a = M(0x06); // get low byte of block buffer address used in same routine
     writeData(Block_BBuf_Low + x, a); // save as offset here to be used later
     a = M(W(0x06) + y); // get contents of block buffer at old address at $06, $07
-    JSR(BlockBumpedChk, 243); // do a sub to check which block player bumped head on
+    pushReturnIndex(243);
+    goto BlockBumpedChk;
+Return_243: // do a sub to check which block player bumped head on
     writeData(0x00, a); // store metatile here
     y = M(PlayerSize); // check player's size
     if (!z)
@@ -6516,7 +7004,9 @@ PutOldMT: // put metatile into A
 
 PutMTileB: // store whatever metatile be appropriate here
     writeData(Block_Metatile + x, a);
-    JSR(InitBlock_XY_Pos, 244); // get block object horizontal coordinates saved
+    pushReturnIndex(244);
+    goto InitBlock_XY_Pos;
+Return_244: // get block object horizontal coordinates saved
     y = M(0x02); // get vertical high nybble offset
     a = 0x23;
     writeData(W(0x06) + y, a); // write blank metatile $23 to block buffer
@@ -6545,11 +7035,15 @@ BigBP: // get player's vertical coordinate
     compare(y, 0x11);
     if (z)
         goto Unbreak; // if set to value loaded for unbreakable, branch
-    JSR(BrickShatter, 245); // execute code for breakable brick
+    pushReturnIndex(245);
+    goto BrickShatter;
+Return_245: // execute code for breakable brick
     goto InvOBit; // skip subroutine to do last part of code here
 
 Unbreak: // execute code for unbreakable brick or question block
-    JSR(BumpBlock, 246);
+    pushReturnIndex(246);
+    goto BumpBlock;
+Return_246:
 
 InvOBit: // invert control bit used by block objects
     a = M(SprDataOffset_Ctrl);
@@ -6576,7 +7070,9 @@ InitBlock_XY_Pos:
 //------------------------------------------------------------------------
 
 BumpBlock:
-    JSR(CheckTopOfBlock, 247); // check to see if there's a coin directly above this block
+    pushReturnIndex(247);
+    goto CheckTopOfBlock;
+Return_247: // check to see if there's a coin directly above this block
     a = Sfx_Bump;
     writeData(Square1SoundQueue, a); // play bump sound
     a = 0x00;
@@ -6586,7 +7082,9 @@ BumpBlock:
     a = 0xfe;
     writeData(Block_Y_Speed + x, a); // set vertical speed for block object
     a = M(0x05); // get original metatile from stack
-    JSR(BlockBumpedChk, 248); // do a sub to check which block player bumped head on
+    pushReturnIndex(248);
+    goto BlockBumpedChk;
+Return_248: // do a sub to check which block player bumped head on
     if (!c)
         goto ExitBlockChk; // if no match was found, branch to leave
     a = y; // move block number to A
@@ -6636,7 +7134,9 @@ Skip_5:
 VineBlock:
     x = 0x05; // load last slot for enemy object buffer
     y = M(SprDataOffset_Ctrl); // get control bit
-    JSR(Setup_Vine, 249); // set up vine object
+    pushReturnIndex(249);
+    goto Setup_Vine;
+Return_249: // set up vine object
 
 ExitBlockChk:
     goto Return; // leave
@@ -6661,16 +7161,22 @@ MatchBump: // note carry is set if found match
 //------------------------------------------------------------------------
 
 BrickShatter:
-    JSR(CheckTopOfBlock, 250); // check to see if there's a coin directly above this block
+    pushReturnIndex(250);
+    goto CheckTopOfBlock;
+Return_250: // check to see if there's a coin directly above this block
     a = Sfx_BrickShatter;
     writeData(Block_RepFlag + x, a); // set flag for block object to immediately replace metatile
     writeData(NoiseSoundQueue, a); // load brick shatter sound
-    JSR(SpawnBrickChunks, 251); // create brick chunk objects
+    pushReturnIndex(251);
+    goto SpawnBrickChunks;
+Return_251: // create brick chunk objects
     a = 0xfe;
     writeData(Player_Y_Speed, a); // set vertical speed for player
     a = 0x05;
     writeData(DigitModifier + 5, a); // set digit modifier to give player 50 points
-    JSR(AddToScore, 252); // do sub to update the score
+    pushReturnIndex(252);
+    goto AddToScore;
+Return_252: // do sub to update the score
     x = M(SprDataOffset_Ctrl); // load control bit and leave
     goto Return;
 
@@ -6692,9 +7198,13 @@ CheckTopOfBlock:
         goto TopEx; // if not, branch to leave
     a = 0x00;
     writeData(W(0x06) + y, a); // otherwise put blank metatile where coin was
-    JSR(RemoveCoin_Axe, 253); // write blank metatile to vram buffer
+    pushReturnIndex(253);
+    goto RemoveCoin_Axe;
+Return_253: // write blank metatile to vram buffer
     x = M(SprDataOffset_Ctrl); // get control bit
-    JSR(SetupJumpCoin, 254); // create jumping coin object and update coin variables
+    pushReturnIndex(254);
+    goto SetupJumpCoin;
+Return_254: // create jumping coin object and update coin variables
 
 TopEx: // leave!
     goto Return;
@@ -6742,18 +7252,32 @@ BlockObjectsCore:
     --y; // decrement Y to check for solid block state
     if (z)
         goto BouncingBlockHandler; // branch if found, otherwise continue for brick chunks
-    JSR(ImposeGravityBlock, 255); // do sub to impose gravity on one block object object
-    JSR(MoveObjectHorizontally, 256); // do another sub to move horizontally
+    pushReturnIndex(255);
+    goto ImposeGravityBlock;
+Return_255: // do sub to impose gravity on one block object object
+    pushReturnIndex(256);
+    goto MoveObjectHorizontally;
+Return_256: // do another sub to move horizontally
     a = x;
     c = 0; // move onto next block object
     a += 0x02;
     x = a;
-    JSR(ImposeGravityBlock, 257); // do sub to impose gravity on other block object
-    JSR(MoveObjectHorizontally, 258); // do another sub to move horizontally
+    pushReturnIndex(257);
+    goto ImposeGravityBlock;
+Return_257: // do sub to impose gravity on other block object
+    pushReturnIndex(258);
+    goto MoveObjectHorizontally;
+Return_258: // do another sub to move horizontally
     x = M(ObjectOffset); // get block object offset used for both
-    JSR(RelativeBlockPosition, 259); // get relative coordinates
-    JSR(GetBlockOffscreenBits, 260); // get offscreen information
-    JSR(DrawBrickChunks, 261); // draw the brick chunks
+    pushReturnIndex(259);
+    goto RelativeBlockPosition;
+Return_259: // get relative coordinates
+    pushReturnIndex(260);
+    goto GetBlockOffscreenBits;
+Return_260: // get offscreen information
+    pushReturnIndex(261);
+    goto DrawBrickChunks;
+Return_261: // draw the brick chunks
     pla(); // get lower nybble of saved state
     y = M(Block_Y_HighPos + x); // check vertical high byte of block object
     if (z)
@@ -6775,11 +7299,19 @@ ChkTop: // get top block object's vertical coordinate
         goto KillBlock; // otherwise do unconditional branch to kill it
 
 BouncingBlockHandler:
-    JSR(ImposeGravityBlock, 262); // do sub to impose gravity on block object
+    pushReturnIndex(262);
+    goto ImposeGravityBlock;
+Return_262: // do sub to impose gravity on block object
     x = M(ObjectOffset); // get block object offset
-    JSR(RelativeBlockPosition, 263); // get relative coordinates
-    JSR(GetBlockOffscreenBits, 264); // get offscreen information
-    JSR(DrawBlock, 265); // draw the block
+    pushReturnIndex(263);
+    goto RelativeBlockPosition;
+Return_263: // get relative coordinates
+    pushReturnIndex(264);
+    goto GetBlockOffscreenBits;
+Return_264: // get offscreen information
+    pushReturnIndex(265);
+    goto DrawBlock;
+Return_265: // draw the block
     a = M(Block_Y_Position + x); // get vertical coordinate
     a &= 0x0f; // mask out high nybble
     compare(a, 0x05); // check to see if low nybble wrapped around
@@ -6818,7 +7350,9 @@ UpdateLoop: // set offset here
     y = a;
     a = M(Block_Metatile + x); // get metatile to be written
     writeData(W(0x06) + y, a); // write it to the block buffer
-    JSR(ReplaceBlockMetatile, 266); // do sub to replace metatile where block object is
+    pushReturnIndex(266);
+    goto ReplaceBlockMetatile;
+Return_266: // do sub to replace metatile where block object is
     a = 0x00;
     writeData(Block_RepFlag + x, a); // clear block object flag
 
@@ -6832,7 +7366,9 @@ NextBUpd: // decrement block object offset
 
 MoveEnemyHorizontally:
     ++x; // increment offset for enemy offset
-    JSR(MoveObjectHorizontally, 267); // position object horizontally according to
+    pushReturnIndex(267);
+    goto MoveObjectHorizontally;
+Return_267: // position object horizontally according to
     x = M(ObjectOffset); // counters, return with saved value in A,
     goto Return; // put enemy offset back in X and leave
 
@@ -6962,7 +7498,9 @@ SetHiMax: // set maximum speed in A
 SetXMoveAmt: // set movement amount here
     writeData(0x00, y);
     ++x; // increment X for enemy offset
-    JSR(ImposeGravitySprObj, 268); // do a sub to move enemy object downwards
+    pushReturnIndex(268);
+    goto ImposeGravitySprObj;
+Return_268: // do a sub to move enemy object downwards
     x = M(ObjectOffset); // get enemy object buffer offset and leave
     goto Return;
 
@@ -7010,7 +7548,9 @@ SetDplSpd: // save downward movement amount here
     y = a; // use as Y, then move onto code shared by red koopa
 
 RedPTroopaGrav:
-    JSR(ImposeGravity, 269); // do a sub to move object gradually
+    pushReturnIndex(269);
+    goto ImposeGravity;
+Return_269: // do a sub to move object gradually
     x = M(ObjectOffset); // get enemy object offset and leave
     goto Return;
 
@@ -7207,8 +7747,12 @@ WrongChk: // are we in world 7? (check performed on
         goto IncMLoop;
 
 DoLpBack: // if player is not in right place, loop back
-    JSR(ExecGameLoopback, 270);
-    JSR(KillAllEnemies, 271);
+    pushReturnIndex(270);
+    goto ExecGameLoopback;
+Return_270:
+    pushReturnIndex(271);
+    goto KillAllEnemies;
+Return_271:
 
 InitMLp: // initialize counters used for multi-part loop commands
     a = 0x00;
@@ -7365,7 +7909,9 @@ StrID: // store enemy object number into buffer
     writeData(Enemy_ID + x, a);
     a = 0x01;
     writeData(Enemy_Flag + x, a); // set flag for enemy in buffer
-    JSR(InitEnemyObject, 272);
+    pushReturnIndex(272);
+    goto InitEnemyObject;
+Return_272:
     a = M(Enemy_Flag + x); // check to see if flag is set
     if (!z)
         goto Inc2B; // if not, leave, otherwise branch
@@ -7389,7 +7935,9 @@ StrFre: // store contents of frenzy buffer into enemy identifier value
 InitEnemyObject:
     a = 0x00; // initialize enemy state
     writeData(Enemy_State + x, a);
-    JSR(CheckpointEnemyID, 273); // jump ahead to run jump engine and subroutines
+    pushReturnIndex(273);
+    goto CheckpointEnemyID;
+Return_273: // jump ahead to run jump engine and subroutines
 
 ExEPar: // then leave
     goto Return;
@@ -7577,7 +8125,9 @@ NoInitCode:
 //------------------------------------------------------------------------
 
 InitGoomba:
-    JSR(InitNormalEnemy, 274); // set appropriate horizontal speed
+    pushReturnIndex(274);
+    goto InitNormalEnemy;
+Return_274: // set appropriate horizontal speed
     goto SmallBBox; // set $09 as bounding box control, set other values
 
 InitPodoboo:
@@ -7612,7 +8162,9 @@ SetESpd: // store as speed for enemy object
     goto TallBBox; // branch to set bounding box control and other data
 
 InitRedKoopa:
-    JSR(InitNormalEnemy, 275); // load appropriate horizontal speed
+    pushReturnIndex(275);
+    goto InitNormalEnemy;
+Return_275: // load appropriate horizontal speed
     a = 0x01; // set enemy state for red koopa troopa $03
     writeData(Enemy_State + x, a);
     goto Return;
@@ -7681,7 +8233,9 @@ InitBulletBill:
 //------------------------------------------------------------------------
 
 InitCheepCheep:
-    JSR(SmallBBox, 276); // set vertical bounding box, speed, init others
+    pushReturnIndex(276);
+    goto SmallBBox;
+Return_276: // set vertical bounding box, speed, init others
     a = M(PseudoRandomBitReg + x); // check one portion of LSFR
     a &= BOOST_BINARY(00010000); // get d4 from it
     writeData(CheepCheepMoveMFlag + x, a); // save as movement flag of some sort
@@ -7699,7 +8253,9 @@ InitLakitu:
 SetupLakitu:
     a = 0x00; // erase counter for lakitu's reappearance
     writeData(LakituReappearTimer, a);
-    JSR(InitHorizFlySwimEnemy, 277); // set $03 as bounding box, set other attributes
+    pushReturnIndex(277);
+    goto InitHorizFlySwimEnemy;
+Return_277: // set $03 as bounding box, set other attributes
     goto TallBBox2; // set $03 as bounding box again (not necessary) and leave
 
 KillLakitu:
@@ -7746,9 +8302,13 @@ CreateL: // initialize enemy state
     writeData(Enemy_State + x, a);
     a = Lakitu; // create lakitu enemy object
     writeData(Enemy_ID + x, a);
-    JSR(SetupLakitu, 278); // do a sub to set up lakitu
+    pushReturnIndex(278);
+    goto SetupLakitu;
+Return_278: // do a sub to set up lakitu
     a = 0x20;
-    JSR(PutAtRightExtent, 279); // finish setting up lakitu
+    pushReturnIndex(279);
+    goto PutAtRightExtent;
+Return_279: // finish setting up lakitu
 
 RetEOfs: // get enemy object buffer offset again and leave
     x = M(ObjectOffset);
@@ -7792,7 +8352,9 @@ DifLoop: // get three values and save them
     if (!n)
         goto DifLoop; // loop until all three are written
     x = M(ObjectOffset); // get enemy object buffer offset
-    JSR(PlayerLakituDiff, 280); // move enemy, change direction, get value - difference
+    pushReturnIndex(280);
+    goto PlayerLakituDiff;
+Return_280: // move enemy, change direction, get value - difference
     y = M(Player_X_Speed); // check player's horizontal speed
     compare(y, 0x08);
     if (c)
@@ -7811,7 +8373,9 @@ UsePosv: // put value from A in Y back to A (they will be lost anyway)
     a = y;
 
 SetSpSpd: // set bounding box control, init attributes, lose contents of A
-    JSR(SmallBBox, 281);
+    pushReturnIndex(281);
+    goto SmallBBox;
+Return_281:
     y = 0x02;
     writeData(Enemy_X_Speed + x, a); // set horizontal speed to zero because previous contents
     compare(a, 0x00); // of A were lost...branch here will never be taken for
@@ -7834,7 +8398,9 @@ ChpChpEx:
 //------------------------------------------------------------------------
 
 InitLongFirebar:
-    JSR(DuplicateEnemyObj, 282); // create enemy object for long firebar
+    pushReturnIndex(282);
+    goto DuplicateEnemyObj;
+Return_282: // create enemy object for long firebar
 
 InitShortFirebar:
     a = 0x00; // initialize low byte of spin state
@@ -7864,7 +8430,9 @@ InitFlyingCheepCheep:
     a = M(FrenzyEnemyTimer); // if timer here not expired yet, branch to leave
     if (!z)
         goto ChpChpEx;
-    JSR(SmallBBox, 283); // jump to set bounding box size $09 and init other values
+    pushReturnIndex(283);
+    goto SmallBBox;
+Return_283: // jump to set bounding box size $09 and init other values
     a = M(PseudoRandomBitReg + 1 + x);
     a &= BOOST_BINARY(00000011); // set pseudorandom offset here
     y = a;
@@ -7967,7 +8535,9 @@ FinCCSt: // save as enemy's page location
 //------------------------------------------------------------------------
 
 InitBowser:
-    JSR(DuplicateEnemyObj, 284); // jump to create another bowser object
+    pushReturnIndex(284);
+    goto DuplicateEnemyObj;
+Return_284: // jump to create another bowser object
     writeData(BowserFront_Offset, x); // save offset of first here
     a = 0x00;
     writeData(BowserBodyControls, a); // initialize bowser's body controls
@@ -8028,7 +8598,9 @@ InitBowserFlame:
     compare(a, Bowser);
     if (z)
         goto SpawnFromMouth; // branch if found
-    JSR(SetFlameTimer, 285); // get timer data based on flame counter
+    pushReturnIndex(285);
+    goto SetFlameTimer;
+Return_285: // get timer data based on flame counter
     c = 0;
     a += 0x20; // add 32 frames by default
     y = M(SecondaryHardMode);
@@ -8203,7 +8775,9 @@ AddFBit: // add bit to already set bits in filter
     a |= M(BitMFilter);
     writeData(BitMFilter, a); // and store
     a = M(Enemy17YPosData + y); // load vertical position using offset
-    JSR(PutAtRightExtent, 286); // set vertical position and other values
+    pushReturnIndex(286);
+    goto PutAtRightExtent;
+Return_286: // set vertical position and other values
     writeData(Enemy_YMF_Dummy + x, a); // initialize dummy variable
     a = 0x20; // set timer
     writeData(FrenzyEnemyTimer, a);
@@ -8308,7 +8882,9 @@ GSltLp: // increment and branch if past
     a = 0x01; // activate flag for buffer, and
     writeData(Enemy_Y_HighPos + x, a); // put enemy within the screen vertically
     writeData(Enemy_Flag + x, a);
-    JSR(CheckpointEnemyID, 287); // process each enemy object separately
+    pushReturnIndex(287);
+    goto CheckpointEnemyID;
+Return_287: // process each enemy object separately
     --M(NumberofGroupEnemies); // do this until we run out of enemy objects
     if (!z)
         goto GrLoop;
@@ -8400,7 +8976,9 @@ InitBalPlatform:
     if (!z)
         goto AlignP; // branch ahead
     y = 0x02; // otherwise set value here
-    JSR(PosPlatform, 288); // do a sub to add or subtract pixels
+    pushReturnIndex(288);
+    goto PosPlatform;
+Return_288: // do a sub to add or subtract pixels
 
 AlignP: // set default value here for now
     y = 0xff;
@@ -8416,7 +8994,9 @@ SetBPA: // store whatever value's in Y here
     a = 0x00;
     writeData(Enemy_MovingDir + x, a); // init moving direction
     y = a; // init Y
-    JSR(PosPlatform, 289); // do a sub to add 8 pixels, then run shared code here
+    pushReturnIndex(289);
+    goto PosPlatform;
+Return_289: // do a sub to add 8 pixels, then run shared code here
 
 InitDropPlatform:
     a = 0xff;
@@ -8446,7 +9026,9 @@ SetYO: // save as top vertical position
     writeData(YPlatformCenterYPos + x, a); // save result as central vertical position
 
 CommonPlatCode:
-    JSR(InitVStf, 290); // do a sub to init certain other values 
+    pushReturnIndex(290);
+    goto InitVStf;
+Return_290: // do a sub to init certain other values 
 
 SPBBox: // set default bounding box size control
     a = 0x05;
@@ -8466,11 +9048,15 @@ CasPBB: // set bounding box size control here and leave
 //------------------------------------------------------------------------
 
 LargeLiftUp:
-    JSR(PlatLiftUp, 291); // execute code for platforms going up
+    pushReturnIndex(291);
+    goto PlatLiftUp;
+Return_291: // execute code for platforms going up
     goto LargeLiftBBox; // overwrite bounding box for large platforms
 
 LargeLiftDown:
-    JSR(PlatLiftDown, 292); // execute code for platforms going down
+    pushReturnIndex(292);
+    goto PlatLiftDown;
+Return_292: // execute code for platforms going down
 
 LargeLiftBBox:
     goto SPBBox; // jump to overwrite bounding box size control
@@ -8490,7 +9076,9 @@ PlatLiftDown:
 
 CommonSmallLift:
     y = 0x01;
-    JSR(PosPlatform, 293); // do a sub to add 12 pixels due to preset value  
+    pushReturnIndex(293);
+    goto PosPlatform;
+Return_293: // do a sub to add 12 pixels due to preset value  
     a = 0x04;
     writeData(Enemy_BoundBoxCtrl + x, a); // set bounding box control for small platforms
     goto Return;
@@ -8603,24 +9191,44 @@ NoRunCode:
 //------------------------------------------------------------------------
 
 RunRetainerObj:
-    JSR(GetEnemyOffscreenBits, 294);
-    JSR(RelativeEnemyPosition, 295);
+    pushReturnIndex(294);
+    goto GetEnemyOffscreenBits;
+Return_294:
+    pushReturnIndex(295);
+    goto RelativeEnemyPosition;
+Return_295:
     goto EnemyGfxHandler;
 
 RunNormalEnemies:
     a = 0x00; // init sprite attributes
     writeData(Enemy_SprAttrib + x, a);
-    JSR(GetEnemyOffscreenBits, 296);
-    JSR(RelativeEnemyPosition, 297);
-    JSR(EnemyGfxHandler, 298);
-    JSR(GetEnemyBoundBox, 299);
-    JSR(EnemyToBGCollisionDet, 300);
-    JSR(EnemiesCollision, 301);
-    JSR(PlayerEnemyCollision, 302);
+    pushReturnIndex(296);
+    goto GetEnemyOffscreenBits;
+Return_296:
+    pushReturnIndex(297);
+    goto RelativeEnemyPosition;
+Return_297:
+    pushReturnIndex(298);
+    goto EnemyGfxHandler;
+Return_298:
+    pushReturnIndex(299);
+    goto GetEnemyBoundBox;
+Return_299:
+    pushReturnIndex(300);
+    goto EnemyToBGCollisionDet;
+Return_300:
+    pushReturnIndex(301);
+    goto EnemiesCollision;
+Return_301:
+    pushReturnIndex(302);
+    goto PlayerEnemyCollision;
+Return_302:
     y = M(TimerControl); // if master timer control set, skip to last routine
     if (!z)
         goto SkipMove;
-    JSR(EnemyMovementSubs, 303);
+    pushReturnIndex(303);
+    goto EnemyMovementSubs;
+Return_303:
 
 SkipMove:
     goto OffscreenBoundsCheck;
@@ -8679,40 +9287,80 @@ NoMoveCode:
 //------------------------------------------------------------------------
 
 RunBowserFlame:
-    JSR(ProcBowserFlame, 304);
-    JSR(GetEnemyOffscreenBits, 305);
-    JSR(RelativeEnemyPosition, 306);
-    JSR(GetEnemyBoundBox, 307);
-    JSR(PlayerEnemyCollision, 308);
+    pushReturnIndex(304);
+    goto ProcBowserFlame;
+Return_304:
+    pushReturnIndex(305);
+    goto GetEnemyOffscreenBits;
+Return_305:
+    pushReturnIndex(306);
+    goto RelativeEnemyPosition;
+Return_306:
+    pushReturnIndex(307);
+    goto GetEnemyBoundBox;
+Return_307:
+    pushReturnIndex(308);
+    goto PlayerEnemyCollision;
+Return_308:
     goto OffscreenBoundsCheck;
 
 RunFirebarObj:
-    JSR(ProcFirebar, 309);
+    pushReturnIndex(309);
+    goto ProcFirebar;
+Return_309:
     goto OffscreenBoundsCheck;
 
 RunSmallPlatform:
-    JSR(GetEnemyOffscreenBits, 310);
-    JSR(RelativeEnemyPosition, 311);
-    JSR(SmallPlatformBoundBox, 312);
-    JSR(SmallPlatformCollision, 313);
-    JSR(RelativeEnemyPosition, 314);
-    JSR(DrawSmallPlatform, 315);
-    JSR(MoveSmallPlatform, 316);
+    pushReturnIndex(310);
+    goto GetEnemyOffscreenBits;
+Return_310:
+    pushReturnIndex(311);
+    goto RelativeEnemyPosition;
+Return_311:
+    pushReturnIndex(312);
+    goto SmallPlatformBoundBox;
+Return_312:
+    pushReturnIndex(313);
+    goto SmallPlatformCollision;
+Return_313:
+    pushReturnIndex(314);
+    goto RelativeEnemyPosition;
+Return_314:
+    pushReturnIndex(315);
+    goto DrawSmallPlatform;
+Return_315:
+    pushReturnIndex(316);
+    goto MoveSmallPlatform;
+Return_316:
     goto OffscreenBoundsCheck;
 
 RunLargePlatform:
-    JSR(GetEnemyOffscreenBits, 317);
-    JSR(RelativeEnemyPosition, 318);
-    JSR(LargePlatformBoundBox, 319);
-    JSR(LargePlatformCollision, 320);
+    pushReturnIndex(317);
+    goto GetEnemyOffscreenBits;
+Return_317:
+    pushReturnIndex(318);
+    goto RelativeEnemyPosition;
+Return_318:
+    pushReturnIndex(319);
+    goto LargePlatformBoundBox;
+Return_319:
+    pushReturnIndex(320);
+    goto LargePlatformCollision;
+Return_320:
     a = M(TimerControl); // if master timer control set,
     if (!z)
         goto SkipPT; // skip subroutine tree
-    JSR(LargePlatformSubroutines, 321);
+    pushReturnIndex(321);
+    goto LargePlatformSubroutines;
+Return_321:
 
 SkipPT:
-    JSR(RelativeEnemyPosition, 322);
-    JSR(DrawLargePlatform, 323);
+    pushReturnIndex(322);
+    goto RelativeEnemyPosition;
+Return_322:
+    pushReturnIndex(323);
+    goto DrawLargePlatform;
+Return_323:
     goto OffscreenBoundsCheck;
 
 LargePlatformSubroutines:
@@ -8755,7 +9403,9 @@ MovePodoboo:
     a = M(EnemyIntervalTimer + x); // check enemy timer
     if (!z)
         goto PdbM; // branch to move enemy if not expired
-    JSR(InitPodoboo, 324); // otherwise set up podoboo again
+    pushReturnIndex(324);
+    goto InitPodoboo;
+Return_324: // otherwise set up podoboo again
     a = M(PseudoRandomBitReg + 1 + x); // get part of LSFR
     a |= BOOST_BINARY(10000000); // set d7
     writeData(Enemy_Y_MoveForce + x, a); // store as movement force
@@ -8790,7 +9440,9 @@ ChkJH: // check jump timer
     y = M(SecondaryHardMode); // otherwise get secondary hard mode flag
     a = M(HammerThrowTmrData + y); // get timer data using flag as offset
     writeData(HammerThrowingTimer + x, a); // set as new timer
-    JSR(SpawnHammerObj, 325); // do a sub here to spawn hammer object
+    pushReturnIndex(325);
+    goto SpawnHammerObj;
+Return_325: // do a sub here to spawn hammer object
     if (!c)
         goto DecHT; // if carry clear, hammer not spawned, skip to decrement timer
     a = M(Enemy_State + x);
@@ -8857,7 +9509,9 @@ MoveHammerBroXDir:
 Shimmy: // store horizontal speed
     writeData(Enemy_X_Speed + x, y);
     y = 0x01; // set to face right by default
-    JSR(PlayerEnemyDiff, 326); // get horizontal difference between player and hammer bro
+    pushReturnIndex(326);
+    goto PlayerEnemyDiff;
+Return_326: // get horizontal difference between player and hammer bro
     if (n)
         goto SetShim; // if enemy to the left of player, skip this part
     ++y; // set to face left
@@ -8896,7 +9550,9 @@ MoveNormalEnemy:
         goto ReviveStunned; // if enemy in states $03 or $04, skip ahead to yet another part
 
 FallE: // do a sub here to move enemy downwards
-    JSR(MoveD_EnemyVertically, 327);
+    pushReturnIndex(327);
+    goto MoveD_EnemyVertically;
+Return_327:
     y = 0x00;
     a = M(Enemy_State + x); // check for enemy state $02
     compare(a, 0x02);
@@ -8930,7 +9586,9 @@ AddHS:
     c = 0;
     a += M(XSpeedAdderData + y); // add value here to slow enemy down if necessary
     writeData(Enemy_X_Speed + x, a); // save as horizontal speed temporarily
-    JSR(MoveEnemyHorizontally, 328); // then do a sub to move horizontally
+    pushReturnIndex(328);
+    goto MoveEnemyHorizontally;
+Return_328: // then do a sub to move horizontally
     pla();
     writeData(Enemy_X_Speed + x, a); // get old horizontal speed from stack and return to
     goto Return; // original memory location, then leave
@@ -8962,7 +9620,9 @@ SetRSpd: // load and store new horizontal speed
 //------------------------------------------------------------------------
 
 MoveDefeatedEnemy:
-    JSR(MoveD_EnemyVertically, 329); // execute sub to move defeated enemy downwards
+    pushReturnIndex(329);
+    goto MoveD_EnemyVertically;
+Return_329: // execute sub to move defeated enemy downwards
     goto MoveEnemyHorizontally; // now move defeated enemy horizontally
 
 ChkKillGoomba:
@@ -8973,7 +9633,9 @@ ChkKillGoomba:
     compare(a, Goomba); // check for goomba object
     if (!z)
         goto NKGmba; // branch if not found
-    JSR(EraseEnemyObject, 330); // otherwise, kill this goomba object
+    pushReturnIndex(330);
+    goto EraseEnemyObject;
+Return_330: // otherwise, kill this goomba object
 
 NKGmba: // leave!
     goto Return;
@@ -8981,7 +9643,9 @@ NKGmba: // leave!
 //------------------------------------------------------------------------
 
 MoveJumpingEnemy:
-    JSR(MoveJ_EnemyVertically, 331); // do a sub to impose gravity on green paratroopa
+    pushReturnIndex(331);
+    goto MoveJ_EnemyVertically;
+Return_331: // do a sub to impose gravity on green paratroopa
     goto MoveEnemyHorizontally; // jump to move enemy horizontally
 
 ProcMoveRedPTroopa:
@@ -9016,8 +9680,12 @@ MovPTDwn: // move downwards
     goto MoveRedPTroopaDown;
 
 MoveFlyGreenPTroopa:
-    JSR(XMoveCntr_GreenPTroopa, 332); // do sub to increment primary and secondary counters
-    JSR(MoveWithXMCntrs, 333); // do sub to move green paratroopa accordingly, and horizontally
+    pushReturnIndex(332);
+    goto XMoveCntr_GreenPTroopa;
+Return_332: // do sub to increment primary and secondary counters
+    pushReturnIndex(333);
+    goto MoveWithXMCntrs;
+Return_333: // do sub to move green paratroopa accordingly, and horizontally
     y = 0x01; // set Y to move green paratroopa down
     a = M(FrameCounter);
     a &= BOOST_BINARY(00000011); // check frame counter 2 LSB for any bits set
@@ -9097,7 +9765,9 @@ MoveWithXMCntrs:
 
 XMRight: // store as moving direction
     writeData(Enemy_MovingDir + x, y);
-    JSR(MoveEnemyHorizontally, 334);
+    pushReturnIndex(334);
+    goto MoveEnemyHorizontally;
+Return_334:
     writeData(0x00, a); // save value obtained from sub here
     pla(); // get secondary counter from stack
     writeData(XMoveSecondaryCounter + x, a); // and return to original place
@@ -9125,7 +9795,9 @@ MoveBloober:
 
 FBLeft: // set left moving direction by default
     y = 0x02;
-    JSR(PlayerEnemyDiff, 335); // get horizontal difference between player and bloober
+    pushReturnIndex(335);
+    goto PlayerEnemyDiff;
+Return_335: // get horizontal difference between player and bloober
     if (!n)
         goto SBMDir; // if enemy to the right of player, keep left
     --y; // otherwise decrement to set right moving direction
@@ -9134,7 +9806,9 @@ SBMDir: // set moving direction of bloober, then continue on here
     writeData(Enemy_MovingDir + x, y);
 
 BlooberSwim:
-    JSR(ProcSwimmingB, 336); // execute sub to make bloober swim characteristically
+    pushReturnIndex(336);
+    goto ProcSwimmingB;
+Return_336: // execute sub to make bloober swim characteristically
     a = M(Enemy_Y_Position + x); // get vertical coordinate
     c = 1;
     a -= M(Enemy_Y_MoveForce + x); // subtract movement force
@@ -9347,7 +10021,9 @@ ExSwCC: // leave
 //------------------------------------------------------------------------
 
 ProcFirebar:
-    JSR(GetEnemyOffscreenBits, 337); // get offscreen information
+    pushReturnIndex(337);
+    goto GetEnemyOffscreenBits;
+Return_337: // get offscreen information
     a = M(Enemy_OffscreenBits); // check for d3 set
     a &= BOOST_BINARY(00001000); // if so, branch to leave
     if (!z)
@@ -9356,7 +10032,9 @@ ProcFirebar:
     if (!z)
         goto SusFbar; // ahead of this part
     a = M(FirebarSpinSpeed + x); // load spinning speed of firebar
-    JSR(FirebarSpin, 338); // modify current spinstate
+    pushReturnIndex(338);
+    goto FirebarSpin;
+Return_338: // modify current spinstate
     a &= BOOST_BINARY(00011111); // mask out all but 5 LSB
     writeData(FirebarSpinState_High + x, a); // and store as new high byte of spinstate
 
@@ -9380,8 +10058,12 @@ SkpFSte:
 
 SetupGFB: // save high byte of spinning thing, modified or otherwise
     writeData(0xef, a);
-    JSR(RelativeEnemyPosition, 339); // get relative coordinates to screen
-    JSR(GetFirebarPosition, 340); // do a sub here (residual, too early to be used now)
+    pushReturnIndex(339);
+    goto RelativeEnemyPosition;
+Return_339: // get relative coordinates to screen
+    pushReturnIndex(340);
+    goto GetFirebarPosition;
+Return_340: // do a sub here (residual, too early to be used now)
     y = M(Enemy_SprDataOffset + x); // get OAM data offset
     a = M(Enemy_Rel_YPos); // get relative vertical coordinate
     writeData(Sprite_Y_Position + y, a); // store as Y in OAM data
@@ -9391,7 +10073,9 @@ SetupGFB: // save high byte of spinning thing, modified or otherwise
     writeData(0x06, a); // also save here
     a = 0x01;
     writeData(0x00, a); // set $01 value here (not necessary)
-    JSR(FirebarCollision, 341); // draw fireball part and do collision detection
+    pushReturnIndex(341);
+    goto FirebarCollision;
+Return_341: // draw fireball part and do collision detection
     y = 0x05; // load value for short firebars by default
     a = M(Enemy_ID + x);
     compare(a, 0x1f); // are we doing a long firebar?
@@ -9406,8 +10090,12 @@ SetMFbar: // store maximum value for length of firebars
 
 DrawFbar: // load high byte of spinstate
     a = M(0xef);
-    JSR(GetFirebarPosition, 342); // get fireball position data depending on firebar part
-    JSR(DrawFirebar_Collision, 343); // position it properly, draw it and do collision detection
+    pushReturnIndex(342);
+    goto GetFirebarPosition;
+Return_342: // get fireball position data depending on firebar part
+    pushReturnIndex(343);
+    goto DrawFirebar_Collision;
+Return_343: // position it properly, draw it and do collision detection
     a = M(0x00); // check which firebar part
     compare(a, 0x04);
     if (!z)
@@ -9485,7 +10173,9 @@ SetVFbr: // store as Y coordinate here
     writeData(0x07, a); // also store here for now
 
 FirebarCollision:
-    JSR(DrawFirebar, 344); // run sub here to draw current tile of firebar
+    pushReturnIndex(344);
+    goto DrawFirebar;
+Return_344: // run sub here to draw current tile of firebar
     a = y; // return OAM data offset and save
     pha(); // to the stack for now
     a = M(StarInvincibleTimer); // if star mario invincibility timer
@@ -9575,7 +10265,9 @@ SetSDir: // store movement direction here
     x = 0x00;
     a = M(0x00); // save value written to $00 to stack
     pha();
-    JSR(InjurePlayer, 345); // perform sub to hurt or kill player
+    pushReturnIndex(345);
+    goto InjurePlayer;
+Return_345: // perform sub to hurt or kill player
     pla();
     writeData(0x00, a); // get value of $00 from stack
 
@@ -9650,10 +10342,14 @@ MoveFlyingCheepCheep:
     goto MoveJ_EnemyVertically; // and jump to move defeated cheep-cheep downwards
 
 FlyCC: // move cheep-cheep horizontally based on speed and force
-    JSR(MoveEnemyHorizontally, 346);
+    pushReturnIndex(346);
+    goto MoveEnemyHorizontally;
+Return_346:
     y = 0x0d; // set vertical movement amount
     a = 0x05; // set maximum speed
-    JSR(SetXMoveAmt, 347); // branch to impose gravity on flying cheep-cheep
+    pushReturnIndex(347);
+    goto SetXMoveAmt;
+Return_347: // branch to impose gravity on flying cheep-cheep
     a = M(Enemy_Y_MoveForce + x);
     a >>= 1; // get vertical movement force and
     a >>= 1; // move high nybble to low
@@ -9719,7 +10415,9 @@ LdLDa: // load values
     --y;
     if (!n)
         goto LdLDa; // do this until all values are stired
-    JSR(PlayerLakituDiff, 348); // execute sub to set speed and create spinys
+    pushReturnIndex(348);
+    goto PlayerLakituDiff;
+Return_348: // execute sub to set speed and create spinys
 
 SetLSpd: // set movement speed returned from sub
     writeData(LakituMoveSpeed + x, a);
@@ -9741,7 +10439,9 @@ SetLMov: // store moving direction
 
 PlayerLakituDiff:
     y = 0x00; // set Y for default value
-    JSR(PlayerEnemyDiff, 349); // get horizontal difference between enemy and player
+    pushReturnIndex(349);
+    goto PlayerEnemyDiff;
+Return_349: // get horizontal difference between enemy and player
     if (!n)
         goto ChkLakDif; // branch if enemy is to the right of the player
     ++y; // increment Y for left of player
@@ -9858,7 +10558,9 @@ SetM2: // silence music
     goto KillAllEnemies; // jump to empty all enemy slots and then leave  
 
 MoveD_Bowser:
-    JSR(MoveEnemySlowVert, 350); // do a sub to move bowser downwards
+    pushReturnIndex(350);
+    goto MoveEnemySlowVert;
+Return_350: // do a sub to move bowser downwards
     goto BowserGfxHandler; // jump to draw bowser's front and rear, then leave
 
 RemoveBridge:
@@ -9878,9 +10580,13 @@ RemoveBridge:
     y = M(VRAM_Buffer1_Offset); // increment vram buffer offset
     ++y;
     x = 0x0c; // set offset for tile data for sub to draw blank metatile
-    JSR(RemBridge, 351); // do sub here to remove bowser's bridge metatiles
+    pushReturnIndex(351);
+    goto RemBridge;
+Return_351: // do sub here to remove bowser's bridge metatiles
     x = M(ObjectOffset); // get enemy offset
-    JSR(MoveVOffset, 352); // set new vram buffer offset
+    pushReturnIndex(352);
+    goto MoveVOffset;
+Return_352: // set new vram buffer offset
     a = Sfx_Blast; // load the fireworks/gunfire sound into the square 2 sfx
     writeData(Square2SoundQueue, a); // queue while at the same time loading the brick
     a = Sfx_BrickShatter; // shatter sound into the noise sfx queue thus
@@ -9890,7 +10596,9 @@ RemoveBridge:
     compare(a, 0x0f); // if bridge collapse offset has not yet reached
     if (!z)
         goto NoBFall; // the end, go ahead and skip this part
-    JSR(InitVStf, 353); // initialize whatever vertical speed bowser has
+    pushReturnIndex(353);
+    goto InitVStf;
+Return_353: // initialize whatever vertical speed bowser has
     a = BOOST_BINARY(01000000);
     writeData(Enemy_State + x, a); // set bowser's state to one of defeated states (d6 set)
     a = Sfx_BowserFall;
@@ -9913,7 +10621,9 @@ KillAllEnemies:
     x = 0x04; // start with last enemy slot
 
 KillLoop: // branch to kill enemy objects
-    JSR(EraseEnemyObject, 354);
+    pushReturnIndex(354);
+    goto EraseEnemyObject;
+Return_354:
     --x; // move onto next enemy slot
     if (!n)
         goto KillLoop; // do this until all slots are emptied
@@ -9959,7 +10669,9 @@ B_FaceP: // if timer set here expired,
     a = M(EnemyFrameTimer + x);
     if (z)
         goto GetPRCmp; // branch to next section
-    JSR(PlayerEnemyDiff, 355); // get horizontal difference between player and bowser,
+    pushReturnIndex(355);
+    goto PlayerEnemyDiff;
+Return_355: // get horizontal difference between player and bowser,
     if (!n)
         goto GetPRCmp; // and branch if bowser to the right of the player
     a = 0x01;
@@ -10018,7 +10730,9 @@ HammerChk: // if timer set here not expired yet, skip ahead to
     a = M(EnemyFrameTimer + x);
     if (!z)
         goto MakeBJump; // some other section of code
-    JSR(MoveEnemySlowVert, 356); // otherwise start by moving bowser downwards
+    pushReturnIndex(356);
+    goto MoveEnemySlowVert;
+Return_356: // otherwise start by moving bowser downwards
     a = M(WorldNumber); // check world number
     compare(a, World6);
     if (!c)
@@ -10027,7 +10741,9 @@ HammerChk: // if timer set here not expired yet, skip ahead to
     a &= BOOST_BINARY(00000011); // check to see if it's time to execute sub
     if (!z)
         goto SetHmrTmr; // if not, skip sub, otherwise
-    JSR(SpawnHammerObj, 357); // execute sub on every fourth frame to spawn misc object (hammer)
+    pushReturnIndex(357);
+    goto SpawnHammerObj;
+Return_357: // execute sub on every fourth frame to spawn misc object (hammer)
 
 SetHmrTmr: // get current vertical position
     a = M(Enemy_Y_Position + x);
@@ -10048,7 +10764,9 @@ MakeBJump: // if timer not yet about to expire,
     if (!z)
         goto ChkFireB; // skip ahead to next part
     --M(Enemy_Y_Position + x); // otherwise decrement vertical coordinate
-    JSR(InitVStf, 358); // initialize movement amount
+    pushReturnIndex(358);
+    goto InitVStf;
+Return_358: // initialize movement amount
     a = 0xfe;
     writeData(Enemy_Y_Speed + x, a); // set vertical speed to move bowser upwards
 
@@ -10072,7 +10790,9 @@ SpawnFBr: // check timer here
     writeData(BowserBodyControls, a); // and close bowser's mouth
     if (n)
         goto ChkFireB; // if bowser's mouth open, loop back
-    JSR(SetFlameTimer, 359); // get timing for bowser's flame
+    pushReturnIndex(359);
+    goto SetFlameTimer;
+Return_359: // get timing for bowser's flame
     y = M(SecondaryHardMode);
     if (z)
         goto SetFBTmr; // if secondary hard mode flag not set, skip this
@@ -10085,7 +10805,9 @@ SetFBTmr: // set value as timer here
     writeData(EnemyFrenzyBuffer, a); // in enemy frenzy buffer
 
 BowserGfxHandler:
-    JSR(ProcessBowserHalf, 360); // do a sub here to process bowser's front
+    pushReturnIndex(360);
+    goto ProcessBowserHalf;
+Return_360: // do a sub here to process bowser's front
     y = 0x10; // load default value here to position bowser's rear
     a = M(Enemy_MovingDir + x); // check moving direction
     a >>= 1;
@@ -10113,7 +10835,9 @@ CopyFToR: // move bowser's rear object position value to A
     writeData(ObjectOffset, x);
     a = Bowser; // set bowser's enemy identifier
     writeData(Enemy_ID + x, a); // store in bowser's rear object
-    JSR(ProcessBowserHalf, 361); // do a sub here to process bowser's rear
+    pushReturnIndex(361);
+    goto ProcessBowserHalf;
+Return_361: // do a sub here to process bowser's rear
     pla();
     writeData(ObjectOffset, a); // get original enemy object offset
     x = a;
@@ -10127,13 +10851,17 @@ ExBGfxH: // leave!
 
 ProcessBowserHalf:
     ++M(BowserGfxFlag); // increment bowser's graphics flag, then run subroutines
-    JSR(RunRetainerObj, 362); // to get offscreen bits, relative position and draw bowser (finally!)
+    pushReturnIndex(362);
+    goto RunRetainerObj;
+Return_362: // to get offscreen bits, relative position and draw bowser (finally!)
     a = M(Enemy_State + x);
     if (!z)
         goto ExBGfxH; // if either enemy object not in normal state, branch to leave
     a = 0x0a;
     writeData(Enemy_BoundBoxCtrl + x, a); // set bounding box size control
-    JSR(GetEnemyBoundBox, 363); // get bounding box coordinates
+    pushReturnIndex(363);
+    goto GetEnemyBoundBox;
+Return_363: // get bounding box coordinates
     goto PlayerEnemyCollision; // do player-to-enemy collision detection
 
 SetFlameTimer:
@@ -10181,7 +10909,9 @@ SFlmX: // store value here
     writeData(Enemy_Y_Position + x, a); // as new vertical coordinate
 
 SetGfxF: // get new relative coordinates
-    JSR(RelativeEnemyPosition, 364);
+    pushReturnIndex(364);
+    goto RelativeEnemyPosition;
+Return_364:
     a = M(Enemy_State + x); // if bowser's flame not in normal state,
     if (!z)
         goto ExFl; // branch to leave
@@ -10221,7 +10951,9 @@ DrawFlameLoop:
     if (!c)
         goto DrawFlameLoop;
     x = M(ObjectOffset); // reload original enemy offset
-    JSR(GetEnemyOffscreenBits, 365); // get offscreen information
+    pushReturnIndex(365);
+    goto GetEnemyOffscreenBits;
+Return_365: // get offscreen information
     y = M(Enemy_SprDataOffset + x); // get OAM data offset
     a = M(Enemy_OffscreenBits); // get enemy object offscreen bits
     a >>= 1; // move d0 to carry and result to stack
@@ -10275,14 +11007,18 @@ RunFireworks:
         goto FireworksSoundScore; // if at a certain point, branch to kill this object
 
 SetupExpl: // get relative coordinates of explosion
-    JSR(RelativeEnemyPosition, 366);
+    pushReturnIndex(366);
+    goto RelativeEnemyPosition;
+Return_366:
     a = M(Enemy_Rel_YPos); // copy relative coordinates
     writeData(Fireball_Rel_YPos, a); // from the enemy object to the fireball object
     a = M(Enemy_Rel_XPos); // first vertical, then horizontal
     writeData(Fireball_Rel_XPos, a);
     y = M(Enemy_SprDataOffset + x); // get OAM data offset
     a = M(ExplosionGfxCounter + x); // get explosion graphics counter
-    JSR(DrawExplosion_Fireworks, 367); // do a sub to draw the explosion then leave
+    pushReturnIndex(367);
+    goto DrawExplosion_Fireworks;
+Return_367: // do a sub to draw the explosion then leave
     goto Return;
 
 //------------------------------------------------------------------------
@@ -10362,7 +11098,9 @@ NoTTick: // set offset here to subtract from game timer's last digit
     y = 0x23;
     a = 0xff; // set adder here to $ff, or -1, to subtract one
     writeData(DigitModifier + 5, a); // from the last digit of the game timer
-    JSR(DigitsMathRoutine, 368); // subtract digit
+    pushReturnIndex(368);
+    goto DigitsMathRoutine;
+Return_368: // subtract digit
     a = 0x05; // set now to add 50 points
     writeData(DigitModifier + 5, a); // per game timer interval subtracted
 
@@ -10374,7 +11112,9 @@ EndAreaPoints:
     y = 0x11; // otherwise load offset for luigi's score
 
 ELPGive: // award 50 points per game timer interval
-    JSR(DigitsMathRoutine, 369);
+    pushReturnIndex(369);
+    goto DigitsMathRoutine;
+Return_369:
     a = M(CurrentPlayer); // get player on the screen (or 500 points per
     a <<= 1; // fireworks explosion if branched here from there)
     a <<= 1; // shift to high nybble
@@ -10401,7 +11141,9 @@ SetoffF: // check fireworks counter
     writeData(EnemyFrenzyBuffer, a); // otherwise set fireworks object in frenzy queue
 
 DrawStarFlag:
-    JSR(RelativeEnemyPosition, 370); // get relative coordinates of star flag
+    pushReturnIndex(370);
+    goto RelativeEnemyPosition;
+Return_370: // get relative coordinates of star flag
     y = M(Enemy_SprDataOffset + x); // get OAM data offset
     x = 0x03; // do four sprites
 
@@ -10431,7 +11173,9 @@ DSFLoop: // get relative vertical coordinate
 //------------------------------------------------------------------------
 
 DrawFlagSetTimer:
-    JSR(DrawStarFlag, 371); // do sub to draw star flag
+    pushReturnIndex(371);
+    goto DrawStarFlag;
+Return_371: // do sub to draw star flag
     a = 0x06;
     writeData(EnemyIntervalTimer + x, a); // set interval timer here
 
@@ -10442,7 +11186,9 @@ IncrementSFTask2:
 //------------------------------------------------------------------------
 
 DelayToAreaEnd:
-    JSR(DrawStarFlag, 372); // do sub to draw star flag
+    pushReturnIndex(372);
+    goto DrawStarFlag;
+Return_372: // do sub to draw star flag
     a = M(EnemyIntervalTimer + x); // if interval timer set in previous task
     if (!z)
         goto StarFlagExit2; // not yet expired, branch to leave
@@ -10468,7 +11214,9 @@ MovePiranhaPlant:
     a = M(PiranhaPlant_Y_Speed + x); // if currently rising, branch 
     if (n)
         goto ReversePlantSpeed; // to move enemy upwards out of pipe
-    JSR(PlayerEnemyDiff, 373); // get horizontal difference between player and
+    pushReturnIndex(373);
+    goto PlayerEnemyDiff;
+Return_373: // get horizontal difference between player and
     if (!n)
         goto ChkPlayerNearPipe; // piranha plant, and branch if enemy to right of player
     a = M(0x00); // otherwise get saved horizontal difference
@@ -10635,15 +11383,21 @@ ColFlg: // if collision flag matches
         goto PlatDn; // current enemy object offset, branch
 
 PlatUp: // do a sub to move upwards
-    JSR(MovePlatformUp, 374);
+    pushReturnIndex(374);
+    goto MovePlatformUp;
+Return_374:
     goto DoOtherPlatform; // jump ahead to remaining code
 
 PlatSt: // do a sub to stop movement
-    JSR(StopPlatforms, 375);
+    pushReturnIndex(375);
+    goto StopPlatforms;
+Return_375:
     goto DoOtherPlatform; // jump ahead to remaining code
 
 PlatDn: // do a sub to move downwards
-    JSR(MovePlatformDown, 376);
+    pushReturnIndex(376);
+    goto MovePlatformDown;
+Return_376:
 
 DoOtherPlatform:
     y = M(Enemy_State + x); // get offset of other platform
@@ -10657,7 +11411,9 @@ DoOtherPlatform:
     if (n)
         goto DrawEraseRope;
     x = a; // put offset which collision occurred here
-    JSR(PositionPlayerOnVPlat, 377); // and use it to position player accordingly
+    pushReturnIndex(377);
+    goto PositionPlayerOnVPlat;
+Return_377: // and use it to position player accordingly
 
 DrawEraseRope:
     y = M(ObjectOffset); // get enemy object offset
@@ -10672,7 +11428,9 @@ DrawEraseRope:
     a = M(Enemy_Y_Speed + y);
     pha(); // save two copies of vertical speed to stack
     pha();
-    JSR(SetupPlatformRope, 378); // do a sub to figure out where to put new bg tiles
+    pushReturnIndex(378);
+    goto SetupPlatformRope;
+Return_378: // do a sub to figure out where to put new bg tiles
     a = M(0x01); // write name table address to vram buffer
     writeData(VRAM_Buffer1 + x, a); // first the high byte, then the low
     a = M(0x00);
@@ -10698,7 +11456,9 @@ OtherRope:
     y = a; // use as Y here
     pla(); // pull second copy of vertical speed from stack
     a ^= 0xff; // invert bits to reverse speed
-    JSR(SetupPlatformRope, 379); // do sub again to figure out where to put bg tiles  
+    pushReturnIndex(379);
+    goto SetupPlatformRope;
+Return_379: // do sub again to figure out where to put bg tiles  
     a = M(0x01); // write name table address to vram buffer
     writeData(VRAM_Buffer1 + 5 + x, a); // this time we're doing putting tiles for
     a = M(0x00); // the other platform
@@ -10801,9 +11561,13 @@ ExPRp: // leave!
 InitPlatformFall:
     a = y; // move offset of other platform from Y to X
     x = a;
-    JSR(GetEnemyOffscreenBits, 380); // get offscreen bits
+    pushReturnIndex(380);
+    goto GetEnemyOffscreenBits;
+Return_380: // get offscreen bits
     a = 0x06;
-    JSR(SetupFloateyNumber, 381); // award 1000 points to player
+    pushReturnIndex(381);
+    goto SetupFloateyNumber;
+Return_381: // award 1000 points to player
     a = M(Player_Rel_XPos);
     writeData(FloateyNum_X_Pos + x, a); // put floatey number coordinates where player is
     a = M(Player_Y_Position);
@@ -10812,7 +11576,9 @@ InitPlatformFall:
     writeData(Enemy_MovingDir + x, a); // falling platforms
 
 StopPlatforms:
-    JSR(InitVStf, 382); // initialize vertical speed and low byte
+    pushReturnIndex(382);
+    goto InitVStf;
+Return_382: // initialize vertical speed and low byte
     writeData(Enemy_Y_Speed + y, a); // for both platforms and leave
     writeData(Enemy_Y_MoveForce + y, a);
     goto Return;
@@ -10822,16 +11588,22 @@ StopPlatforms:
 PlatformFall:
     a = y; // save offset for other platform to stack
     pha();
-    JSR(MoveFallingPlatform, 383); // make current platform fall
+    pushReturnIndex(383);
+    goto MoveFallingPlatform;
+Return_383: // make current platform fall
     pla();
     x = a; // pull offset from stack and save to X
-    JSR(MoveFallingPlatform, 384); // make other platform fall
+    pushReturnIndex(384);
+    goto MoveFallingPlatform;
+Return_384: // make other platform fall
     x = M(ObjectOffset);
     a = M(PlatformCollisionFlag + x); // if player not standing on either platform,
     if (n)
         goto ExPF; // skip this part
     x = a; // transfer collision flag offset as offset to X
-    JSR(PositionPlayerOnVPlat, 385); // and position player appropriately
+    pushReturnIndex(385);
+    goto PositionPlayerOnVPlat;
+Return_385: // and position player appropriately
 
 ExPF: // get enemy object buffer offset and leave
     x = M(ObjectOffset);
@@ -10863,17 +11635,23 @@ ChkYCenterPos:
     compare(a, M(YPlatformCenterYPos + x)); // to slow ascent/move downwards
     if (!c)
         goto YMDown;
-    JSR(MovePlatformUp, 386); // otherwise start slowing descent/moving upwards
+    pushReturnIndex(386);
+    goto MovePlatformUp;
+Return_386: // otherwise start slowing descent/moving upwards
     goto ChkYPCollision;
 
 YMDown: // start slowing ascent/moving downwards
-    JSR(MovePlatformDown, 387);
+    pushReturnIndex(387);
+    goto MovePlatformDown;
+Return_387:
 
 ChkYPCollision:
     a = M(PlatformCollisionFlag + x); // if collision flag not set here, branch
     if (n)
         goto ExYPl; // to leave
-    JSR(PositionPlayerOnVPlat, 388); // otherwise position player appropriately
+    pushReturnIndex(388);
+    goto PositionPlayerOnVPlat;
+Return_388: // otherwise position player appropriately
 
 ExYPl: // leave
     goto Return;
@@ -10882,8 +11660,12 @@ ExYPl: // leave
 
 XMovingPlatform:
     a = 0x0e; // load preset maximum value for secondary counter
-    JSR(XMoveCntr_Platform, 389); // do a sub to increment counters for movement
-    JSR(MoveWithXMCntrs, 390); // do a sub to move platform accordingly, and return value
+    pushReturnIndex(389);
+    goto XMoveCntr_Platform;
+Return_389: // do a sub to increment counters for movement
+    pushReturnIndex(390);
+    goto MoveWithXMCntrs;
+Return_390: // do a sub to move platform accordingly, and return value
     a = M(PlatformCollisionFlag + x); // if no collision with player,
     if (n)
         goto ExXMP; // branch ahead to leave
@@ -10906,7 +11688,9 @@ PPHSubt: // subtract borrow from page location
 SetPVar: // save result to player's page location
     writeData(Player_PageLoc, a);
     writeData(Platform_X_Scroll, y); // put saved value from second sub here to be used later
-    JSR(PositionPlayerOnVPlat, 391); // position player vertically and appropriately
+    pushReturnIndex(391);
+    goto PositionPlayerOnVPlat;
+Return_391: // position player vertically and appropriately
 
 ExXMP: // and we are done here
     goto Return;
@@ -10917,8 +11701,12 @@ DropPlatform:
     a = M(PlatformCollisionFlag + x); // if no collision between platform and player
     if (n)
         goto ExDPl; // occurred, just leave without moving anything
-    JSR(MoveDropPlatform, 392); // otherwise do a sub to move platform down very quickly
-    JSR(PositionPlayerOnVPlat, 393); // do a sub to position player appropriately
+    pushReturnIndex(392);
+    goto MoveDropPlatform;
+Return_392: // otherwise do a sub to move platform down very quickly
+    pushReturnIndex(393);
+    goto PositionPlayerOnVPlat;
+Return_393: // do a sub to position player appropriately
 
 ExDPl: // leave
     goto Return;
@@ -10926,14 +11714,18 @@ ExDPl: // leave
 //------------------------------------------------------------------------
 
 RightPlatform:
-    JSR(MoveEnemyHorizontally, 394); // move platform with current horizontal speed, if any
+    pushReturnIndex(394);
+    goto MoveEnemyHorizontally;
+Return_394: // move platform with current horizontal speed, if any
     writeData(0x00, a); // store saved value here (residual code)
     a = M(PlatformCollisionFlag + x); // check collision flag, if no collision between player
     if (n)
         goto ExRPl; // and platform, branch ahead, leave speed unaltered
     a = 0x10;
     writeData(Enemy_X_Speed + x, a); // otherwise set new speed (gets moving if motionless)
-    JSR(PositionPlayerOnHPlat, 395); // use saved value from earlier sub to position player
+    pushReturnIndex(395);
+    goto PositionPlayerOnHPlat;
+Return_395: // use saved value from earlier sub to position player
 
 ExRPl: // then leave
     goto Return;
@@ -10941,11 +11733,15 @@ ExRPl: // then leave
 //------------------------------------------------------------------------
 
 MoveLargeLiftPlat:
-    JSR(MoveLiftPlatforms, 396); // execute common to all large and small lift platforms
+    pushReturnIndex(396);
+    goto MoveLiftPlatforms;
+Return_396: // execute common to all large and small lift platforms
     goto ChkYPCollision; // branch to position player correctly
 
 MoveSmallPlatform:
-    JSR(MoveLiftPlatforms, 397); // execute common to all large and small lift platforms
+    pushReturnIndex(397);
+    goto MoveLiftPlatforms;
+Return_397: // execute common to all large and small lift platforms
     goto ChkSmallPlatCollision; // branch to position player correctly
 
 MoveLiftPlatforms:
@@ -10967,7 +11763,9 @@ ChkSmallPlatCollision:
     a = M(PlatformCollisionFlag + x); // get bounding box counter saved in collision flag
     if (z)
         goto ExLiftP; // if none found, leave player position alone
-    JSR(PositionPlayerOnS_Plat, 398); // use to position player correctly
+    pushReturnIndex(398);
+    goto PositionPlayerOnS_Plat;
+Return_398: // use to position player correctly
 
 ExLiftP: // then leave
     goto Return;
@@ -11033,7 +11831,9 @@ ExtendLB: // subtract 72 pixels regardless of enemy object
         goto ExScrnBd; // erase all others too far to the right
 
 TooFar: // erase object if necessary
-    JSR(EraseEnemyObject, 399);
+    pushReturnIndex(399);
+    goto EraseEnemyObject;
+Return_399:
 
 ExScrnBd: // leave
     goto Return;
@@ -11097,14 +11897,18 @@ NotGoomba: // if any masked offscreen bits set,
     c = 0;
     a += 0x04; // add 4 bytes to it
     x = a; // to use enemy's bounding box coordinates
-    JSR(SprObjectCollisionCore, 400); // do fireball-to-enemy collision detection
+    pushReturnIndex(400);
+    goto SprObjectCollisionCore;
+Return_400: // do fireball-to-enemy collision detection
     x = M(ObjectOffset); // return fireball's original offset
     if (!c)
         goto NoFToECol; // if carry clear, no collision, thus do next enemy slot
     a = BOOST_BINARY(10000000);
     writeData(Fireball_State + x, a); // set d7 in enemy state
     x = M(0x01); // get enemy offset
-    JSR(HandleEnemyFBallCol, 401); // jump to handle fireball to enemy collision
+    pushReturnIndex(401);
+    goto HandleEnemyFBallCol;
+Return_401: // jump to handle fireball to enemy collision
 
 NoFToECol: // pull fireball offset from stack
     pla();
@@ -11121,7 +11925,9 @@ ExitFBallEnemy:
 //------------------------------------------------------------------------
 
 HandleEnemyFBallCol:
-    JSR(RelativeEnemyPosition, 402); // get relative coordinate of enemy
+    pushReturnIndex(402);
+    goto RelativeEnemyPosition;
+Return_402: // get relative coordinate of enemy
     x = M(0x01); // get current enemy object offset
     a = M(Enemy_Flag + x); // check buffer flag for d7 set
     if (!n)
@@ -11147,7 +11953,9 @@ HurtBowser:
     --M(BowserHitPoints); // decrement bowser's hit points
     if (!z)
         goto ExHCF; // if bowser still has hit points, branch to leave
-    JSR(InitVStf, 403); // otherwise do sub to init vertical speed and movement force
+    pushReturnIndex(403);
+    goto InitVStf;
+Return_403: // otherwise do sub to init vertical speed and movement force
     writeData(Enemy_X_Speed + x, a); // initialize horizontal speed
     writeData(EnemyFrenzyBuffer, a); // init enemy frenzy buffer
     a = 0xfe;
@@ -11191,7 +11999,9 @@ ShellOrBlockDefeat:
     writeData(Enemy_Y_Position + x, a);
 
 StnE: // do yet another sub
-    JSR(ChkToStunEnemies, 404);
+    pushReturnIndex(404);
+    goto ChkToStunEnemies;
+Return_404:
     a = M(Enemy_State + x);
     a &= BOOST_BINARY(00011111); // mask out 2 MSB of enemy object's state
     a |= BOOST_BINARY(00100000); // set d5 to defeat enemy and save as new state
@@ -11210,7 +12020,9 @@ GoombaPoints:
     a = 0x01; // award 100 points for goomba
 
 EnemySmackScore:
-    JSR(SetupFloateyNumber, 405); // update necessary score variables
+    pushReturnIndex(405);
+    goto SetupFloateyNumber;
+Return_405: // update necessary score variables
     a = Sfx_EnemySmack; // play smack enemy sound
     writeData(Square1SoundQueue, a);
 
@@ -11234,7 +12046,9 @@ PlayerHammerCollision:
     c = 0;
     a += 0x24; // add 36 or $24 bytes to get proper offset
     y = a; // for misc object bounding box coordinates
-    JSR(PlayerCollisionCore, 406); // do player-to-hammer collision detection
+    pushReturnIndex(406);
+    goto PlayerCollisionCore;
+Return_406: // do player-to-hammer collision detection
     x = M(ObjectOffset); // get misc object offset
     if (!c)
         goto ClHCol; // if no collision, then branch
@@ -11263,9 +12077,13 @@ ExPHC:
 //------------------------------------------------------------------------
 
 HandlePowerUpCollision:
-    JSR(EraseEnemyObject, 407); // erase the power-up object
+    pushReturnIndex(407);
+    goto EraseEnemyObject;
+Return_407: // erase the power-up object
     a = 0x06;
-    JSR(SetupFloateyNumber, 408); // award 1000 points to player by default
+    pushReturnIndex(408);
+    goto SetupFloateyNumber;
+Return_408: // award 1000 points to player by default
     a = Sfx_PowerUpGrab;
     writeData(Square2SoundQueue, a); // play the power-up sound
     a = M(PowerUpType); // check power-up type
@@ -11293,7 +12111,9 @@ Shroom_Flower_PUp:
     x = M(ObjectOffset); // get enemy offset, not necessary
     a = 0x02; // set player status to fiery
     writeData(PlayerStatus, a);
-    JSR(GetPlayerColors, 409); // run sub to change colors of player
+    pushReturnIndex(409);
+    goto GetPlayerColors;
+Return_409: // run sub to change colors of player
     x = M(ObjectOffset); // get enemy offset again, and again not necessary
     a = 0x0c; // set value to be used by subroutine tree (fiery)
     goto UpToFiery; // jump to set values accordingly
@@ -11312,19 +12132,25 @@ UpToSuper:
 
 UpToFiery:
     y = 0x00; // set value to be used as new player state
-    JSR(SetPRout, 410); // set values to stop certain things in motion
+    pushReturnIndex(410);
+    goto SetPRout;
+Return_410: // set values to stop certain things in motion
 
 NoPUp:
     goto Return;
 
 //------------------------------------------------------------------------
 
+ResidualXSpdData:
+
 PlayerEnemyCollision:
     a = M(FrameCounter); // check counter for d0 set
     a >>= 1;
     if (c)
         goto NoPUp; // if set, branch to leave
-    JSR(CheckPlayerVertical, 411); // if player object is completely offscreen or
+    pushReturnIndex(411);
+    goto CheckPlayerVertical;
+Return_411: // if player object is completely offscreen or
     if (c)
         goto NoPECol; // if down past 224th pixel row, branch to leave
     a = M(EnemyOffscrBitsMasked + x); // if current enemy is offscreen by any amount,
@@ -11338,8 +12164,12 @@ PlayerEnemyCollision:
     a &= BOOST_BINARY(00100000); // if enemy state has d5 set, branch to leave
     if (!z)
         goto NoPECol;
-    JSR(GetEnemyBoundBoxOfs, 412); // get bounding box offset for current enemy object
-    JSR(PlayerCollisionCore, 413); // do collision detection on player vs. enemy
+    pushReturnIndex(412);
+    goto GetEnemyBoundBoxOfs;
+Return_412: // get bounding box offset for current enemy object
+    pushReturnIndex(413);
+    goto PlayerCollisionCore;
+Return_413: // do collision detection on player vs. enemy
     x = M(ObjectOffset); // get enemy object buffer offset
     if (c)
         goto CheckForPUpCollision; // if collision, branch past this part here
@@ -11410,7 +12240,9 @@ HandlePECollisions:
     a = M(Enemy_State + x); // set d7 in enemy state, thus become moving shell
     a |= BOOST_BINARY(10000000);
     writeData(Enemy_State + x, a);
-    JSR(EnemyFacePlayer, 414); // set moving direction and get offset
+    pushReturnIndex(414);
+    goto EnemyFacePlayer;
+Return_414: // set moving direction and get offset
     a = M(KickedShellXSpdData + y); // load and set horizontal speed data with offset
     writeData(Enemy_X_Speed + x, a);
     a = 0x03; // add three to whatever the stomp counter contains
@@ -11423,7 +12255,9 @@ HandlePECollisions:
     a = M(KickedShellPtsData + y); // otherwise, set points based on proximity to timer expiration
 
 KSPts: // set values for floatey number now
-    JSR(SetupFloateyNumber, 415);
+    pushReturnIndex(415);
+    goto SetupFloateyNumber;
+Return_415:
 
 ExPEC: // leave!!!
     goto Return;
@@ -11483,7 +12317,9 @@ ForceInjury:
     writeData(InjuryTimer, a); // set injured invincibility timer
     a <<= 1;
     writeData(Square1SoundQueue, a); // play pipedown/injury sound
-    JSR(GetPlayerColors, 416); // change player's palette if necessary
+    pushReturnIndex(416);
+    goto GetPlayerColors;
+Return_416: // change player's palette if necessary
     a = 0x0a; // set subroutine to run on next frame
 
 SetKRout: // set new player state
@@ -11549,15 +12385,21 @@ EnemyStomped:
 
 EnemyStompedPts:
     a = M(StompedEnemyPtsData + y); // load points data using offset in Y
-    JSR(SetupFloateyNumber, 417); // run sub to set floatey number controls
+    pushReturnIndex(417);
+    goto SetupFloateyNumber;
+Return_417: // run sub to set floatey number controls
     a = M(Enemy_MovingDir + x);
     pha(); // save enemy movement direction to stack
-    JSR(SetStun, 418); // run sub to kill enemy
+    pushReturnIndex(418);
+    goto SetStun;
+Return_418: // run sub to kill enemy
     pla();
     writeData(Enemy_MovingDir + x, a); // return enemy movement direction from stack
     a = BOOST_BINARY(00100000);
     writeData(Enemy_State + x, a); // set d5 in enemy state
-    JSR(InitVStf, 419); // nullify vertical speed, physics-related thing,
+    pushReturnIndex(419);
+    goto InitVStf;
+Return_419: // nullify vertical speed, physics-related thing,
     writeData(Enemy_X_Speed + x, a); // and horizontal speed
     a = 0xfd; // set player's vertical speed, to give bounce
     writeData(Player_Y_Speed, a);
@@ -11574,9 +12416,15 @@ ChkForDemoteKoopa:
     y = 0x00; // return enemy to normal state
     writeData(Enemy_State + x, y);
     a = 0x03; // award 400 points to the player
-    JSR(SetupFloateyNumber, 420);
-    JSR(InitVStf, 421); // nullify physics-related thing and vertical speed
-    JSR(EnemyFacePlayer, 422); // turn enemy around if necessary
+    pushReturnIndex(420);
+    goto SetupFloateyNumber;
+Return_420:
+    pushReturnIndex(421);
+    goto InitVStf;
+Return_421: // nullify physics-related thing and vertical speed
+    pushReturnIndex(422);
+    goto EnemyFacePlayer;
+Return_422: // turn enemy around if necessary
     a = M(DemotedKoopaXSpdData + y);
     writeData(Enemy_X_Speed + x, a); // set appropriate moving speed based on direction
     goto SBnce; // then move onto something else
@@ -11588,7 +12436,9 @@ HandleStompedShellE:
     a = M(StompChainCounter); // add whatever is in the stomp counter
     c = 0; // to whatever is in the stomp timer
     a += M(StompTimer);
-    JSR(SetupFloateyNumber, 423); // award points accordingly
+    pushReturnIndex(423);
+    goto SetupFloateyNumber;
+Return_423: // award points accordingly
     ++M(StompTimer); // increment stomp timer of some sort
     y = M(PrimaryHardMode); // check primary hard mode flag
     a = M(RevivalRateData + y); // load timer setting according to flag
@@ -11609,12 +12459,16 @@ ChkEnemyFaceRight:
     goto InjurePlayer; // otherwise go back to hurt player
 
 LInj: // turn the enemy around, if necessary
-    JSR(EnemyTurnAround, 424);
+    pushReturnIndex(424);
+    goto EnemyTurnAround;
+Return_424:
     goto InjurePlayer; // go back to hurt player
 
 EnemyFacePlayer:
     y = 0x01; // set to move right by default
-    JSR(PlayerEnemyDiff, 425); // get horizontal difference between player and enemy
+    pushReturnIndex(425);
+    goto PlayerEnemyDiff;
+Return_425: // get horizontal difference between player and enemy
     if (!n)
         goto SFcRt; // if enemy is to the right of player, do not increment
     ++y; // otherwise, increment to set to move to the left
@@ -11661,7 +12515,9 @@ EnemiesCollision:
     a = M(EnemyOffscrBitsMasked + x); // if masked offscreen bits nonzero, branch to leave
     if (!z)
         goto ExitECRoutine;
-    JSR(GetEnemyBoundBoxOfs, 426); // otherwise, do sub, get appropriate bounding box offset for
+    pushReturnIndex(426);
+    goto GetEnemyBoundBoxOfs;
+Return_426: // otherwise, do sub, get appropriate bounding box offset for
     --x; // first enemy we're going to compare, then decrement for second
     if (n)
         goto ExitECRoutine; // branch to leave if there are no other enemies
@@ -11692,7 +12548,9 @@ ECLoop: // save enemy object buffer offset for second enemy here
     c = 0;
     a += 0x04;
     x = a; // use as new contents of X
-    JSR(SprObjectCollisionCore, 427); // do collision detection using the two enemies here
+    pushReturnIndex(427);
+    goto SprObjectCollisionCore;
+Return_427: // do collision detection using the two enemies here
     x = M(ObjectOffset); // use first enemy offset for X
     y = M(0x01); // use second enemy offset for Y
     if (!c)
@@ -11711,7 +12569,9 @@ ECLoop: // save enemy object buffer offset for second enemy here
     writeData(Enemy_CollisionBits + y, a);
 
 YesEC: // react according to the nature of collision
-    JSR(ProcEnemyCollisions, 428);
+    pushReturnIndex(428);
+    goto ProcEnemyCollisions;
+Return_428:
     goto ReadyNextEnemy; // move onto next enemy slot
 
 NoEnemyCollision:
@@ -11752,20 +12612,28 @@ ProcEnemyCollisions:
     if (!c)
         goto ShellCollisions; // branch if d7 is clear
     a = 0x06;
-    JSR(SetupFloateyNumber, 429); // award 1000 points for killing enemy
-    JSR(ShellOrBlockDefeat, 430); // then kill enemy, then load
+    pushReturnIndex(429);
+    goto SetupFloateyNumber;
+Return_429: // award 1000 points for killing enemy
+    pushReturnIndex(430);
+    goto ShellOrBlockDefeat;
+Return_430: // then kill enemy, then load
     y = M(0x01); // original offset of second enemy
 
 ShellCollisions:
     a = y; // move Y to X
     x = a;
-    JSR(ShellOrBlockDefeat, 431); // kill second enemy
+    pushReturnIndex(431);
+    goto ShellOrBlockDefeat;
+Return_431: // kill second enemy
     x = M(ObjectOffset);
     a = M(ShellChainCounter + x); // get chain counter for shell
     c = 0;
     a += 0x04; // add four to get appropriate point offset
     x = M(0x01);
-    JSR(SetupFloateyNumber, 432); // award appropriate number of points for second enemy
+    pushReturnIndex(432);
+    goto SetupFloateyNumber;
+Return_432: // award appropriate number of points for second enemy
     x = M(ObjectOffset); // load original offset of first enemy
     ++M(ShellChainCounter + x); // increment chain counter for additional enemies
 
@@ -11783,13 +12651,17 @@ ProcSecondEnemyColl:
     compare(a, HammerBro); // if hammer bro found in alt state, branch to leave
     if (z)
         goto ExitProcessEColl;
-    JSR(ShellOrBlockDefeat, 433); // otherwise, kill first enemy
+    pushReturnIndex(433);
+    goto ShellOrBlockDefeat;
+Return_433: // otherwise, kill first enemy
     y = M(0x01);
     a = M(ShellChainCounter + y); // get chain counter for shell
     c = 0;
     a += 0x04; // add four to get appropriate point offset
     x = M(ObjectOffset);
-    JSR(SetupFloateyNumber, 434); // award appropriate number of points for first enemy
+    pushReturnIndex(434);
+    goto SetupFloateyNumber;
+Return_434: // award appropriate number of points for first enemy
     x = M(0x01); // load original offset of second enemy
     ++M(ShellChainCounter + x); // increment chain counter for additional enemies
     goto Return; // leave!!!
@@ -11799,7 +12671,9 @@ ProcSecondEnemyColl:
 MoveEOfs:
     a = y; // move Y ($01) to X
     x = a;
-    JSR(EnemyTurnAround, 435); // do the sub here using value from $01
+    pushReturnIndex(435);
+    goto EnemyTurnAround;
+Return_435: // do the sub here using value from $01
     x = M(ObjectOffset); // then do it again using value from $08
 
 EnemyTurnAround:
@@ -11853,24 +12727,34 @@ LargePlatformCollision:
         goto ChkForPlayerC_LargeP; // balance platform, branch if not found
     a = M(Enemy_State + x);
     x = a; // set state as enemy offset here
-    JSR(ChkForPlayerC_LargeP, 436); // perform code with state offset, then original offset, in X
+    pushReturnIndex(436);
+    goto ChkForPlayerC_LargeP;
+Return_436: // perform code with state offset, then original offset, in X
 
 ChkForPlayerC_LargeP:
-    JSR(CheckPlayerVertical, 437); // figure out if player is below a certain point
+    pushReturnIndex(437);
+    goto CheckPlayerVertical;
+Return_437: // figure out if player is below a certain point
     if (c)
         goto ExLPC; // or offscreen, branch to leave if true
     a = x;
-    JSR(GetEnemyBoundBoxOfsArg, 438); // get bounding box offset in Y
+    pushReturnIndex(438);
+    goto GetEnemyBoundBoxOfsArg;
+Return_438: // get bounding box offset in Y
     a = M(Enemy_Y_Position + x); // store vertical coordinate in
     writeData(0x00, a); // temp variable for now
     a = x; // send offset we're on to the stack
     pha();
-    JSR(PlayerCollisionCore, 439); // do player-to-platform collision detection
+    pushReturnIndex(439);
+    goto PlayerCollisionCore;
+Return_439: // do player-to-platform collision detection
     pla(); // retrieve offset from the stack
     x = a;
     if (!c)
         goto ExLPC; // if no collision, branch to leave
-    JSR(ProcLPlatCollisions, 440); // otherwise collision, perform sub
+    pushReturnIndex(440);
+    goto ProcLPlatCollisions;
+Return_440: // otherwise collision, perform sub
 
 ExLPC: // get enemy object buffer offset and leave
     x = M(ObjectOffset);
@@ -11883,7 +12767,9 @@ SmallPlatformCollision:
     if (!z)
         goto ExSPC; // branch to leave
     writeData(PlatformCollisionFlag + x, a); // otherwise initialize collision flag
-    JSR(CheckPlayerVertical, 441); // do a sub to see if player is below a certain point
+    pushReturnIndex(441);
+    goto CheckPlayerVertical;
+Return_441: // do a sub to see if player is below a certain point
     if (c)
         goto ExSPC; // or entirely offscreen, and branch to leave if true
     a = 0x02;
@@ -11891,7 +12777,9 @@ SmallPlatformCollision:
 
 ChkSmallPlatLoop:
     x = M(ObjectOffset); // get enemy object offset
-    JSR(GetEnemyBoundBoxOfs, 442); // get bounding box offset in Y
+    pushReturnIndex(442);
+    goto GetEnemyBoundBoxOfs;
+Return_442: // get bounding box offset in Y
     a &= BOOST_BINARY(00000010); // if d1 of offscreen lower nybble bits was set
     if (!z)
         goto ExSPC; // then branch to leave
@@ -11899,7 +12787,9 @@ ChkSmallPlatLoop:
     compare(a, 0x20); // above a specific point
     if (!c)
         goto MoveBoundBox; // if so, branch, don't do collision detection
-    JSR(PlayerCollisionCore, 443); // otherwise, perform player-to-platform collision detection
+    pushReturnIndex(443);
+    goto PlayerCollisionCore;
+Return_443: // otherwise, perform player-to-platform collision detection
     if (c)
         goto ProcSPlatCollisions; // skip ahead if collision
 
@@ -11985,7 +12875,9 @@ PlatformSideCollisions:
         goto NoSideC; // and instead branch to leave (no collision)
 
 SideC: // deal with horizontal collision
-    JSR(ImpedePlayerMove, 444);
+    pushReturnIndex(444);
+    goto ImpedePlayerMove;
+Return_444:
 
 NoSideC: // return with enemy object buffer offset
     x = M(ObjectOffset);
@@ -12133,10 +13025,14 @@ HeadChk: // get player's vertical coordinate
     compare(a, M(PlayerBGUpperExtent + x)); // compare with upper extent value based on offset
     if (!c)
         goto DoFootCheck; // if player is too high, skip this part
-    JSR(BlockBufferColli_Head, 445); // do player-to-bg collision detection on top of
+    pushReturnIndex(445);
+    goto BlockBufferColli_Head;
+Return_445: // do player-to-bg collision detection on top of
     if (z)
         goto DoFootCheck; // player, and branch if nothing above player's head
-    JSR(CheckForCoinMTiles, 446); // check to see if player touched coin with their head
+    pushReturnIndex(446);
+    goto CheckForCoinMTiles;
+Return_446: // check to see if player touched coin with their head
     if (c)
         goto AwardTouchedCoin; // if so, branch to some other part of code
     y = M(Player_Y_Speed); // check player's vertical speed
@@ -12146,7 +13042,9 @@ HeadChk: // get player's vertical coordinate
     compare(y, 0x04); // from collision detection routine
     if (!c)
         goto DoFootCheck; // if low nybble < 4, branch
-    JSR(CheckForSolidMTiles, 447); // check to see what player's head bumped on
+    pushReturnIndex(447);
+    goto CheckForSolidMTiles;
+Return_447: // check to see what player's head bumped on
     if (c)
         goto SolidOrClimb; // if player collided with solid metatile, branch
     y = M(AreaType); // otherwise check area type
@@ -12155,7 +13053,9 @@ HeadChk: // get player's vertical coordinate
     y = M(BlockBounceTimer); // if block bounce timer not expired,
     if (!z)
         goto NYSpd; // branch ahead, do not process collision
-    JSR(PlayerHeadCollision, 448); // otherwise do a sub to process collision
+    pushReturnIndex(448);
+    goto PlayerHeadCollision;
+Return_448: // otherwise do a sub to process collision
     goto DoFootCheck; // jump ahead to skip these other parts here
 
 SolidOrClimb:
@@ -12175,12 +13075,18 @@ DoFootCheck:
     compare(a, 0xcf); // check to see how low player is
     if (c)
         goto DoPlayerSideCheck; // if player is too far down on screen, skip all of this
-    JSR(BlockBufferColli_Feet, 449); // do player-to-bg collision detection on bottom left of player
-    JSR(CheckForCoinMTiles, 450); // check to see if player touched coin with their left foot
+    pushReturnIndex(449);
+    goto BlockBufferColli_Feet;
+Return_449: // do player-to-bg collision detection on bottom left of player
+    pushReturnIndex(450);
+    goto CheckForCoinMTiles;
+Return_450: // check to see if player touched coin with their left foot
     if (c)
         goto AwardTouchedCoin; // if so, branch to some other part of code
     pha(); // save bottom left metatile to stack
-    JSR(BlockBufferColli_Feet, 451); // do player-to-bg collision detection on bottom right of player
+    pushReturnIndex(451);
+    goto BlockBufferColli_Feet;
+Return_451: // do player-to-bg collision detection on bottom right of player
     writeData(0x00, a); // save bottom right metatile here
     pla();
     writeData(0x01, a); // pull bottom left metatile and save here
@@ -12189,7 +13095,9 @@ DoFootCheck:
     a = M(0x00); // otherwise check for anything in bottom right metatile
     if (z)
         goto DoPlayerSideCheck; // and skip ahead if not
-    JSR(CheckForCoinMTiles, 452); // check to see if player touched coin with their right foot
+    pushReturnIndex(452);
+    goto CheckForCoinMTiles;
+Return_452: // check to see if player touched coin with their right foot
     if (!c)
         goto ChkFootMTile; // if not, skip unconditional jump and continue code
 
@@ -12197,7 +13105,9 @@ AwardTouchedCoin:
     goto HandleCoinMetatile; // follow the code to erase coin and award to player 1 coin
 
 ChkFootMTile:
-    JSR(CheckForClimbMTiles, 453); // check to see if player landed on climbable metatiles
+    pushReturnIndex(453);
+    goto CheckForClimbMTiles;
+Return_453: // check to see if player landed on climbable metatiles
     if (c)
         goto DoPlayerSideCheck; // if so, branch
     y = M(Player_Y_Speed); // check player's vertical speed
@@ -12209,7 +13119,9 @@ ChkFootMTile:
     goto HandleAxeMetatile; // otherwise jump to set modes of operation
 
 ContChk: // do sub to check for hidden coin or 1-up blocks
-    JSR(ChkInvisibleMTiles, 454);
+    pushReturnIndex(454);
+    goto ChkInvisibleMTiles;
+Return_454:
     if (z)
         goto DoPlayerSideCheck; // if either found, branch
     y = M(JumpspringAnimCtrl); // if jumpspring animating right now,
@@ -12224,11 +13136,15 @@ ContChk: // do sub to check for hidden coin or 1-up blocks
     goto ImpedePlayerMove; // jump to impede player's movement in that direction
 
 LandPlyr: // do sub to check for jumpspring metatiles and deal with it
-    JSR(ChkForLandJumpSpring, 455);
+    pushReturnIndex(455);
+    goto ChkForLandJumpSpring;
+Return_455:
     a = 0xf0;
     a &= M(Player_Y_Position); // mask out lower nybble of player's vertical position
     writeData(Player_Y_Position, a); // and store as new vertical position to land player properly
-    JSR(HandlePipeEntry, 456); // do sub to process potential pipe entry
+    pushReturnIndex(456);
+    goto HandlePipeEntry;
+Return_456: // do sub to process potential pipe entry
     a = 0x00;
     writeData(Player_Y_Speed, a); // initialize vertical speed and fractional
     writeData(Player_Y_MoveForce, a); // movement force to stop player's vertical movement
@@ -12255,7 +13171,9 @@ SideCheckLoop:
     compare(a, 0xe4);
     if (c)
         goto ExSCH; // branch to leave if player is too far down
-    JSR(BlockBufferColli_Side, 457); // do player-to-bg collision detection on one half of player
+    pushReturnIndex(457);
+    goto BlockBufferColli_Side;
+Return_457: // do player-to-bg collision detection on one half of player
     if (z)
         goto BHalf; // branch ahead if nothing found
     compare(a, 0x1c); // otherwise check for pipe metatiles
@@ -12264,7 +13182,9 @@ SideCheckLoop:
     compare(a, 0x6b);
     if (z)
         goto BHalf; // if collided with water pipe (top), branch ahead
-    JSR(CheckForClimbMTiles, 458); // do sub to see if player bumped into anything climbable
+    pushReturnIndex(458);
+    goto CheckForClimbMTiles;
+Return_458: // do sub to see if player bumped into anything climbable
     if (!c)
         goto CheckSideMTiles; // if not, branch to alternate section of code
 
@@ -12278,7 +13198,9 @@ BHalf: // load block adder offset
     compare(a, 0xd0);
     if (c)
         goto ExSCH; // if too low, branch to leave
-    JSR(BlockBufferColli_Side, 459); // do player-to-bg collision detection on other half of player
+    pushReturnIndex(459);
+    goto BlockBufferColli_Side;
+Return_459: // do player-to-bg collision detection on other half of player
     if (!z)
         goto CheckSideMTiles; // if something found, branch
     --M(0x00); // otherwise decrement counter
@@ -12291,19 +13213,27 @@ ExSCH: // leave
 //------------------------------------------------------------------------
 
 CheckSideMTiles:
-    JSR(ChkInvisibleMTiles, 460); // check for hidden or coin 1-up blocks
+    pushReturnIndex(460);
+    goto ChkInvisibleMTiles;
+Return_460: // check for hidden or coin 1-up blocks
     if (z)
         goto ExCSM; // branch to leave if either found
-    JSR(CheckForClimbMTiles, 461); // check for climbable metatiles
+    pushReturnIndex(461);
+    goto CheckForClimbMTiles;
+Return_461: // check for climbable metatiles
     if (!c)
         goto ContSChk; // if not found, skip and continue with code
     goto HandleClimbing; // otherwise jump to handle climbing
 
 ContSChk: // check to see if player touched coin
-    JSR(CheckForCoinMTiles, 462);
+    pushReturnIndex(462);
+    goto CheckForCoinMTiles;
+Return_462:
     if (c)
         goto HandleCoinMetatile; // if so, execute code to erase coin and award to player 1 coin
-    JSR(ChkJumpspringMetatiles, 463); // check for jumpspring metatiles
+    pushReturnIndex(463);
+    goto ChkJumpspringMetatiles;
+Return_463: // check for jumpspring metatiles
     if (!c)
         goto ChkPBtm; // if not found, branch ahead to continue cude
     a = M(JumpspringAnimCtrl); // otherwise check jumpspring animation control
@@ -12366,7 +13296,9 @@ ChkGERtn: // get number of game engine routine running
 //------------------------------------------------------------------------
 
 StopPlayerMove:
-    JSR(ImpedePlayerMove, 464); // stop player's movement
+    pushReturnIndex(464);
+    goto ImpedePlayerMove;
+Return_464: // stop player's movement
 
 ExCSM: // leave
     goto Return;
@@ -12374,7 +13306,9 @@ ExCSM: // leave
 //------------------------------------------------------------------------
 
 HandleCoinMetatile:
-    JSR(ErACM, 465); // do sub to erase coin metatile from block buffer
+    pushReturnIndex(465);
+    goto ErACM;
+Return_465: // do sub to erase coin metatile from block buffer
     ++M(CoinTallyFor1Ups); // increment coin tally used for 1-up blocks
     goto GiveOneCoin; // update coin amount and tally on the screen
 
@@ -12427,7 +13361,9 @@ FlagpoleCollision:
     if (z)
         goto RunFR; // if running, branch to end of flagpole code here
     a = BulletBill_CannonVar; // load identifier for bullet bills (cannon variant)
-    JSR(KillEnemies, 466); // get rid of them
+    pushReturnIndex(466);
+    goto KillEnemies;
+Return_466: // get rid of them
     a = Silence;
     writeData(EventMusicQueue, a); // silence music
     a >>= 1;
@@ -12513,7 +13449,9 @@ ExCInvT: // leave with zero flag set if either found
 //------------------------------------------------------------------------
 
 ChkForLandJumpSpring:
-    JSR(ChkJumpspringMetatiles, 467); // do sub to check if player landed on jumpspring
+    pushReturnIndex(467);
+    goto ChkJumpspringMetatiles;
+Return_467: // do sub to check if player landed on jumpspring
     if (!c)
         goto ExCJSp; // if carry not set, jumpspring not found, therefore leave
     a = 0x70;
@@ -12657,14 +13595,18 @@ ExIPM: // invert contents of X
 //------------------------------------------------------------------------
 
 CheckForSolidMTiles:
-    JSR(GetMTileAttrib, 468); // find appropriate offset based on metatile's 2 MSB
+    pushReturnIndex(468);
+    goto GetMTileAttrib;
+Return_468: // find appropriate offset based on metatile's 2 MSB
     compare(a, M(SolidMTileUpperExt + x)); // compare current metatile with solid metatiles
     goto Return;
 
 //------------------------------------------------------------------------
 
 CheckForClimbMTiles:
-    JSR(GetMTileAttrib, 469); // find appropriate offset based on metatile's 2 MSB
+    pushReturnIndex(469);
+    goto GetMTileAttrib;
+Return_469: // find appropriate offset based on metatile's 2 MSB
     compare(a, M(ClimbMTileUpperExt + x)); // compare current metatile with climbable metatiles
     goto Return;
 
@@ -12708,7 +13650,9 @@ EnemyToBGCollisionDet:
     a &= BOOST_BINARY(00100000);
     if (!z)
         goto ExEBG; // if set, branch to leave
-    JSR(SubtEnemyYPos, 470); // otherwise, do a subroutine here
+    pushReturnIndex(470);
+    goto SubtEnemyYPos;
+Return_470: // otherwise, do a subroutine here
     if (!c)
         goto ExEBG; // if enemy vertical coord + 62 < 68, branch to leave
     y = M(Enemy_ID + x);
@@ -12744,7 +13688,9 @@ CInvu: // if enemy object is spiny, branch
         goto ExEBGChk;
 
 YesIn: // if enemy object < $07, or = $12 or $2e, do this sub
-    JSR(ChkUnderEnemy, 471);
+    pushReturnIndex(471);
+    goto ChkUnderEnemy;
+Return_471:
     if (!z)
         goto HandleEToBGCollision; // if block underneath enemy, branch
 
@@ -12752,7 +13698,9 @@ NoEToBGCollision:
     goto ChkForRedKoopa; // otherwise skip and do something else
 
 HandleEToBGCollision:
-    JSR(ChkForNonSolids, 472); // if something is underneath enemy, find out what
+    pushReturnIndex(472);
+    goto ChkForNonSolids;
+Return_472: // if something is underneath enemy, find out what
     if (z)
         goto NoEToBGCollision; // if blank $26, coins, or hidden blocks, jump, enemy falls through
     compare(a, 0x23);
@@ -12768,11 +13716,15 @@ HandleEToBGCollision:
     compare(a, Goomba); // if enemy object not goomba, branch ahead of this routine
     if (!z)
         goto GiveOEPoints;
-    JSR(KillEnemyAboveBlock, 473); // if enemy object IS goomba, do this sub
+    pushReturnIndex(473);
+    goto KillEnemyAboveBlock;
+Return_473: // if enemy object IS goomba, do this sub
 
 GiveOEPoints:
     a = 0x01; // award 100 points for hitting block beneath enemy
-    JSR(SetupFloateyNumber, 474);
+    pushReturnIndex(474);
+    goto SetupFloateyNumber;
+Return_474:
 
 ChkToStunEnemies:
     compare(a, 0x09); // perform many comparisons on enemy object identifier
@@ -12814,7 +13766,9 @@ SetWYSpd: // change the vertical speed
 SetNotW: // set vertical speed now
     writeData(Enemy_Y_Speed + x, a);
     y = 0x01;
-    JSR(PlayerEnemyDiff, 475); // get horizontal difference between player and enemy object
+    pushReturnIndex(475);
+    goto PlayerEnemyDiff;
+Return_475: // get horizontal difference between player and enemy object
     if (!n)
         goto ChkBBill; // branch if enemy is to the right of player
     ++y; // increment Y if not
@@ -12883,7 +13837,9 @@ SetForStn: // set timer here
     writeData(EnemyIntervalTimer + x, a);
     a = 0x03; // set state here, apparently used to render
     writeData(Enemy_State + x, a); // upside-down koopas and buzzy beetles
-    JSR(EnemyLanding, 476); // then land it properly
+    pushReturnIndex(476);
+    goto EnemyLanding;
+Return_476: // then land it properly
 
 ExSteChk: // then leave
     goto Return;
@@ -12909,7 +13865,9 @@ ProcEnemyDirection:
 
 InvtD: // load 1 for enemy to face the left (inverted here)
     y = 0x01;
-    JSR(PlayerEnemyDiff, 477); // get horizontal difference between player and enemy
+    pushReturnIndex(477);
+    goto PlayerEnemyDiff;
+Return_477: // get horizontal difference between player and enemy
     if (!n)
         goto CNwCDir; // if enemy to the right of player, branch
     ++y; // if to the left, increment by one for enemy to face right (inverted)
@@ -12919,10 +13877,14 @@ CNwCDir:
     compare(a, M(Enemy_MovingDir + x)); // compare direction in A with current direction in memory
     if (!z)
         goto LandEnemyInitState;
-    JSR(ChkForBump_HammerBroJ, 478); // if equal, not facing in correct dir, do sub to turn around
+    pushReturnIndex(478);
+    goto ChkForBump_HammerBroJ;
+Return_478: // if equal, not facing in correct dir, do sub to turn around
 
 LandEnemyInitState:
-    JSR(EnemyLanding, 479); // land enemy properly
+    pushReturnIndex(479);
+    goto EnemyLanding;
+Return_479: // land enemy properly
     a = M(Enemy_State + x);
     a &= BOOST_BINARY(10000000); // if d7 of enemy state is set, branch
     if (!z)
@@ -12981,10 +13943,14 @@ SdeCLoop: // check value
     if (!z)
         goto NextSdeC; // branch if different and do not seek block there
     a = 0x01; // set flag in A for save horizontal coordinate 
-    JSR(BlockBufferChk_Enemy, 480); // find block to left or right of enemy object
+    pushReturnIndex(480);
+    goto BlockBufferChk_Enemy;
+Return_480: // find block to left or right of enemy object
     if (z)
         goto NextSdeC; // if nothing found, branch
-    JSR(ChkForNonSolids, 481); // check for non-solid blocks
+    pushReturnIndex(481);
+    goto ChkForNonSolids;
+Return_481: // check for non-solid blocks
     if (!z)
         goto ChkForBump_HammerBroJ; // branch if not found
 
@@ -13036,7 +14002,9 @@ PlayerEnemyDiff:
 //------------------------------------------------------------------------
 
 EnemyLanding:
-    JSR(InitVStf, 482); // do something here to vertical speed and something else
+    pushReturnIndex(482);
+    goto InitVStf;
+Return_482: // do something here to vertical speed and something else
     a = M(Enemy_Y_Position + x);
     a &= BOOST_BINARY(11110000); // save high nybble of vertical coordinate, and
     a |= BOOST_BINARY(00001000); // set d3, then store, probably used to set enemy object
@@ -13055,7 +14023,9 @@ SubtEnemyYPos:
 //------------------------------------------------------------------------
 
 EnemyJump:
-    JSR(SubtEnemyYPos, 483); // do a sub here
+    pushReturnIndex(483);
+    goto SubtEnemyYPos;
+Return_483: // do a sub here
     if (!c)
         goto DoSide; // if enemy vertical coord + 62 < 68, branch to leave
     a = M(Enemy_Y_Speed + x);
@@ -13064,13 +14034,19 @@ EnemyJump:
     compare(a, 0x03); // if green paratroopa not falling, branch ahead
     if (!c)
         goto DoSide;
-    JSR(ChkUnderEnemy, 484); // otherwise, check to see if green paratroopa is 
+    pushReturnIndex(484);
+    goto ChkUnderEnemy;
+Return_484: // otherwise, check to see if green paratroopa is 
     if (z)
         goto DoSide; // standing on anything, then branch to same place if not
-    JSR(ChkForNonSolids, 485); // check for non-solid blocks
+    pushReturnIndex(485);
+    goto ChkForNonSolids;
+Return_485: // check for non-solid blocks
     if (z)
         goto DoSide; // branch if found
-    JSR(EnemyLanding, 486); // change vertical coordinate and speed
+    pushReturnIndex(486);
+    goto EnemyLanding;
+Return_486: // change vertical coordinate and speed
     a = 0xfd;
     writeData(Enemy_Y_Speed + x, a); // make the paratroopa jump again
 
@@ -13078,7 +14054,9 @@ DoSide: // check for horizontal blockage, then leave
     goto DoEnemySideCheck;
 
 HammerBroBGColl:
-    JSR(ChkUnderEnemy, 487); // check to see if hammer bro is standing on anything
+    pushReturnIndex(487);
+    goto ChkUnderEnemy;
+Return_487: // check to see if hammer bro is standing on anything
     if (z)
         goto NoUnderHammerBro;
     compare(a, 0x23); // check for blank metatile $23 and branch if not found
@@ -13086,7 +14064,9 @@ HammerBroBGColl:
         goto UnderHammerBro;
 
 KillEnemyAboveBlock:
-    JSR(ShellOrBlockDefeat, 488); // do this sub to kill enemy
+    pushReturnIndex(488);
+    goto ShellOrBlockDefeat;
+Return_488: // do this sub to kill enemy
     a = 0xfc; // alter vertical speed of enemy and leave
     writeData(Enemy_Y_Speed + x, a);
     goto Return;
@@ -13100,7 +14080,9 @@ UnderHammerBro:
     a = M(Enemy_State + x);
     a &= BOOST_BINARY(10001000); // save d7 and d3 from enemy state, nullify other bits
     writeData(Enemy_State + x, a); // and store
-    JSR(EnemyLanding, 489); // modify vertical coordinate, speed and something else
+    pushReturnIndex(489);
+    goto EnemyLanding;
+Return_489: // modify vertical coordinate, speed and something else
     goto DoEnemySideCheck; // then check for horizontal blockage and leave
 
 NoUnderHammerBro:
@@ -13141,10 +14123,14 @@ FireballBGCollision:
     compare(a, 0x18);
     if (!c)
         goto ClearBounceFlag; // if within the status bar area of the screen, branch ahead
-    JSR(BlockBufferChk_FBall, 490); // do fireball to background collision detection on bottom of it
+    pushReturnIndex(490);
+    goto BlockBufferChk_FBall;
+Return_490: // do fireball to background collision detection on bottom of it
     if (z)
         goto ClearBounceFlag; // if nothing underneath fireball, branch
-    JSR(ChkForNonSolids, 491); // check for non-solid metatiles
+    pushReturnIndex(491);
+    goto ChkForNonSolids;
+Return_491: // check for non-solid metatiles
     if (z)
         goto ClearBounceFlag; // branch if any found
     a = M(Fireball_Y_Speed + x); // if fireball's vertical speed set to move upwards,
@@ -13197,7 +14183,9 @@ GetMiscBoundBox:
     y = 0x06; // set offset for relative coordinates
 
 FBallB: // get bounding box coordinates
-    JSR(BoundingBoxCore, 492);
+    pushReturnIndex(492);
+    goto BoundingBoxCore;
+Return_492:
     goto CheckRightScreenBBox; // jump to handle any offscreen coordinates
 
 GetEnemyBoundBox:
@@ -13235,7 +14223,9 @@ CMBits: // otherwise use contents of Y
 
 LargePlatformBoundBox:
     ++x; // increment X to get the proper offset
-    JSR(GetXOffscreenBits, 493); // then jump directly to the sub for horizontal offscreen bits
+    pushReturnIndex(493);
+    goto GetXOffscreenBits;
+Return_493: // then jump directly to the sub for horizontal offscreen bits
     --x; // decrement to return to original offset
     compare(a, 0xfe); // if completely offscreen, branch to put entire bounding
     if (c)
@@ -13247,7 +14237,9 @@ SetupEOffsetFBBox:
     a += 0x01;
     x = a;
     y = 0x01; // load 1 as offset here, same reason
-    JSR(BoundingBoxCore, 494); // do a sub to get the coordinates of the bounding box
+    pushReturnIndex(494);
+    goto BoundingBoxCore;
+Return_494: // do a sub to get the coordinates of the bounding box
     goto CheckRightScreenBBox; // jump to handle offscreen coordinates of bounding box
 
 MoveBoundBoxOffscreen:
@@ -13468,7 +14460,9 @@ ResJmpM: // set A to return vertical coordinate
     a = 0x00;
 
 BBChk_E: // do collision detection subroutine for sprite object
-    JSR(BlockBufferCollision, 495);
+    pushReturnIndex(495);
+    goto BlockBufferCollision;
+Return_495:
     x = M(ObjectOffset); // get object offset
     compare(a, 0x00); // check to see if object bumped into anything
     goto Return;
@@ -13503,7 +14497,9 @@ BlockBufferCollision:
     a >>= 1; // and effectively move high nybble to
     a >>= 1; // lower, LSB which became MSB will be
     a >>= 1; // d4 at this point
-    JSR(GetBlockBufferAddr, 496); // get address of block buffer into $06, $07
+    pushReturnIndex(496);
+    goto GetBlockBufferAddr;
+Return_496: // get address of block buffer into $06, $07
     y = M(0x04); // get old contents of Y
     a = M(SprObject_Y_Position + x); // get vertical coordinate of object
     c = 0;
@@ -13541,7 +14537,9 @@ DrawVine:
     x = M(VineObjOffset + y); // get offset to vine
     y = M(Enemy_SprDataOffset + x); // get sprite data offset
     writeData(0x02, y); // store sprite data offset here
-    JSR(SixSpriteStacker, 497); // stack six sprites on top of each other vertically
+    pushReturnIndex(497);
+    goto SixSpriteStacker;
+Return_497: // stack six sprites on top of each other vertically
     a = M(Enemy_Rel_XPos); // get relative horizontal coordinate
     writeData(Sprite_X_Position + y, a); // store in first, third and fifth sprites
     writeData(Sprite_X_Position + 8 + y, a);
@@ -13677,7 +14675,9 @@ RenderH: // get relative vertical coordinate
     a = 0x00;
     writeData(Misc_State + x, a); // otherwise nullify misc object state
     a = 0xf8;
-    JSR(DumpTwoSpr, 498); // do sub to move hammer sprites offscreen
+    pushReturnIndex(498);
+    goto DumpTwoSpr;
+Return_498: // do sub to move hammer sprites offscreen
 
 NoHOffscr: // leave
     goto Return;
@@ -13696,7 +14696,9 @@ FlagpoleGfxHandler:
     a += 0x0c; // add twelve more pixels and
     writeData(0x05, a); // store here to be used later by floatey number
     a = M(Enemy_Y_Position + x); // get vertical coordinate
-    JSR(DumpTwoSpr, 499); // and do sub to dump into first and second sprites
+    pushReturnIndex(499);
+    goto DumpTwoSpr;
+Return_499: // and do sub to dump into first and second sprites
     a += 0x08; // add eight pixels
     writeData(Sprite_Y_Position + 8 + y, a); // and store into third sprite
     a = M(FlagpoleFNum_Y_Pos); // get vertical coordinate for floatey number
@@ -13725,7 +14727,9 @@ FlagpoleGfxHandler:
     a = M(FlagpoleScoreNumTiles + x); // get appropriate tile data
     writeData(0x00, a);
     a = M(FlagpoleScoreNumTiles + 1 + x);
-    JSR(DrawOneSpriteRow, 500); // use it to render floatey number
+    pushReturnIndex(500);
+    goto DrawOneSpriteRow;
+Return_500: // use it to render floatey number
 
 ChkFlagOffscreen:
     x = M(ObjectOffset); // get object offset for flag
@@ -13764,10 +14768,14 @@ DrawLargePlatform:
     ++y; // to X coordinate
     ++y;
     a = M(Enemy_Rel_XPos); // get horizontal relative coordinate
-    JSR(SixSpriteStacker, 501); // store X coordinates using A as base, stack horizontally
+    pushReturnIndex(501);
+    goto SixSpriteStacker;
+Return_501: // store X coordinates using A as base, stack horizontally
     x = M(ObjectOffset);
     a = M(Enemy_Y_Position + x); // get vertical coordinate
-    JSR(DumpFourSpr, 502); // dump into first four sprites as Y coordinate
+    pushReturnIndex(502);
+    goto DumpFourSpr;
+Return_502: // dump into first four sprites as Y coordinate
     y = M(AreaType);
     compare(y, 0x03); // check for castle-type level
     if (z)
@@ -13792,12 +14800,18 @@ SetLast2Platform:
 SetPlatformTilenum:
     x = M(ObjectOffset); // get enemy object buffer offset
     ++y; // increment Y for tile offset
-    JSR(DumpSixSpr, 503); // dump tile number into all six sprites
+    pushReturnIndex(503);
+    goto DumpSixSpr;
+Return_503: // dump tile number into all six sprites
     a = 0x02; // set palette controls
     ++y; // increment Y for sprite attributes
-    JSR(DumpSixSpr, 504); // dump attributes into all six sprites
+    pushReturnIndex(504);
+    goto DumpSixSpr;
+Return_504: // dump attributes into all six sprites
     ++x; // increment X for enemy objects
-    JSR(GetXOffscreenBits, 505); // get offscreen bits again
+    pushReturnIndex(505);
+    goto GetXOffscreenBits;
+Return_505: // get offscreen bits again
     --x;
     y = M(Enemy_SprDataOffset + x); // get OAM data offset
     a <<= 1; // rotate d7 into carry, save remaining
@@ -13856,7 +14870,9 @@ SLChk: // check d7 of offscreen bits
     a <<= 1; // and if d7 is not set, skip sub
     if (!c)
         goto ExDLPl;
-    JSR(MoveSixSpritesOffscreen, 506); // otherwise branch to move all sprites offscreen
+    pushReturnIndex(506);
+    goto MoveSixSpritesOffscreen;
+Return_506: // otherwise branch to move all sprites offscreen
 
 ExDLPl:
     goto Return;
@@ -13872,7 +14888,9 @@ DrawFloateyNumber_Coin:
 
 NotRsNum: // get vertical coordinate
     a = M(Misc_Y_Position + x);
-    JSR(DumpTwoSpr, 507); // dump into both sprites
+    pushReturnIndex(507);
+    goto DumpTwoSpr;
+Return_507: // dump into both sprites
     a = M(Misc_Rel_XPos); // get relative horizontal coordinate
     writeData(Sprite_X_Position + y, a); // store as X coordinate for first sprite
     c = 0;
@@ -13907,7 +14925,9 @@ JCoinGfxHandler:
     x = a; // use as graphical offset
     a = M(JumpingCoinTiles + x); // load tile number
     ++y; // increment OAM data offset to write tile numbers
-    JSR(DumpTwoSpr, 508); // do sub to dump tile number into both sprites
+    pushReturnIndex(508);
+    goto DumpTwoSpr;
+Return_508: // do sub to dump tile number into both sprites
     --y; // decrement to get old offset
     a = 0x02;
     writeData(Sprite_Attributes + y, a); // set attribute byte in first sprite
@@ -13945,7 +14965,9 @@ PUpDrawLoop:
     a = M(PowerUpGfxTable + x); // load left tile of power-up object
     writeData(0x00, a);
     a = M(PowerUpGfxTable + 1 + x); // load right tile
-    JSR(DrawOneSpriteRow, 509); // branch to draw one row of our power-up object
+    pushReturnIndex(509);
+    goto DrawOneSpriteRow;
+Return_509: // branch to draw one row of our power-up object
     --M(0x07); // decrement counter
     if (!n)
         goto PUpDrawLoop; // branch until two rows are drawn
@@ -14317,9 +15339,15 @@ CheckDefeatedState:
 
 DrawEnemyObject:
     y = M(0xeb); // load sprite data offset
-    JSR(DrawEnemyObjRow, 510); // draw six tiles of data
-    JSR(DrawEnemyObjRow, 511); // into sprite data
-    JSR(DrawEnemyObjRow, 512);
+    pushReturnIndex(510);
+    goto DrawEnemyObjRow;
+Return_510: // draw six tiles of data
+    pushReturnIndex(511);
+    goto DrawEnemyObjRow;
+Return_511: // into sprite data
+    pushReturnIndex(512);
+    goto DrawEnemyObjRow;
+Return_512:
     x = M(ObjectOffset); // get enemy object offset
     y = M(Enemy_SprDataOffset + x); // get sprite data offset
     a = M(0xef);
@@ -14338,7 +15366,9 @@ CheckForVerticalFlip:
     a |= BOOST_BINARY(10000000); // set bit for vertical flip
     ++y;
     ++y; // increment two bytes so that we store the vertical flip
-    JSR(DumpSixSpr, 513); // in attribute bytes of enemy obj sprite data
+    pushReturnIndex(513);
+    goto DumpSixSpr;
+Return_513: // in attribute bytes of enemy obj sprite data
     --y;
     --y; // now go back to the Y coordinate offset
     a = y;
@@ -14496,7 +15526,9 @@ SprObjectOffscrChk:
     if (!c)
         goto LcChk; // branch if not set
     a = 0x04; // set for right column sprites
-    JSR(MoveESprColOffscreen, 514); // and move them offscreen
+    pushReturnIndex(514);
+    goto MoveESprColOffscreen;
+Return_514: // and move them offscreen
 
 LcChk: // get from stack
     pla();
@@ -14505,7 +15537,9 @@ LcChk: // get from stack
     if (!c)
         goto Row3C; // branch if not set
     a = 0x00; // set for left column sprites,
-    JSR(MoveESprColOffscreen, 515); // move them offscreen
+    pushReturnIndex(515);
+    goto MoveESprColOffscreen;
+Return_515: // move them offscreen
 
 Row3C: // get from stack again
     pla();
@@ -14515,7 +15549,9 @@ Row3C: // get from stack again
     if (!c)
         goto Row23C; // branch if carry not set
     a = 0x10; // set for third row of sprites
-    JSR(MoveESprRowOffscreen, 516); // and move them offscreen
+    pushReturnIndex(516);
+    goto MoveESprRowOffscreen;
+Return_516: // and move them offscreen
 
 Row23C: // get from stack
     pla();
@@ -14524,14 +15560,18 @@ Row23C: // get from stack
     if (!c)
         goto AllRowC;
     a = 0x08; // set for second and third rows
-    JSR(MoveESprRowOffscreen, 517); // move them offscreen
+    pushReturnIndex(517);
+    goto MoveESprRowOffscreen;
+Return_517: // move them offscreen
 
 AllRowC: // get from stack once more
     pla();
     a >>= 1; // move d7 into carry
     if (!c)
         goto ExEGHandler;
-    JSR(MoveESprRowOffscreen, 518); // move all sprites offscreen (A should be 0 by now)
+    pushReturnIndex(518);
+    goto MoveESprRowOffscreen;
+Return_518: // move all sprites offscreen (A should be 0 by now)
     a = M(Enemy_ID + x);
     compare(a, Podoboo); // check enemy identifier for podoboo
     if (z)
@@ -14540,7 +15580,9 @@ AllRowC: // get from stack once more
     compare(a, 0x02); // if not yet past the bottom of the screen, branch
     if (!z)
         goto ExEGHandler;
-    JSR(EraseEnemyObject, 519); // what it says
+    pushReturnIndex(519);
+    goto EraseEnemyObject;
+Return_519: // what it says
 
 ExEGHandler:
     goto Return;
@@ -14567,7 +15609,9 @@ MoveESprColOffscreen:
     c = 0; // add A to enemy object OAM data offset
     a += M(Enemy_SprDataOffset + x);
     y = a; // use as offset
-    JSR(MoveColOffscreen, 520); // move first and second row sprites in column offscreen
+    pushReturnIndex(520);
+    goto MoveColOffscreen;
+Return_520: // move first and second row sprites in column offscreen
     writeData(Sprite_Data + 16 + y, a); // move third row sprite in column offscreen
     goto Return;
 
@@ -14589,7 +15633,9 @@ DBlkLoop: // get left tile number
     a = M(DefaultBlockObjTiles + x);
     writeData(0x00, a); // set here
     a = M(DefaultBlockObjTiles + 1 + x); // get right tile number
-    JSR(DrawOneSpriteRow, 521); // do sub to write tile numbers to first row of sprites
+    pushReturnIndex(521);
+    goto DrawOneSpriteRow;
+Return_521: // do sub to write tile numbers to first row of sprites
     compare(x, 0x04); // check incremented offset
     if (!z)
         goto DBlkLoop; // and loop back until all four sprites are done
@@ -14610,7 +15656,9 @@ ChkRep: // check replacement metatile
         goto BlkOffscr; // branch ahead to use current graphics
     a = 0x87; // set A for used block tile
     ++y; // increment Y to write to tile bytes
-    JSR(DumpFourSpr, 522); // do sub to dump into all four sprites
+    pushReturnIndex(522);
+    goto DumpFourSpr;
+Return_522: // do sub to dump into all four sprites
     --y; // return Y to original offset
     a = 0x03; // set palette bits
     x = M(AreaType);
@@ -14672,7 +15720,9 @@ DrawBrickChunks:
 DChunks: // get OAM data offset
     y = M(Block_SprDataOffset + x);
     ++y; // increment to start with tile bytes in OAM
-    JSR(DumpFourSpr, 523); // do sub to dump tile number into all four sprites
+    pushReturnIndex(523);
+    goto DumpFourSpr;
+Return_523: // do sub to dump tile number into all four sprites
     a = M(FrameCounter); // get frame counter
     a <<= 1;
     a <<= 1;
@@ -14681,11 +15731,15 @@ DChunks: // get OAM data offset
     a &= 0xc0; // get what was originally d3-d2 of low nybble
     a |= M(0x00); // add palette bits
     ++y; // increment offset for attribute bytes
-    JSR(DumpFourSpr, 524); // do sub to dump attribute data into all four sprites
+    pushReturnIndex(524);
+    goto DumpFourSpr;
+Return_524: // do sub to dump attribute data into all four sprites
     --y;
     --y; // decrement offset to Y coordinate
     a = M(Block_Rel_YPos); // get first block object's relative vertical coordinate
-    JSR(DumpTwoSpr, 525); // do sub to dump current Y coordinate into two sprites
+    pushReturnIndex(525);
+    goto DumpTwoSpr;
+Return_525: // do sub to dump current Y coordinate into two sprites
     a = M(Block_Rel_XPos); // get first block object's relative horizontal coordinate
     writeData(Sprite_X_Position + y, a); // save into X coordinate of first sprite
     a = M(Block_Orig_XPos + x); // get original horizontal coordinate
@@ -14709,13 +15763,17 @@ DChunks: // get OAM data offset
     a += 0x06; // plus 6 pixels to position fourth brick chunk correctly
     writeData(Sprite_X_Position + 12 + y, a); // save into X coordinate of fourth sprite
     a = M(Block_OffscreenBits); // get offscreen bits for block object
-    JSR(ChkLeftCo, 526); // do sub to move left half of sprites offscreen if necessary
+    pushReturnIndex(526);
+    goto ChkLeftCo;
+Return_526: // do sub to move left half of sprites offscreen if necessary
     a = M(Block_OffscreenBits); // get offscreen bits again
     a <<= 1; // shift d7 into carry
     if (!c)
         goto ChnkOfs; // if d7 not set, branch to last part
     a = 0xf8;
-    JSR(DumpTwoSpr, 527); // otherwise move top sprites offscreen
+    pushReturnIndex(527);
+    goto DumpTwoSpr;
+Return_527: // otherwise move top sprites offscreen
 
 ChnkOfs: // if relative position on left side of screen,
     a = M(0x00);
@@ -14777,7 +15835,9 @@ DrawExplosion_Fireworks:
     x = a; // use whatever's in A for offset
     a = M(ExplosionTiles + x); // get tile number using offset
     ++y; // increment Y (contains sprite data offset)
-    JSR(DumpFourSpr, 528); // and dump into tile number part of sprite data
+    pushReturnIndex(528);
+    goto DumpFourSpr;
+Return_528: // and dump into tile number part of sprite data
     --y; // decrement Y so we have the proper offset again
     x = M(ObjectOffset); // return enemy object buffer offset to X
     a = M(Fireball_Rel_YPos); // get relative vertical coordinate
@@ -14821,10 +15881,14 @@ DrawSmallPlatform:
     y = M(Enemy_SprDataOffset + x); // get OAM data offset
     a = 0x5b; // load tile number for small platforms
     ++y; // increment offset for tile numbers
-    JSR(DumpSixSpr, 529); // dump tile number into all six sprites
+    pushReturnIndex(529);
+    goto DumpSixSpr;
+Return_529: // dump tile number into all six sprites
     ++y; // increment offset for attributes
     a = 0x02; // load palette controls
-    JSR(DumpSixSpr, 530); // dump attributes into all six sprites
+    pushReturnIndex(530);
+    goto DumpSixSpr;
+Return_530: // dump attributes into all six sprites
     --y; // decrement for original offset
     --y;
     a = M(Enemy_Rel_XPos); // get relative horizontal coordinate
@@ -14847,7 +15911,9 @@ DrawSmallPlatform:
     a = 0xf8; // otherwise move first three sprites offscreen
 
 TopSP: // dump vertical coordinate into Y coordinates
-    JSR(DumpThreeSpr, 531);
+    pushReturnIndex(531);
+    goto DumpThreeSpr;
+Return_531:
     pla(); // pull from stack
     c = 0;
     a += 0x80; // add 128 pixels
@@ -14943,7 +16009,9 @@ CntPl: // if executing specific game engine routine,
     compare(a, 0x00); // if player status normal,
     if (z)
         goto FindPlayerAction; // branch and do not return
-    JSR(FindPlayerAction, 532); // otherwise jump and return
+    pushReturnIndex(532);
+    goto FindPlayerAction;
+Return_532: // otherwise jump and return
     a = M(FrameCounter);
     a &= BOOST_BINARY(00000100); // check frame counter for d2 set (8 frames every
     if (!z)
@@ -14979,11 +16047,15 @@ ExPGH: // then leave
 //------------------------------------------------------------------------
 
 FindPlayerAction:
-    JSR(ProcessPlayerAction, 533); // find proper offset to graphics table by player's actions
+    pushReturnIndex(533);
+    goto ProcessPlayerAction;
+Return_533: // find proper offset to graphics table by player's actions
     goto PlayerGfxProcessing; // draw player, then process for fireball throwing
 
 DoChangeSize:
-    JSR(HandleChangeSize, 534); // find proper offset to graphics table for grow/shrink
+    pushReturnIndex(534);
+    goto HandleChangeSize;
+Return_534: // find proper offset to graphics table for grow/shrink
     goto PlayerGfxProcessing; // draw player, then process for fireball throwing
 
 PlayerKilled:
@@ -14993,8 +16065,12 @@ PlayerKilled:
 PlayerGfxProcessing:
     writeData(PlayerGfxOffset, a); // store offset to graphics table here
     a = 0x04;
-    JSR(RenderPlayerSub, 535); // draw player based on offset loaded
-    JSR(ChkForPlayerAttrib, 536); // set horizontal flip bits as necessary
+    pushReturnIndex(535);
+    goto RenderPlayerSub;
+Return_535: // draw player based on offset loaded
+    pushReturnIndex(536);
+    goto ChkForPlayerAttrib;
+Return_536: // set horizontal flip bits as necessary
     a = M(FireballThrowingTimer);
     if (z)
         goto PlayerOffscreenChk; // if fireball throw timer not set, skip to the end
@@ -15017,7 +16093,9 @@ PlayerGfxProcessing:
 
 SUpdR: // save in A for use
     a = y;
-    JSR(RenderPlayerSub, 537); // in sub, draw player object again
+    pushReturnIndex(537);
+    goto RenderPlayerSub;
+Return_537: // in sub, draw player object again
 
 PlayerOffscreenChk:
     a = M(Player_OffscreenBits); // get player's offscreen bits
@@ -15037,7 +16115,9 @@ PROfsLoop: // load offscreen Y coordinate just in case
     M(0x00) >>= 1; // shift bit into carry
     if (!c)
         goto NPROffscr; // if bit not set, skip, do not move sprites
-    JSR(DumpTwoSpr, 538); // otherwise dump offscreen Y coordinate into sprite data
+    pushReturnIndex(538);
+    goto DumpTwoSpr;
+Return_538: // otherwise dump offscreen Y coordinate into sprite data
 
 NPROffscr:
     a = y;
@@ -15062,7 +16142,9 @@ PIntLoop: // load data to display player as he always
         goto PIntLoop; // do this until all data is loaded
     x = 0xb8; // load offset for small standing
     y = 0x04; // load sprite data offset
-    JSR(DrawPlayerLoop, 539); // draw player accordingly
+    pushReturnIndex(539);
+    goto DrawPlayerLoop;
+Return_539: // draw player accordingly
     a = M(Sprite_Attributes + 36); // get empty sprite attributes
     a |= BOOST_BINARY(01000000); // set horizontal flip bit for bottom-right sprite
     writeData(Sprite_Attributes + 32, a); // store and leave
@@ -15088,7 +16170,9 @@ DrawPlayerLoop:
     a = M(PlayerGraphicsTable + x); // load player's left side
     writeData(0x00, a);
     a = M(PlayerGraphicsTable + 1 + x); // now load right side
-    JSR(DrawOneSpriteRow, 540);
+    pushReturnIndex(540);
+    goto DrawOneSpriteRow;
+Return_540:
     --M(0x07); // decrement rows of sprites to draw
     if (!z)
         goto DrawPlayerLoop; // do this until all rows are drawn
@@ -15138,7 +16222,9 @@ ProcOnGroundActs:
     ++y; // otherwise increment to skid offset ($03)
 
 NonAnimatedActs:
-    JSR(GetGfxOffsetAdder, 541); // do a sub here to get offset adder for graphics table
+    pushReturnIndex(541);
+    goto GetGfxOffsetAdder;
+Return_541: // do a sub here to get offset adder for graphics table
     a = 0x00;
     writeData(PlayerAnimCtrl, a); // initialize animation frame control
     a = M(PlayerGfxTblOffsets + y); // load offset to graphics table using size as offset
@@ -15148,12 +16234,16 @@ NonAnimatedActs:
 
 ActionFalling:
     y = 0x04; // load offset for walking/running
-    JSR(GetGfxOffsetAdder, 542); // get offset to graphics table
+    pushReturnIndex(542);
+    goto GetGfxOffsetAdder;
+Return_542: // get offset to graphics table
     goto GetCurrentAnimOffset; // execute instructions for falling state
 
 ActionWalkRun:
     y = 0x04; // load offset for walking/running
-    JSR(GetGfxOffsetAdder, 543); // get offset to graphics table
+    pushReturnIndex(543);
+    goto GetGfxOffsetAdder;
+Return_543: // get offset to graphics table
     goto FourFrameExtent; // execute instructions for normal state
 
 ActionClimbing:
@@ -15161,12 +16251,16 @@ ActionClimbing:
     a = M(Player_Y_Speed); // check player's vertical speed
     if (z)
         goto NonAnimatedActs; // if no speed, branch, use offset as-is
-    JSR(GetGfxOffsetAdder, 544); // otherwise get offset for graphics table
+    pushReturnIndex(544);
+    goto GetGfxOffsetAdder;
+Return_544: // otherwise get offset for graphics table
     goto ThreeFrameExtent; // then skip ahead to more code
 
 ActionSwimming:
     y = 0x01; // load offset for swimming
-    JSR(GetGfxOffsetAdder, 545);
+    pushReturnIndex(545);
+    goto GetGfxOffsetAdder;
+Return_545:
     a = M(JumpSwimTimer); // check jump/swim timer
     a |= M(PlayerAnimCtrl); // and animation frame control
     if (!z)
@@ -15189,7 +16283,9 @@ ThreeFrameExtent:
 
 AnimationControl:
     writeData(0x00, a); // store upper extent here
-    JSR(GetCurrentAnimOffset, 546); // get proper offset to graphics table
+    pushReturnIndex(546);
+    goto GetCurrentAnimOffset;
+Return_546: // get proper offset to graphics table
     pha(); // save offset to stack
     a = M(PlayerAnimTimer); // load animation frame timer
     if (!z)
@@ -15326,17 +16422,23 @@ RelativePlayerPosition:
 
 RelativeBubblePosition:
     y = 0x01; // set for air bubble offsets
-    JSR(GetProperObjOffset, 547); // modify X to get proper air bubble offset
+    pushReturnIndex(547);
+    goto GetProperObjOffset;
+Return_547: // modify X to get proper air bubble offset
     y = 0x03;
     goto RelWOfs; // get the coordinates
 
 RelativeFireballPosition:
     y = 0x00; // set for fireball offsets
-    JSR(GetProperObjOffset, 548); // modify X to get proper fireball offset
+    pushReturnIndex(548);
+    goto GetProperObjOffset;
+Return_548: // modify X to get proper fireball offset
     y = 0x02;
 
 RelWOfs: // get the coordinates
-    JSR(GetObjRelativePosition, 549);
+    pushReturnIndex(549);
+    goto GetObjRelativePosition;
+Return_549:
     x = M(ObjectOffset); // return original offset
     goto Return; // leave
 
@@ -15344,7 +16446,9 @@ RelWOfs: // get the coordinates
 
 RelativeMiscPosition:
     y = 0x02; // set for misc object offsets
-    JSR(GetProperObjOffset, 550); // modify X to get proper misc object offset
+    pushReturnIndex(550);
+    goto GetProperObjOffset;
+Return_550: // modify X to get proper misc object offset
     y = 0x06;
     goto RelWOfs; // get the coordinates
 
@@ -15356,7 +16460,9 @@ RelativeEnemyPosition:
 RelativeBlockPosition:
     a = 0x09; // get coordinates of one block object
     y = 0x04; // relative to the screen
-    JSR(VariableObjOfsRelPos, 551);
+    pushReturnIndex(551);
+    goto VariableObjOfsRelPos;
+Return_551:
     ++x; // adjust offset for other block object if any
     ++x;
     a = 0x09;
@@ -15367,7 +16473,9 @@ VariableObjOfsRelPos:
     c = 0;
     a += M(0x00); // add A to value stored
     x = a; // use as enemy offset
-    JSR(GetObjRelativePosition, 552);
+    pushReturnIndex(552);
+    goto GetObjRelativePosition;
+Return_552:
     x = M(ObjectOffset); // reload old object offset and leave
     goto Return;
 
@@ -15391,19 +16499,25 @@ GetPlayerOffscreenBits:
 
 GetFireballOffscreenBits:
     y = 0x00; // set for fireball offsets
-    JSR(GetProperObjOffset, 553); // modify X to get proper fireball offset
+    pushReturnIndex(553);
+    goto GetProperObjOffset;
+Return_553: // modify X to get proper fireball offset
     y = 0x02; // set other offset for fireball's offscreen bits
     goto GetOffScreenBitsSet; // and get offscreen information about fireball
 
 GetBubbleOffscreenBits:
     y = 0x01; // set for air bubble offsets
-    JSR(GetProperObjOffset, 554); // modify X to get proper air bubble offset
+    pushReturnIndex(554);
+    goto GetProperObjOffset;
+Return_554: // modify X to get proper air bubble offset
     y = 0x03; // set other offset for airbubble's offscreen bits
     goto GetOffScreenBitsSet; // and get offscreen information about air bubble
 
 GetMiscOffscreenBits:
     y = 0x02; // set for misc object offsets
-    JSR(GetProperObjOffset, 555); // modify X to get proper misc object offset
+    pushReturnIndex(555);
+    goto GetProperObjOffset;
+Return_555: // modify X to get proper misc object offset
     y = 0x06; // set other offset for misc object's offscreen bits
     goto GetOffScreenBitsSet; // and get offscreen information about misc object
 
@@ -15434,7 +16548,9 @@ SetOffscrBitsOffset:
 GetOffScreenBitsSet:
     a = y; // save offscreen bits offset to stack for now
     pha();
-    JSR(RunOffscrBitsSubs, 556);
+    pushReturnIndex(556);
+    goto RunOffscrBitsSubs;
+Return_556:
     a <<= 1; // move low nybble to high nybble
     a <<= 1;
     a <<= 1;
@@ -15451,7 +16567,9 @@ GetOffScreenBitsSet:
 //------------------------------------------------------------------------
 
 RunOffscrBitsSubs:
-    JSR(GetXOffscreenBits, 557); // do subroutine here
+    pushReturnIndex(557);
+    goto GetXOffscreenBits;
+Return_557: // do subroutine here
     a >>= 1; // move high nybble to low
     a >>= 1;
     a >>= 1;
@@ -15481,7 +16599,9 @@ XOfsLoop: // get pixel coordinate of edge
     a = 0x38; // if no branching, load value here and store
     writeData(0x06, a);
     a = 0x08; // load some other value and execute subroutine
-    JSR(DividePDiff, 558);
+    pushReturnIndex(558);
+    goto DividePDiff;
+Return_558:
 
 XLdBData: // get bits here
     a = M(XOffscreenBitsData + x);
@@ -15520,7 +16640,9 @@ YOfsLoop: // load coordinate for edge of vertical unit
     a = 0x20; // if no branching, load value here and store
     writeData(0x06, a);
     a = 0x04; // load some other value and execute subroutine
-    JSR(DividePDiff, 559);
+    pushReturnIndex(559);
+    goto DividePDiff;
+Return_559:
 
 YLdBData: // get offscreen data bits using offset
     a = M(YOffscreenBitsData + x);
@@ -15670,7 +16792,9 @@ PTone2F: // store reg contents and play the pause sfx
 PTRegC:
     x = 0x84;
     y = 0x7f;
-    JSR(PlaySqu1Sfx, 560);
+    pushReturnIndex(560);
+    goto PlaySqu1Sfx;
+Return_560:
 
 DecPauC: // decrement pause sfx counter
     --M(Squ1_SfxLenCounter);
@@ -15692,10 +16816,18 @@ SkipPIn: // clear pause sfx buffer
         goto SkipSoundSubroutines;
 
 RunSoundSubroutines:
-    JSR(Square1SfxHandler, 561); // play sfx on square channel 1
-    JSR(Square2SfxHandler, 562); //  ''  ''  '' square channel 2
-    JSR(NoiseSfxHandler, 563); //  ''  ''  '' noise channel
-    JSR(MusicHandler, 564); // play music on all channels
+    pushReturnIndex(561);
+    goto Square1SfxHandler;
+Return_561: // play sfx on square channel 1
+    pushReturnIndex(562);
+    goto Square2SfxHandler;
+Return_562: //  ''  ''  '' square channel 2
+    pushReturnIndex(563);
+    goto NoiseSfxHandler;
+Return_563: //  ''  ''  '' noise channel
+    pushReturnIndex(564);
+    goto MusicHandler;
+Return_564: // play music on all channels
     a = 0x00; // clear the music queues
     writeData(AreaMusicQueue, a);
     writeData(EventMusicQueue, a);
@@ -15736,7 +16868,9 @@ Dump_Squ1_Regs:
 //------------------------------------------------------------------------
 
 PlaySqu1Sfx:
-    JSR(Dump_Squ1_Regs, 565); // do sub to set ctrl regs for square 1, then set frequency regs
+    pushReturnIndex(565);
+    goto Dump_Squ1_Regs;
+Return_565: // do sub to set ctrl regs for square 1, then set frequency regs
 
 SetFreq_Squ1:
     x = 0x00; // set frequency reg offset for square 1 sound channel
@@ -15764,7 +16898,9 @@ Dump_Sq2_Regs:
 //------------------------------------------------------------------------
 
 PlaySqu2Sfx:
-    JSR(Dump_Sq2_Regs, 566); // do sub to set ctrl regs for square 2, then set frequency regs
+    pushReturnIndex(566);
+    goto Dump_Sq2_Regs;
+Return_566: // do sub to set ctrl regs for square 2, then set frequency regs
 
 SetFreq_Squ2:
     x = 0x04; // set frequency reg offset for square 2 sound channel
@@ -15780,7 +16916,9 @@ PlayFlagpoleSlide:
     a = 0x40; // store length of flagpole sound
     writeData(Squ1_SfxLenCounter, a);
     a = 0x62; // load part of reg contents for flagpole sound
-    JSR(SetFreq_Squ1, 567);
+    pushReturnIndex(567);
+    goto SetFreq_Squ1;
+Return_567:
     x = 0x99; // now load the rest
     if (!z)
         goto FPS2nd;
@@ -15796,7 +16934,9 @@ PlayBigJump:
 JumpRegContents:
     x = 0x82; // note that small and big jump borrow each others' reg contents
     y = 0xa7; // anyway, this loads the first part of mario's jumping sound
-    JSR(PlaySqu1Sfx, 568);
+    pushReturnIndex(568);
+    goto PlaySqu1Sfx;
+Return_568:
     a = 0x28; // store length of sfx for both jumping sounds
     writeData(Squ1_SfxLenCounter, a); // then continue on here
 
@@ -15820,7 +16960,9 @@ FPS2nd: // the flagpole slide sound shares part of third part
     y = 0xbc;
 
 DmpJpFPS:
-    JSR(Dump_Squ1_Regs, 569);
+    pushReturnIndex(569);
+    goto Dump_Squ1_Regs;
+Return_569:
     if (!z)
         goto DecJpFPS; // unconditional branch outta here
 
@@ -15838,7 +16980,9 @@ Fthrow: // the fireball sound shares reg contents with the bump sound
     x = 0x9e;
     writeData(Squ1_SfxLenCounter, a);
     a = 0x0c; // load offset for bump sound
-    JSR(PlaySqu1Sfx, 570);
+    pushReturnIndex(570);
+    goto PlaySqu1Sfx;
+Return_570:
 
 ContinueBumpThrow:
     a = M(Squ1_SfxLenCounter); // check for second part of bump sound
@@ -15920,7 +17064,9 @@ PlaySwimStomp:
     y = 0x9c; // store reg contents for swim/stomp sound
     x = 0x9e;
     a = 0x26;
-    JSR(PlaySqu1Sfx, 571);
+    pushReturnIndex(571);
+    goto PlaySqu1Sfx;
+Return_571:
 
 ContinueSwimStomp:
     y = M(Squ1_SfxLenCounter); // look up reg contents in data section based on
@@ -15942,7 +17088,9 @@ PlaySmackEnemy:
     x = 0x9f;
     writeData(Squ1_SfxLenCounter, a);
     a = 0x28; // store reg contents for smack enemy sound
-    JSR(PlaySqu1Sfx, 572);
+    pushReturnIndex(572);
+    goto PlaySqu1Sfx;
+Return_572:
     if (!z)
         goto DecrementSfx1Length; // unconditional branch
 
@@ -15999,7 +17147,9 @@ ContinuePipeDownInj:
     y = 0x91; // and this is where it actually gets written in
     x = 0x9a;
     a = 0x44;
-    JSR(PlaySqu1Sfx, 573);
+    pushReturnIndex(573);
+    goto PlaySqu1Sfx;
+Return_573:
 
 NoPDwnL:
     goto DecrementSfx1Length;
@@ -16018,7 +17168,9 @@ CGrab_TTickRegL:
     writeData(Squ2_SfxLenCounter, a);
     y = 0x7f; // load the rest of reg contents 
     a = 0x42; // of coin grab and timer tick sound
-    JSR(PlaySqu2Sfx, 574);
+    pushReturnIndex(574);
+    goto PlaySqu2Sfx;
+Return_574:
 
 ContinueCGrabTTick:
     a = M(Squ2_SfxLenCounter); // check for time to play second tone yet
@@ -16067,7 +17219,9 @@ ContinuePowerUpGrab:
     y = 0x7f;
 
 LoadSqu2Regs:
-    JSR(PlaySqu2Sfx, 575);
+    pushReturnIndex(575);
+    goto PlaySqu2Sfx;
+Return_575:
 
 DecrementSfx2Length:
     --M(Squ2_SfxLenCounter); // decrement length of sfx
@@ -16234,7 +17388,9 @@ ContinueGrowItems:
     a = 0x9d; // load contents of other reg directly
     writeData(SND_SQUARE2_REG, a);
     a = M(PUp_VGrow_FreqData + y); // use secondary counter / 2 as offset for frequency regs
-    JSR(SetFreq_Squ2, 576);
+    pushReturnIndex(576);
+    goto SetFreq_Squ2;
+Return_576:
     goto Return;
 
 //------------------------------------------------------------------------
@@ -16339,8 +17495,12 @@ LoadEventMusic:
     compare(a, DeathMusic); // is it death music?
     if (!z)
         goto NoStopSfx; // if not, jump elsewhere
-    JSR(StopSquare1Sfx, 577); // stop sfx in square 1 and 2
-    JSR(StopSquare2Sfx, 578); // but clear only square 1's sfx buffer
+    pushReturnIndex(577);
+    goto StopSquare1Sfx;
+Return_577: // stop sfx in square 1 and 2
+    pushReturnIndex(578);
+    goto StopSquare2Sfx;
+Return_578: // but clear only square 1's sfx buffer
 
 NoStopSfx:
     x = M(AreaMusicBuffer);
@@ -16360,7 +17520,9 @@ LoadAreaMusic:
     compare(a, 0x04); // is it underground music?
     if (!z)
         goto NoStop1; // no, do not stop square 1 sfx
-    JSR(StopSquare1Sfx, 579);
+    pushReturnIndex(579);
+    goto StopSquare1Sfx;
+Return_579:
 
 NoStop1: // start counter used only by ground level music
     y = 0x10;
@@ -16472,7 +17634,9 @@ VictoryMLoopBack:
     goto LoadEventMusic;
 
 Squ2LengthHandler:
-    JSR(ProcessLengthData, 580); // store length of note
+    pushReturnIndex(580);
+    goto ProcessLengthData;
+Return_580: // store length of note
     writeData(Squ2_NoteLenBuffer, a);
     y = M(MusicOffset_Square2); // fetch another byte (MUST NOT BE LENGTH BYTE!)
     ++M(MusicOffset_Square2);
@@ -16482,14 +17646,20 @@ Squ2NoteHandler:
     x = M(Square2SoundBuffer); // is there a sound playing on this channel?
     if (!z)
         goto SkipFqL1;
-    JSR(SetFreq_Squ2, 581); // no, then play the note
+    pushReturnIndex(581);
+    goto SetFreq_Squ2;
+Return_581: // no, then play the note
     if (z)
         goto Rest; // check to see if note is rest
-    JSR(LoadControlRegs, 582); // if not, load control regs for square 2
+    pushReturnIndex(582);
+    goto LoadControlRegs;
+Return_582: // if not, load control regs for square 2
 
 Rest: // save contents of A
     writeData(Squ2_EnvelopeDataCtrl, a);
-    JSR(Dump_Sq2_Regs, 583); // dump X and Y into square 2 control regs
+    pushReturnIndex(583);
+    goto Dump_Sq2_Regs;
+Return_583: // dump X and Y into square 2 control regs
 
 SkipFqL1: // save length in square 2 note counter
     a = M(Squ2_NoteLenBuffer);
@@ -16509,7 +17679,9 @@ MiscSqu2MusicTasks:
     --M(Squ2_EnvelopeDataCtrl); // decrement unless already zero
 
 NoDecEnv1: // do a load of envelope data to replace default
-    JSR(LoadEnvelopeData, 584);
+    pushReturnIndex(584);
+    goto LoadEnvelopeData;
+Return_584:
     writeData(SND_SQUARE2_REG, a); // based on offset set by first load unless playing
     x = 0x7f; // death music or d4 set on secondary buffer
     writeData(SND_SQUARE2_REG + 1, x);
@@ -16537,21 +17709,29 @@ FetchSqu1MusicData:
         goto FetchSqu1MusicData; // unconditional branch
 
 Squ1NoteHandler:
-    JSR(AlternateLengthHandler, 585);
+    pushReturnIndex(585);
+    goto AlternateLengthHandler;
+Return_585:
     writeData(Squ1_NoteLenCounter, a); // save contents of A in square 1 note counter
     y = M(Square1SoundBuffer); // is there a sound playing on square 1?
     if (!z)
         goto HandleTriangleMusic;
     a = x;
     a &= BOOST_BINARY(00111110); // change saved data to appropriate note format
-    JSR(SetFreq_Squ1, 586); // play the note
+    pushReturnIndex(586);
+    goto SetFreq_Squ1;
+Return_586: // play the note
     if (z)
         goto SkipCtrlL;
-    JSR(LoadControlRegs, 587);
+    pushReturnIndex(587);
+    goto LoadControlRegs;
+Return_587:
 
 SkipCtrlL: // save envelope offset
     writeData(Squ1_EnvelopeDataCtrl, a);
-    JSR(Dump_Squ1_Regs, 588);
+    pushReturnIndex(588);
+    goto Dump_Squ1_Regs;
+Return_588:
 
 MiscSqu1MusicTasks:
     a = M(Square1SoundBuffer); // is there a sound playing on square 1?
@@ -16567,7 +17747,9 @@ MiscSqu1MusicTasks:
     --M(Squ1_EnvelopeDataCtrl); // decrement unless already zero
 
 NoDecEnv2: // do a load of envelope data
-    JSR(LoadEnvelopeData, 589);
+    pushReturnIndex(589);
+    goto LoadEnvelopeData;
+Return_589:
     writeData(SND_SQUARE1_REG, a); // based on offset set by first load
 
 DeathMAltReg: // check for alternate control reg data
@@ -16591,7 +17773,9 @@ HandleTriangleMusic:
         goto LoadTriCtrlReg; // if zero, skip all this and move on to noise 
     if (!n)
         goto TriNoteHandler; // if non-negative, data is note
-    JSR(ProcessLengthData, 590); // otherwise, it is length data
+    pushReturnIndex(590);
+    goto ProcessLengthData;
+Return_590: // otherwise, it is length data
     writeData(Tri_NoteLenBuffer, a); // save contents of A
     a = 0x1f;
     writeData(SND_TRIANGLE_REG, a); // load some default data for triangle control reg
@@ -16602,7 +17786,9 @@ HandleTriangleMusic:
         goto LoadTriCtrlReg; // check once more for nonzero data
 
 TriNoteHandler:
-    JSR(SetFreq_Tri, 591);
+    pushReturnIndex(591);
+    goto SetFreq_Tri;
+Return_591:
     x = M(Tri_NoteLenBuffer); // save length in triangle note counter
     writeData(Tri_NoteLenCounter, x);
     a = M(EventMusicBuffer);
@@ -16659,7 +17845,9 @@ FetchNoiseBeatData:
         goto FetchNoiseBeatData; // unconditional branch
 
 NoiseBeatHandler:
-    JSR(AlternateLengthHandler, 592);
+    pushReturnIndex(592);
+    goto AlternateLengthHandler;
+Return_592:
     writeData(Noise_BeatLenCounter, a); // store length in noise beat counter
     a = x;
     a &= BOOST_BINARY(00111110); // reload data and erase length bits
@@ -16779,6 +17967,8 @@ LoadWaterEventMusEnvData:
     goto Return;
 
 //------------------------------------------------------------------------
+
+ResidualHeaderData:
 // Return handler
 // This emulates the RTS instruction using a generated jump table
 //
