@@ -14,6 +14,16 @@
 ;Nintendo for creating this game and the NES, without which this disassembly would
 ;only be theory.
 
+.segment "HEADER"
+      .byte "NES", $1A         ; Magic bytes
+      .byte $02                ; 2 × 16KB PRG-ROM banks
+      .byte $01                ; 1 × 8KB CHR-ROM bank
+      .byte $01                ; Control bits 1 (e.g., vertical mirroring)
+      .byte $00                ; Control bits 2
+      .byte $00                ; PRG-RAM size (0 = default)
+      .byte $00                ; Region (0 = NTSC)
+      .byte $00, $00, $00, $00, $00, $00, $00, $00  ; Unused padding
+
 ;Assembles with x816.
 
 ;-------------------------------------------------------------------------------------
