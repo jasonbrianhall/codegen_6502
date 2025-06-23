@@ -76,6 +76,7 @@ class TokenType(IntEnum):
     BRK = 64
     NOP = 65
     RTI = 66
+    ISC = 67
     
     # Special characters
     EQUALS = 67     # '='
@@ -159,4 +160,5 @@ INSTRUCTION_MAP = {
     'brk': TokenType.BRK,
     'nop': TokenType.NOP,
     'rti': TokenType.RTI,
+    'isc': TokenType.ISC,
 }

@@ -1429,7 +1429,10 @@ class Translator:
             return "; // nop"
         elif code == TokenType.RTI.value:
             return "return;"
-        
+        elif code == TokenType.ISC.value:
+            operand_str = self.translate_operand(inst.value)
+            # ISC does: INC operand, then SBC operand (all inlined)
+            return f"++{operand_str}; a -= {operand_str} + (c ? 0 : 1); /* ISC */"        
         else:
             return f"/* Unknown instruction code: {code} */"
     

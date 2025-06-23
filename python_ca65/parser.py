@@ -452,7 +452,7 @@ class Parser:
                          TokenType.STA, TokenType.STX, TokenType.STY,
                          TokenType.AND, TokenType.EOR, TokenType.ORA, TokenType.BIT,
                          TokenType.ADC, TokenType.SBC, TokenType.CMP, TokenType.CPX, TokenType.CPY,
-                         TokenType.INC, TokenType.DEC, TokenType.JMP]:
+                         TokenType.INC, TokenType.DEC, TokenType.JMP,  TokenType.ISC]:
             if self.debug_mode:
                 print(f"    -> Parsing instruction {token.type.name} at line {token.line}")
             self.advance()
