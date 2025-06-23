@@ -707,7 +707,7 @@ class Translator:
         return LabelType.LABEL_CODE
     
     def generate_code(self):
-        """Generate the main C++ code with proper label handling - SIMPLIFIED"""
+        """Generate the main C++ code - GENERATE ALL LABELS VERSION"""
         
         # First, collect all actual labels from the AST
         actual_labels = {}  # label_name -> node
@@ -766,8 +766,7 @@ class Translator:
         # Collect all labels to avoid duplicates
         seen_labels = set()
         
-        # Generate code for ALL labels that exist in the AST
-        # Skip only pure DATA labels (those that only contain .db/.dw directives)
+        # Generate code for ALL labels that exist in the AST - NO FILTERING
         for node in self.root.children:
             if node.type != AstType.AST_LABEL:
                 continue
@@ -780,17 +779,6 @@ class Translator:
                 print(f"Warning: Skipping duplicate label {label_name}")
                 continue
             seen_labels.add(label_name)
-            
-            # Skip ONLY pure data labels (those that contain only data directives)
-            try:
-                if (hasattr(label, 'label_type') and 
-                    label.label_type == LabelType.LABEL_DATA and
-                    not self._label_has_any_instructions(label)):
-                    print(f"Skipping pure DATA label: {label_name}")
-                    continue
-            except Exception as e:
-                print(f"Warning: Error checking label type for {label_name}: {e}")
-                # Continue processing the label anyway
             
             # Output C++ label with cleaned name
             clean_label_name = self._clean_label_name(label_name)
@@ -833,7 +821,7 @@ class Translator:
         
         self.source_output += f"{TAB}}}\n"
         self.source_output += "}\n"
-    
+        
     def _label_has_any_instructions(self, label_node) -> bool:
         """Check if a label contains any instructions (not just data)"""
         try:

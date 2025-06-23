@@ -16,6 +16,7 @@ from lexer import Lexer
 from parser import Parser  # This will use your debug parser
 from ast_nodes import cleanup_ast
 from util import clear_comments
+from translator import Translator
 
 # Enhanced Translator class with variable detection
 class EnhancedTranslator:
@@ -281,8 +282,10 @@ def main():
             print(f"Using config directory: {config_dir}")
         
         # Use enhanced translator
-        translator = EnhancedTranslator(input_file, ast_root, config_dir, is_ca65)
-        
+        #translator = EnhancedTranslator(input_file, ast_root, config_dir, is_ca65)
+
+        translator = Translator(input_file, ast_root, config_dir, is_ca65)        
+
         # Create output directory
         create_output_directory(output_dir)
         
