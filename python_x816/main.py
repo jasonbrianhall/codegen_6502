@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-6502 Assembly Code Generator - Main Application with Debug Parser
+6502 Assembly Code Generator - FIXED Main Application with Debug Parser
 
 Converts 6502 assembly code to C++ code for game engines.
-This is a Python port of the original C++ version.
+This is the FIXED version that addresses section skipping issues.
 
 Usage: python main.py <INPUT_ASM_FILE> <OUTPUT_DIRECTORY>
 """
@@ -13,8 +13,8 @@ import os
 from pathlib import Path
 
 from lexer import Lexer
-from parser import Parser  # This will use your debug parser
-from ast_nodes import cleanup_ast
+from parser import Parser  # This will use the fixed parser
+from ast_nodes import cleanup_ast, validate_ast_integrity, print_node
 from translator import Translator
 from util import clear_comments
 
@@ -52,16 +52,60 @@ def write_output_files(translator: Translator, output_dir: str):
     print("  SMBDataPointers.hpp")
     print("  SMBConstants.hpp")
 
+def debug_print_ast_summary(root, source_lines=None):
+    """Print a comprehensive AST summary"""
+    print(f"\n{'='*60}")
+    print("AST STRUCTURE SUMMARY")
+    print(f"{'='*60}")
+    
+    labels = []
+    declarations = []
+    other_nodes = []
+    
+    for i, child in enumerate(root.children):
+        if child.type.name == 'AST_LABEL':
+            labels.append((i, child.value, child.line_number))
+        elif child.type.name == 'AST_DECL':
+            declarations.append((i, child.value))
+        else:
+            other_nodes.append((i, child.type.name))
+    
+    print(f"Total root children: {len(root.children)}")
+    print(f"  Labels: {len(labels)}")
+    print(f"  Declarations: {len(declarations)}")
+    print(f"  Other: {len(other_nodes)}")
+    
+    if labels:
+        print(f"\nLABELS FOUND:")
+        for i, (idx, name, line) in enumerate(labels):
+            print(f"  [{idx:3d}] {name:20s} (line {line:4d})")
+            if i >= 20:  # Limit output
+                print(f"  ... and {len(labels) - 20} more labels")
+                break
+    
+    if declarations:
+        print(f"\nDECLARATIONS:")
+        for idx, name in declarations[:10]:  # Show first 10
+            print(f"  [{idx:3d}] {name}")
+        if len(declarations) > 10:
+            print(f"  ... and {len(declarations) - 10} more declarations")
+    
+    print(f"{'='*60}\n")
+    
+    # Validate integrity
+    validate_ast_integrity(root, source_lines)
+
 def main():
-    """Main function with CA65 support and debug parser"""
+    """FIXED main function with comprehensive debugging"""
     if len(sys.argv) < 3:
-        print("usage: python main.py <INPUT ASM FILE> <OUTPUT DIRECTORY> [CONFIG DIRECTORY] [-ca65] [-debug]")
+        print("usage: python main.py <INPUT ASM FILE> <OUTPUT DIRECTORY> [CONFIG DIRECTORY] [-ca65] [-debug] [-ast]")
         print("  -ca65: Use CA65 assembly format instead of original format")
         print("  -debug: Enable detailed debug output from parser")
+        print("  -ast: Print detailed AST structure")
         print("Examples:")
         print("  python main.py game.asm output_dir")
-        print("  python main.py game.asm output_dir -ca65")
-        print("  python main.py game.asm output_dir my_config -ca65 -debug")
+        print("  python main.py game.asm output_dir -ca65 -debug")
+        print("  python main.py game.asm output_dir my_config -ca65 -debug -ast")
         sys.exit(1)
     
     input_file = sys.argv[1]
@@ -71,6 +115,7 @@ def main():
     config_dir = None
     is_ca65 = False
     debug_mode = False
+    show_ast = False
     
     # Check all remaining arguments
     for i in range(3, len(sys.argv)):
@@ -79,6 +124,8 @@ def main():
             is_ca65 = True
         elif arg == "-debug":
             debug_mode = True
+        elif arg == "-ast":
+            show_ast = True
         elif not arg.startswith('-'):
             config_dir = arg
     
@@ -99,81 +146,145 @@ def main():
         with open(input_file, 'r') as f:
             input_text = f.read()
         
+        print(f"Processing: {input_file}")
         print(f"Debug mode: {'ON' if debug_mode else 'OFF'}")
+        print(f"AST display: {'ON' if show_ast else 'OFF'}")
+        print(f"Format: {'CA65' if is_ca65 else 'Original'}")
+        
+        # Split source into lines for debugging
+        source_lines = input_text.split('\n')
+        print(f"Source file has {len(source_lines)} lines")
+        
+        # Show some sample lines with labels for verification
+        print("\nSample labels from source:")
+        import re
+        label_count = 0
+        for line_num, line in enumerate(source_lines[:200], 1):  # Check first 200 lines
+            if re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*:', line.strip()):
+                print(f"  Line {line_num:4d}: {line.strip()}")
+                label_count += 1
+                if label_count >= 10:  # Show first 10 labels
+                    break
         
         # Lexical analysis
-        print(f"Performing lexical analysis ({'CA65' if is_ca65 else 'Original'} format)...")
+        print(f"\n{'='*60}")
+        print("LEXICAL ANALYSIS")
+        print(f"{'='*60}")
+        
         lexer = Lexer(input_text)
         tokens = lexer.tokenize()
         print(f"Generated {len(tokens)} tokens")
         
-        # Show first few tokens in debug mode
-        if debug_mode:
-            print(f"\nFirst 10 tokens:")
-            for i, token in enumerate(tokens[:10]):
-                print(f"  [{i}] {token.type.name}: '{token.value}' (line {token.line})")
-            print()
+        # Count LABEL tokens specifically
+        label_tokens = [t for t in tokens if t.type.name == 'LABEL']
+        print(f"Found {len(label_tokens)} LABEL tokens")
         
-        # Parsing with debug support
-        print("Parsing...")
+        if debug_mode and label_tokens:
+            print("First 10 LABEL tokens:")
+            for i, token in enumerate(label_tokens[:10]):
+                print(f"  [{i:2d}] LABEL: '{token.value}' (line {token.line})")
+        
+        # Parsing with FIXED parser
+        print(f"\n{'='*60}")
+        print("PARSING WITH FIXED PARSER")
+        print(f"{'='*60}")
+        
         parser = Parser(tokens)
-        
-        # Set debug mode
         parser.debug_mode = debug_mode
-        
-        # Provide source lines for better debugging
-        source_lines = input_text.split('\n')
         parser.set_source_lines(source_lines)
         
-        # Parse with error recovery
+        # Parse with comprehensive error recovery
         try:
             ast_root = parser.parse()
-            print(f"Parsed {len(ast_root.children)} top-level nodes")
+            print(f"✓ Parsing completed successfully")
+            print(f"  Generated {len(ast_root.children)} top-level AST nodes")
         except Exception as e:
-            print(f"Parser error: {e}")
+            print(f"✗ Parser error: {e}")
             if debug_mode:
                 import traceback
                 traceback.print_exc()
             
-            # Try to continue with partial AST if available
-            if hasattr(parser, 'root') and parser.root:
-                ast_root = parser.root
-                print(f"Using partial AST with {len(ast_root.children)} nodes")
-            else:
-                print("Could not recover from parser error")
-                sys.exit(1)
+            # This shouldn't happen with the fixed parser, but just in case
+            print("✗ Could not recover from parser error")
+            sys.exit(1)
         
-        # Cleanup AST (reverse lists, etc.)
-        print("Cleaning up AST...")
-        cleanup_ast(ast_root)
+        # AST cleanup with debugging
+        print(f"\n{'='*60}")
+        print("AST CLEANUP")
+        print(f"{'='*60}")
+        
+        cleanup_ast(ast_root, debug=debug_mode)
+        print("✓ AST cleanup completed")
+        
+        # Display AST summary
+        debug_print_ast_summary(ast_root, source_lines)
+        
+        # Show detailed AST structure if requested
+        if show_ast:
+            print(f"\n{'='*60}")
+            print("DETAILED AST STRUCTURE")
+            print(f"{'='*60}")
+            # Only show first few nodes to avoid overwhelming output
+            print("First 5 AST nodes:")
+            for i, child in enumerate(ast_root.children[:5]):
+                print(f"\n--- Node {i} ---")
+                print_node(child)
+            
+            if len(ast_root.children) > 5:
+                print(f"\n... and {len(ast_root.children) - 5} more nodes")
+            print(f"{'='*60}\n")
         
         # Translation
-        print("Translating to C++...")
+        print(f"{'='*60}")
+        print("TRANSLATION")
+        print(f"{'='*60}")
+        
         if config_dir:
             print(f"Using config directory: {config_dir}")
         
-        # PASS is_ca65 FLAG TO TRANSLATOR
+        # Pass is_ca65 flag to translator
         translator = Translator(input_file, ast_root, config_dir, is_ca65)
+        print("✓ Translation completed")
         
-        # Create output directory
+        # Create output directory and write files
+        print(f"\n{'='*60}")
+        print("OUTPUT GENERATION")
+        print(f"{'='*60}")
+        
         create_output_directory(output_dir)
-        
-        # Write output files
         write_output_files(translator, output_dir)
         
-        print("Translation completed successfully!")
+        print(f"\n✅ SUCCESS: Translation completed successfully!")
+        print(f"   Output files written to: {output_dir}")
+        
         if config_dir:
             analyzer_script = "ca65_analyzer.py" if is_ca65 else "rom_analyzer.py"
-            print(f"\nIf you encounter indirect jump errors, run: python {analyzer_script} {input_file}")
-            print(f"Then edit the files in {config_dir}:")
-            print("  - *_targets.txt (for indirect jump targets)")
-            if not is_ca65:
-                print("  - data_labels.txt (for labels that should generate data pointers)")
-                print("  - code_labels.txt (for labels used in goto statements)")
-                print("  - alias_labels.txt (for simple label aliases)")
+            print(f"\n💡 If you encounter indirect jump errors, run:")
+            print(f"   python {analyzer_script} {input_file}")
+            print(f"   Then edit the files in {config_dir}/")
+        
+        # Final statistics
+        print(f"\n📊 FINAL STATISTICS:")
+        print(f"   Source lines: {len(source_lines)}")
+        print(f"   Tokens generated: {len(tokens)}")
+        print(f"   LABEL tokens: {len(label_tokens)}")
+        print(f"   AST root children: {len(ast_root.children)}")
+        
+        # Count different types of AST nodes
+        label_nodes = [c for c in ast_root.children if c.type.name == 'AST_LABEL']
+        decl_nodes = [c for c in ast_root.children if c.type.name == 'AST_DECL']
+        
+        print(f"   Labels in AST: {len(label_nodes)}")
+        print(f"   Declarations in AST: {len(decl_nodes)}")
+        
+        if len(label_tokens) != len(label_nodes):
+            print(f"   ⚠️  WARNING: Token/AST label count mismatch!")
+            print(f"   This indicates some labels may have been lost during parsing.")
+        else:
+            print(f"   ✅ Label token/AST count matches!")
         
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"\n❌ FATAL ERROR: {e}")
         if debug_mode:
             import traceback
             traceback.print_exc()

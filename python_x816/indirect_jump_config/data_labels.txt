@@ -1,0 +1,11 @@
+# Data Labels Configuration
+# One label per line - these labels will be treated as DATA (generate pointers)
+# Lines starting with # are comments
+#
+# Examples of typical data labels:
+# GameText
+# AreaAddrOffsets
+# MusicData
+# PaletteData
+#
+# Add labels here that contain lookup tables, graphics data, etc.
