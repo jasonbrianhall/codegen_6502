@@ -310,6 +310,8 @@ class FirstPassClassifier:
                 f.write("# PaletteData\n")
                 f.write("#\n")
                 f.write("# Add labels here that contain lookup tables, graphics data, etc.\n")
+                f.write("# Common data_xxxx labels:\n")
+                f.write("data_e5df\n")  # Add the problematic one by default
             print(f"Created {data_file}")
         
         # Create code_labels.txt only if it doesn't exist
@@ -370,14 +372,59 @@ class FirstPassClassifier:
             'brk', 'nop'
         }
     
+    def find_data_labels_by_pattern(self):
+        """Find data labels by looking for common patterns"""
+        data_pattern_labels = set()
+        
+        for line_num, line in enumerate(self.lines):
+            line_stripped = line.strip()
+            
+            # Look for labels that match data patterns
+            label_match = re.match(r'^([a-zA-Z_][a-zA-Z0-9_]*):(.*)$', line_stripped)
+            if label_match:
+                label_name = label_match.group(1)
+                rest_of_line = label_match.group(2).strip()
+                
+                # Check if data directive is on same line
+                if any(directive in rest_of_line.lower() for directive in ['.db', '.dw', '.byte', '.word']):
+                    data_pattern_labels.add(label_name)
+                    print(f"Found data label (same line): {label_name}")
+                    continue
+                
+                # Check if it's a hex data label pattern (data_xxxx)
+                if re.match(r'^data_[a-fA-F0-9]+$', label_name):
+                    # Look ahead to see if it's followed by data
+                    for i in range(1, min(5, len(self.lines) - line_num)):
+                        if line_num + i - 1 >= len(self.lines):
+                            break
+                        next_line = self.lines[line_num + i - 1].strip()
+                        if not next_line or next_line.startswith(';'):
+                            continue
+                        if any(directive in next_line.lower() for directive in ['.db', '.dw']):
+                            data_pattern_labels.add(label_name)
+                            print(f"Found data label (pattern): {label_name}")
+                            break
+                        # If we hit another label or instruction, stop
+                        if ':' in next_line or any(inst in next_line.lower().split() for inst in ['lda', 'sta', 'jmp', 'jsr']):
+                            break
+        
+        return data_pattern_labels
+    
     def classify_all_labels(self) -> Dict[str, LabelType]:
         """Perform first pass classification of all labels"""
         # First, find all labels and their locations
         self._find_all_labels()
         
+        # Find data labels by pattern
+        pattern_data_labels = self.find_data_labels_by_pattern()
+        
         # Then classify each label based on what follows it
         for label_name, line_num in self.label_line_map.items():
-            self.labels[label_name] = self._classify_single_label(label_name, line_num)
+            if label_name in pattern_data_labels:
+                self.labels[label_name] = LabelType.LABEL_DATA
+                print(f"Classified {label_name} as DATA (pattern match)")
+            else:
+                self.labels[label_name] = self._classify_single_label(label_name, line_num)
         
         return self.labels
     
@@ -402,14 +449,19 @@ class FirstPassClassifier:
         elif label_name in self.forced_alias_labels:
             return LabelType.LABEL_ALIAS
         
+        # Special handling for data_xxxx pattern labels
+        if re.match(r'^data_[a-fA-F0-9]+$', label_name):
+            print(f"Auto-classifying {label_name} as DATA due to naming pattern")
+            return LabelType.LABEL_DATA
+        
         # Fall back to automatic analysis
         content_analysis = self._analyze_content_after_label(start_line)
         
-        # Very strict criteria for DATA classification to prevent goto conflicts
+        # Less strict criteria for DATA classification
         if (content_analysis['has_data_directives'] and 
             not content_analysis['has_instructions'] and
             content_analysis['only_data_directives'] and
-            content_analysis['line_count_analyzed'] >= 3):  # Must have multiple data lines
+            content_analysis['line_count_analyzed'] >= 1):  # Changed from 3 to 1
             return LabelType.LABEL_DATA
         
         # Check for simple aliases (labels that just point to other labels)
