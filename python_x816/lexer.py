@@ -1,5 +1,6 @@
 """
-Lexical Analyzer for 6502 Assembly
+Lexical Analyzer for 6502 Assembly - FIXED VERSION
+Handles both uppercase and lowercase register names (X/x, Y/y)
 """
 
 import re
@@ -165,7 +166,6 @@ class Lexer:
                 self.tokens.append(Token(TokenType.BINCONST, bin_const, current_line, current_column))
                 continue
         
-            # ADD THIS SECTION FOR STRINGS:
             # String literals (CA65 format)
             if self.text[self.pos] in '"\'':
                 string_literal = self.read_string()
@@ -232,15 +232,15 @@ class Lexer:
                     self.tokens.append(Token(TokenType.LABEL, label, current_line, current_column))
                     continue
 
-                # Check for special register names
-                if name == 'x':
+                # FIXED: Check for special register names (case-insensitive)
+                if name.lower() == 'x':
                     self.tokens.append(Token(TokenType.X_REG, name, current_line, current_column))
                     continue
-                elif name == 'y':
+                elif name.lower() == 'y':
                     self.tokens.append(Token(TokenType.Y_REG, name, current_line, current_column))
                     continue
             
-                # Check for instructions
+                # Check for instructions (case-insensitive)
                 if name.lower() in INSTRUCTION_MAP:
                     token_type = INSTRUCTION_MAP[name.lower()]
                     self.tokens.append(Token(token_type, name, current_line, current_column))
@@ -256,4 +256,3 @@ class Lexer:
         # Add EOF token
         self.tokens.append(Token(TokenType.EOF, "", self.line, self.column))
         return self.tokens
-
