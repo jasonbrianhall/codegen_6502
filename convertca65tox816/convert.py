@@ -125,17 +125,7 @@ class CA65ToX816Converter:
             # Convert segments to .org
             if '.segment' in line:
                 if '"CODE"' in line or "'CODE'" in line:
-                    line = '.org $8000'
-                elif '"VECTORS"' in line or "'VECTORS'" in line:
-                    line = '.org $FFFA'
-                elif '"HEADER"' in line or "'HEADER'" in line:
-                    line = '; HEADER segment removed'
-                    output_lines.append(line)
-                    continue
-                elif '"ZEROPAGE"' in line or "'ZEROPAGE'" in line:
-                    line = '.org $0000'
-                else:
-                    line = '.org $8000  ; TODO: check address'
+                    line = '.org $C000'
             
             # Convert data directives
             line = re.sub(r'\.byte\b', '.db', line)
