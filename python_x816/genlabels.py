@@ -361,7 +361,7 @@ class AssemblyLabelAnalyzer:
             'data', 'table', 'tbl', 'offset', 'addr', 'palette', 'color',
             'hdr', 'header', 'music', 'sound', 'sfx', 'mus', 'graphics', 'gfx',
             'tiles', 'mtiles', 'text', 'message', 'msg', 'speed', 'timer',
-            'freq', 'envelope', 'env', 'pos', 'adder', 'lookup'
+            'freq', 'envelope', 'env', 'pos', 'adder', 'lookup', 'areas'
         ]
         
         strong_data_score = sum(1 for pattern in strong_data_patterns if pattern in name_lower)
@@ -369,7 +369,14 @@ class AssemblyLabelAnalyzer:
             total_indicators += 1
             data_score += min(1.0, strong_data_score * 0.3)  # Cap contribution
         
-        # PATTERN 3: Array/collection patterns
+        # PATTERN 2b: Specific problematic patterns that should NOT be data
+        anti_data_patterns = ['movesub', 'move_sub', 'nomove']
+        anti_data_score = sum(1 for pattern in anti_data_patterns if pattern in name_lower)
+        if anti_data_score > 0:
+            total_indicators += 1
+            data_score -= 0.5  # Reduce data probability
+        
+        # PATTERN 3: Array/collection patterns  
         array_patterns = [
             ('world', 'areas'), ('e_', 'area'), ('l_', 'area'),
             ('area', 'data'), ('enemy', 'data'), ('player', 'data')
@@ -381,8 +388,13 @@ class AssemblyLabelAnalyzer:
                 data_score += 0.8
                 break
         
+        # PATTERN 3b: World Areas specifically (common pattern in games)
+        if name_lower.startswith('world') and name_lower.endswith('areas'):
+            total_indicators += 1
+            data_score += 0.9  # Very high confidence for this pattern
+        
         # PATTERN 4: Suffix patterns for data
-        data_suffixes = ['data', 'hdr', 'offsets', 'table', 'tbl', 'palette', 'colors']
+        data_suffixes = ['data', 'hdr', 'offsets', 'table', 'tbl', 'palette', 'colors', 'areas']
         if any(name_lower.endswith(suffix) for suffix in data_suffixes):
             total_indicators += 1
             data_score += 0.7
