@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-6502 Assembly Label Analyzer
+6502 Assembly Label Analyzer - Enhanced Version
 Analyzes assembly code and creates configuration files for label classification
 """
 
@@ -134,11 +134,15 @@ class AssemblyLabelAnalyzer:
             'has_only_data': True,
             'has_only_instructions': True,
             'content_lines': 0,
-            'sample_content': []
+            'sample_content': [],
+            'consecutive_data_lines': 0,
+            'max_consecutive_data': 0,
+            'data_to_instruction_ratio': 0
         }
         
-        # Look at content after the label
-        max_lines = min(20, len(self.lines) - start_line - 1)
+        # Look at content after the label - increase range for better analysis
+        max_lines = min(50, len(self.lines) - start_line - 1)
+        consecutive_data = 0
         
         for i in range(1, max_lines + 1):
             line_num = start_line + i
@@ -156,13 +160,14 @@ class AssemblyLabelAnalyzer:
                 break
             
             analysis['content_lines'] += 1
-            if len(analysis['sample_content']) < 5:
+            if len(analysis['sample_content']) < 10:  # Keep more samples
                 analysis['sample_content'].append(line)
             
             # Check for instructions
             if self._contains_instruction(line):
                 analysis['instruction_count'] += 1
                 analysis['has_only_data'] = False
+                consecutive_data = 0  # Reset consecutive data counter
                 if not analysis['first_instruction']:
                     analysis['first_instruction'] = line.split()[0].lower()
             
@@ -170,17 +175,27 @@ class AssemblyLabelAnalyzer:
             elif self._contains_data_directive(line):
                 analysis['data_directive_count'] += 1
                 analysis['has_only_instructions'] = False
+                consecutive_data += 1
+                analysis['max_consecutive_data'] = max(analysis['max_consecutive_data'], consecutive_data)
             
             # Check for jump targets
             elif self._is_jump_target(line):
                 analysis['jump_target_count'] += 1
                 analysis['has_only_data'] = False
                 analysis['has_only_instructions'] = False
+                consecutive_data = 0
             
             else:
-                # Unknown content
+                # Unknown content - might be comments, labels, etc.
                 analysis['has_only_data'] = False
                 analysis['has_only_instructions'] = False
+                consecutive_data = 0
+        
+        # Calculate data to instruction ratio
+        if analysis['instruction_count'] > 0:
+            analysis['data_to_instruction_ratio'] = analysis['data_directive_count'] / analysis['instruction_count']
+        elif analysis['data_directive_count'] > 0:
+            analysis['data_to_instruction_ratio'] = float('inf')  # Only data, no instructions
         
         return analysis
     
@@ -232,33 +247,230 @@ class AssemblyLabelAnalyzer:
         return False
     
     def _classify_label(self, label_name: str, analysis: Dict) -> LabelType:
-        """Classify a label based on its analysis"""
-        # Strong data indicators
+        """Classify a label based on its actual content analysis"""
+        
+        # Pure data: Only data directives, no instructions
         if (analysis['data_directive_count'] > 0 and 
             analysis['instruction_count'] == 0 and
             analysis['has_only_data']):
             return LabelType.DATA
         
-        # Strong alias indicators
+        # Predominantly data: Multiple data directives with minimal or no instructions
+        if (analysis['data_directive_count'] >= 3 and 
+            analysis['instruction_count'] <= 1):
+            return LabelType.DATA
+        
+        # Data-heavy content: More data than instructions
+        if (analysis['data_directive_count'] > 0 and 
+            analysis['data_directive_count'] > analysis['instruction_count'] and
+            analysis['content_lines'] >= 2):
+            return LabelType.DATA
+        
+        # Simple alias: Very short content that just jumps to another label
         if (analysis['content_lines'] <= 2 and 
             analysis['jump_target_count'] > 0 and
-            analysis['instruction_count'] == 0 and
+            analysis['instruction_count'] <= 1 and
             analysis['data_directive_count'] == 0):
             return LabelType.ALIAS
         
-        # Code indicators
+        # Single instruction alias
+        if (analysis['content_lines'] == 1 and 
+            analysis['first_instruction'] in ['jmp', 'jsr']):
+            return LabelType.ALIAS
+        
+        # Code: Contains instructions
         if analysis['instruction_count'] > 0:
             return LabelType.CODE
         
-        # Special patterns
-        if analysis['first_instruction'] in ['jmp', 'jsr'] and analysis['content_lines'] == 1:
-            return LabelType.ALIAS
-        
-        # Default to code for safety (prevents goto compilation errors)
+        # ENHANCED EMPTY LABEL HANDLING
         if analysis['content_lines'] == 0:
-            return LabelType.CODE
+            # For empty labels, use contextual analysis
+            data_probability = self._analyze_empty_label_context(label_name)
+            
+            if data_probability >= 0.7:  # High confidence it's data
+                return LabelType.DATA
+            elif data_probability <= 0.3:  # High confidence it's code
+                return LabelType.CODE
+            else:
+                # Medium confidence - use safe default but flag for review
+                return LabelType.CODE
         
+        # If we have content but no clear classification, check the actual content
+        if analysis['sample_content']:
+            for line in analysis['sample_content']:
+                line_lower = line.lower().strip()
+                
+                # Check for data-like content patterns
+                if any(directive in line_lower for directive in ['.db', '.dw', '.byte', '.word']):
+                    return LabelType.DATA
+                
+                # Check for immediate alias patterns  
+                if line_lower.startswith('jmp ') or line_lower.startswith('jsr '):
+                    # If this is the only/main content, it's likely an alias
+                    if analysis['content_lines'] <= 2:
+                        return LabelType.ALIAS
+                    else:
+                        return LabelType.CODE
+                
+                # Any other instruction indicates code
+                if any(instr in line_lower.split() for instr in self.instructions):
+                    return LabelType.CODE
+        
+        # Default to CODE for safety (prevents compilation errors)
         return LabelType.CODE
+    
+    def _analyze_empty_label_context(self, label_name: str) -> float:
+        """
+        Analyze context around empty labels to predict if they're data or code.
+        Returns probability (0.0-1.0) that label is DATA.
+        """
+        data_score = 0.0
+        total_indicators = 0
+        
+        # Find the label's line number
+        label_line = self.label_line_map.get(label_name, -1)
+        if label_line == -1:
+            return 0.5  # Unknown, neutral score
+        
+        # PATTERN 1: Check surrounding labels for data patterns
+        nearby_data_labels = 0
+        nearby_code_labels = 0
+        
+        # Look at labels within ±10 lines
+        for other_label, other_line in self.label_line_map.items():
+            if other_label == label_name:
+                continue
+            
+            line_distance = abs(other_line - label_line)
+            if line_distance <= 10:
+                other_analysis = self.label_analysis.get(other_label, {})
+                if other_analysis.get('data_directive_count', 0) > 0:
+                    nearby_data_labels += 1
+                elif other_analysis.get('instruction_count', 0) > 0:
+                    nearby_code_labels += 1
+        
+        if nearby_data_labels + nearby_code_labels > 0:
+            total_indicators += 1
+            data_score += nearby_data_labels / (nearby_data_labels + nearby_code_labels)
+        
+        # PATTERN 2: Common data label naming patterns
+        name_lower = label_name.lower()
+        
+        # Strong data indicators
+        strong_data_patterns = [
+            'data', 'table', 'tbl', 'offset', 'addr', 'palette', 'color',
+            'hdr', 'header', 'music', 'sound', 'sfx', 'mus', 'graphics', 'gfx',
+            'tiles', 'mtiles', 'text', 'message', 'msg', 'speed', 'timer',
+            'freq', 'envelope', 'env', 'pos', 'adder', 'lookup'
+        ]
+        
+        strong_data_score = sum(1 for pattern in strong_data_patterns if pattern in name_lower)
+        if strong_data_score > 0:
+            total_indicators += 1
+            data_score += min(1.0, strong_data_score * 0.3)  # Cap contribution
+        
+        # PATTERN 3: Array/collection patterns
+        array_patterns = [
+            ('world', 'areas'), ('e_', 'area'), ('l_', 'area'),
+            ('area', 'data'), ('enemy', 'data'), ('player', 'data')
+        ]
+        
+        for prefix, suffix in array_patterns:
+            if prefix in name_lower and suffix in name_lower:
+                total_indicators += 1
+                data_score += 0.8
+                break
+        
+        # PATTERN 4: Suffix patterns for data
+        data_suffixes = ['data', 'hdr', 'offsets', 'table', 'tbl', 'palette', 'colors']
+        if any(name_lower.endswith(suffix) for suffix in data_suffixes):
+            total_indicators += 1
+            data_score += 0.7
+        
+        # PATTERN 5: Prefix patterns for area/enemy data
+        data_prefixes = ['e_', 'l_', 'world', 'area', 'enemy', 'player']
+        if any(name_lower.startswith(prefix) for prefix in data_prefixes):
+            total_indicators += 1
+            data_score += 0.6
+        
+        # PATTERN 6: Check lines before label for context clues
+        context_lines = self._get_lines_before_label(label_line, 5)
+        data_context_clues = 0
+        code_context_clues = 0
+        
+        for line in context_lines:
+            line_lower = line.lower()
+            if any(directive in line_lower for directive in ['.db', '.dw', '.byte', '.word']):
+                data_context_clues += 1
+            elif any(instr in line_lower.split() for instr in self.instructions):
+                code_context_clues += 1
+        
+        if data_context_clues + code_context_clues > 0:
+            total_indicators += 1
+            data_score += data_context_clues / (data_context_clues + code_context_clues)
+        
+        # PATTERN 7: Check lines after label (further ahead) for data blocks
+        future_lines = self._get_lines_after_label(label_line, 20, 50)
+        future_data_count = 0
+        future_code_count = 0
+        
+        for line in future_lines:
+            line_lower = line.lower()
+            if any(directive in line_lower for directive in ['.db', '.dw', '.byte', '.word']):
+                future_data_count += 1
+            elif any(instr in line_lower.split() for instr in self.instructions):
+                future_code_count += 1
+        
+        if future_data_count + future_code_count > 0:
+            total_indicators += 1
+            # Weight this less since it's further away
+            data_score += 0.3 * (future_data_count / (future_data_count + future_code_count))
+        
+        # Calculate final probability
+        if total_indicators == 0:
+            return 0.5  # No indicators, neutral
+        
+        probability = data_score / total_indicators
+        
+        # Apply some bounds and adjustments
+        probability = max(0.0, min(1.0, probability))
+        
+        # Add debug info for empty labels with high confidence
+        if probability >= 0.7 or probability <= 0.3:
+            self.label_analysis[label_name]['empty_label_analysis'] = {
+                'probability': probability,
+                'indicators': total_indicators,
+                'raw_score': data_score,
+                'classification': 'DATA' if probability >= 0.7 else 'CODE'
+            }
+        
+        return probability
+    
+    def _get_lines_before_label(self, label_line: int, count: int) -> List[str]:
+        """Get lines before a label for context analysis"""
+        lines = []
+        start = max(0, label_line - count)
+        for i in range(start, label_line):
+            if i < len(self.lines):
+                line = self.lines[i].strip()
+                if line and not line.startswith(';'):  # Skip empty lines and comments
+                    lines.append(line)
+        return lines
+    
+    def _get_lines_after_label(self, label_line: int, skip: int, count: int) -> List[str]:
+        """Get lines after a label, skipping some lines first"""
+        lines = []
+        start = label_line + 1 + skip
+        end = min(len(self.lines), start + count)
+        
+        for i in range(start, end):
+            line = self.lines[i].strip()
+            if line and not line.startswith(';'):  # Skip empty lines and comments
+                # Stop if we hit another label
+                if self._is_label_line(line):
+                    break
+                lines.append(line)
+        return lines
     
     def _print_classification_summary(self):
         """Print summary of label classification"""
@@ -311,6 +523,8 @@ class AssemblyLabelAnalyzer:
                 f.write(f"{label}")
                 if analysis['first_instruction']:
                     f.write(f"  # starts with: {analysis['first_instruction']}")
+                elif analysis['content_lines'] == 0:
+                    f.write(f"  # empty label")
                 f.write("\n")
         
         print(f"  Generated {config_file} with {len(code_labels)} labels")
@@ -326,17 +540,68 @@ class AssemblyLabelAnalyzer:
             f.write("# Labels that should be treated as DATA (generate data pointers)\n")
             f.write("# One label per line, lines starting with # are comments\n")
             f.write("#\n")
-            f.write(f"# Auto-detected {len(data_labels)} data labels:\n")
+            f.write("# Examples of typical data labels:\n")
+            f.write("# GameText\n")
+            f.write("# AreaAddrOffsets\n")
+            f.write("# MusicData\n")
+            f.write("# PaletteData\n")
             f.write("#\n")
+            f.write("# Add labels here that contain lookup tables, graphics data, etc.\n")
+            f.write(f"# Auto-detected {len(data_labels)} data labels based on content analysis:\n")
+            f.write("#\n")
+            
+            # Separate empty labels from content-based labels
+            empty_data_labels = []
+            content_data_labels = []
             
             for label in sorted(data_labels):
                 analysis = self.label_analysis[label]
-                f.write(f"{label}")
-                if analysis['data_directive_count'] > 0:
-                    f.write(f"  # {analysis['data_directive_count']} data directives")
-                f.write("\n")
+                if analysis['content_lines'] == 0:
+                    empty_data_labels.append(label)
+                else:
+                    content_data_labels.append(label)
+            
+            # Write content-based data labels first
+            if content_data_labels:
+                f.write("# Labels with actual data content:\n")
+                for label in content_data_labels:
+                    analysis = self.label_analysis[label]
+                    f.write(f"{label}")
+                    
+                    # Add analysis info as comment
+                    if analysis['data_directive_count'] > 0:
+                        f.write(f"  # {analysis['data_directive_count']} data directives")
+                        if analysis['max_consecutive_data'] >= 3:
+                            f.write(f", {analysis['max_consecutive_data']} consecutive")
+                        if analysis['instruction_count'] > 0:
+                            f.write(f", {analysis['instruction_count']} instructions")
+                    else:
+                        f.write(f"  # content analysis classified as data")
+                    
+                    f.write("\n")
+            
+            # Write empty labels that were auto-classified as data
+            if empty_data_labels:
+                f.write(f"\n# Empty labels auto-classified as DATA (based on context analysis):\n")
+                f.write("# These labels have no content but patterns suggest they are data pointers\n")
+                for label in empty_data_labels:
+                    analysis = self.label_analysis[label]
+                    f.write(f"{label}")
+                    
+                    if 'empty_label_analysis' in analysis:
+                        empty_analysis = analysis['empty_label_analysis']
+                        f.write(f"  # auto-classified: {empty_analysis['probability']:.2f} confidence")
+                    else:
+                        f.write(f"  # empty label - review classification")
+                    
+                    f.write("\n")
         
         print(f"  Generated {config_file} with {len(data_labels)} labels")
+        
+        if empty_data_labels:
+            print(f"    - {len(content_data_labels)} labels with actual data content")
+            print(f"    - {len(empty_data_labels)} empty labels auto-classified as DATA")
+            print(f"    Check the analysis report for empty label classification details")
     
     def _generate_alias_labels_config(self, output_path: Path):
         """Generate alias labels configuration file"""
@@ -387,12 +652,38 @@ class AssemblyLabelAnalyzer:
                     f.write(f"  Data directives: {analysis['data_directive_count']}\n")
                     f.write(f"  Content lines: {analysis['content_lines']}\n")
                     
+                    # Add empty label analysis if available
+                    if 'empty_label_analysis' in analysis:
+                        empty_analysis = analysis['empty_label_analysis']
+                        f.write(f"  Empty label analysis:\n")
+                        f.write(f"    Probability (DATA): {empty_analysis['probability']:.2f}\n")
+                        f.write(f"    Indicators found: {empty_analysis['indicators']}\n")
+                        f.write(f"    Auto-classification: {empty_analysis['classification']}\n")
+                    
                     if analysis['sample_content']:
                         f.write(f"  Sample content:\n")
                         for line in analysis['sample_content'][:3]:
                             f.write(f"    {line}\n")
                 
                 f.write("\n")
+            
+            # Special section for empty labels that were auto-classified as DATA
+            empty_data_labels = []
+            for label, ltype in self.labels.items():
+                if (ltype == LabelType.DATA and 
+                    self.label_analysis[label]['content_lines'] == 0 and
+                    'empty_label_analysis' in self.label_analysis[label]):
+                    empty_data_labels.append(label)
+            
+            if empty_data_labels:
+                f.write("\nEMPTY LABELS AUTO-CLASSIFIED AS DATA:\n")
+                f.write("-" * 40 + "\n")
+                f.write("These labels had no content but were classified as DATA\n")
+                f.write("based on contextual analysis (naming patterns, nearby labels, etc.)\n\n")
+                
+                for label in sorted(empty_data_labels):
+                    analysis = self.label_analysis[label]['empty_label_analysis']
+                    f.write(f"{label}: {analysis['probability']:.2f} confidence\n")
         
         print(f"  Generated {report_file}")
     
@@ -401,7 +692,7 @@ class AssemblyLabelAnalyzer:
         guide_file = output_path / "USAGE_GUIDE.txt"
         
         with open(guide_file, 'w') as f:
-            f.write("6502 Assembly Label Analyzer - Usage Guide\n")
+            f.write("6502 Assembly Label Analyzer - Enhanced Usage Guide\n")
             f.write("=" * 50 + "\n\n")
             
             f.write("GENERATED FILES:\n")
@@ -416,6 +707,30 @@ class AssemblyLabelAnalyzer:
             f.write("3. Add/remove labels as needed\n")
             f.write("4. Use these files with your 6502 translator\n\n")
             
+            f.write("CONTENT-BASED CLASSIFICATION:\n")
+            f.write("This analyzer classifies labels based on what actually follows them:\n")
+            f.write("- DATA: Labels followed primarily by .db/.dw/.byte/.word directives\n")
+            f.write("- CODE: Labels followed by 6502 instructions (lda, sta, jmp, etc.)\n")
+            f.write("- ALIAS: Labels with single jmp/jsr to another label\n\n")
+            
+            f.write("ENHANCED EMPTY LABEL ANALYSIS:\n")
+            f.write("For empty labels (no content), the analyzer uses contextual clues:\n")
+            f.write("- Naming patterns (Data, Hdr, Table, Offset, Music, etc.)\n")
+            f.write("- Array patterns (World*Areas, E_*Area*, L_*Area*)\n")
+            f.write("- Surrounding label types\n")
+            f.write("- Context before/after the label\n")
+            f.write("- High confidence (>=70%) auto-classifies as DATA\n")
+            f.write("- Low confidence (<=30%) auto-classifies as CODE\n")
+            f.write("- Medium confidence defaults to CODE (safer)\n\n")
+            
+            f.write("CLASSIFICATION CRITERIA:\n")
+            f.write("- Pure DATA: Only data directives, no instructions\n")
+            f.write("- Predominantly DATA: 3+ data directives, ≤1 instruction\n")
+            f.write("- Data-heavy: More data directives than instructions\n")
+            f.write("- Simple ALIAS: ≤2 lines with jump to another label\n")
+            f.write("- CODE: Contains any 6502 instructions\n")
+            f.write("- Empty labels: Use contextual analysis with confidence scoring\n\n")
+            
             f.write("EDITING TIPS:\n")
             f.write("- Add # at start of line to comment out a label\n")
             f.write("- Move labels between files to change classification\n")
@@ -427,6 +742,13 @@ class AssemblyLabelAnalyzer:
             f.write("- If you get 'undefined label' errors, move the label to code_labels.txt\n")
             f.write("- If data isn't accessible, move the label to data_labels.txt\n")
             f.write("- Check the analysis report for detailed label information\n")
+            f.write("- Empty labels with low confidence may need manual review\n")
+            f.write("- Mixed content (data + instructions) defaults to CODE\n\n")
+            
+            f.write("CONFIDENCE INDICATORS FOR EMPTY LABELS:\n")
+            f.write("- High confidence DATA: Contains 'Hdr', 'Data', 'Table', 'Areas'\n")
+            f.write("- Medium confidence DATA: Starts with 'E_', 'L_', 'World'\n")
+            f.write("- Review labels with medium confidence (30-70%) manually\n")
         
         print(f"  Generated {guide_file}")
 
@@ -464,6 +786,7 @@ def main():
         analyzer.generate_config_files(output_dir)
         
         print(f"\nDone! Check the '{output_dir}' directory for configuration files.")
+        print("The analyzer now includes enhanced empty label detection!")
         print("Review and edit the files as needed, then use them with your 6502 translator.")
         
     except Exception as e:
