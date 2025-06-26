@@ -144,12 +144,6 @@ void SMBEngine::pha()
     registerS--;
 }
 
-void SMBEngine::pla()
-{
-    registerS++;
-    a = readData(0x100 | (uint16_t)registerS);
-}
-
 int SMBEngine::popReturnIndex()
 {
     return returnIndexStack[returnIndexStackTop--];
@@ -231,6 +225,134 @@ void SMBEngine::setZN(uint8_t value)
     n = (value & (1 << 7)) != 0;
 }
 
+void SMBEngine::adc(uint8_t value)
+{
+    uint16_t result = registerA + value + (c ? 1 : 0);
+    
+    // Set overflow flag: overflow occurs if both operands have same sign
+    // but result has different sign
+    v = ((registerA ^ result) & (value ^ result) & 0x80) != 0;
+    
+    // Set carry flag if result > 255
+    c = (result > 0xFF);
+    
+    // Update accumulator
+    registerA = result & 0xFF;
+    
+    // Set N and Z flags based on result
+    setZN(registerA);
+}
+
+// SBC - Subtract with Carry (actually subtract with borrow)
+void SMBEngine::sbc(uint8_t value)
+{
+    // SBC is actually subtraction with borrow (inverse of carry)
+    uint16_t result = registerA - value - (c ? 0 : 1);
+    
+    // Set overflow flag
+    v = ((registerA ^ value) & (registerA ^ result) & 0x80) != 0;
+    
+    // Set carry flag (clear on borrow)
+    c = (result < 0x100);
+    
+    // Update accumulator
+    registerA = result & 0xFF;
+    
+    // Set N and Z flags
+    setZN(registerA);
+}
+
+// ASL - Arithmetic Shift Left (Accumulator)
+void SMBEngine::asl_acc()
+{
+    c = (registerA & 0x80) != 0;  // Carry = bit 7
+    registerA = (registerA << 1) & 0xFF;
+    setZN(registerA);
+}
+
+// ASL - Arithmetic Shift Left (Memory)
+void SMBEngine::asl(uint16_t address)
+{
+    uint8_t value = readData(address);
+    c = (value & 0x80) != 0;  // Carry = bit 7
+    value = (value << 1) & 0xFF;
+    writeData(address, value);
+    setZN(value);
+}
+
+// LSR - Logical Shift Right (Accumulator)
+void SMBEngine::lsr_acc()
+{
+    c = (registerA & 0x01) != 0;  // Carry = bit 0
+    registerA = registerA >> 1;
+    setZN(registerA);
+}
+
+// LSR - Logical Shift Right (Memory)
+void SMBEngine::lsr(uint16_t address)
+{
+    uint8_t value = readData(address);
+    c = (value & 0x01) != 0;  // Carry = bit 0
+    value = value >> 1;
+    writeData(address, value);
+    setZN(value);
+}
+
+// ROL - Rotate Left (Accumulator)
+void SMBEngine::rol_acc()
+{
+    bool oldCarry = c;
+    c = (registerA & 0x80) != 0;  // New carry = bit 7
+    registerA = ((registerA << 1) | (oldCarry ? 1 : 0)) & 0xFF;
+    setZN(registerA);
+}
+
+// ROL - Rotate Left (Memory)
+void SMBEngine::rol(uint16_t address)
+{
+    uint8_t value = readData(address);
+    bool oldCarry = c;
+    c = (value & 0x80) != 0;  // New carry = bit 7
+    value = ((value << 1) | (oldCarry ? 1 : 0)) & 0xFF;
+    writeData(address, value);
+    setZN(value);
+}
+
+// ROR - Rotate Right (Accumulator)
+void SMBEngine::ror_acc()
+{
+    bool oldCarry = c;
+    c = (registerA & 0x01) != 0;  // New carry = bit 0
+    registerA = (registerA >> 1) | (oldCarry ? 0x80 : 0);
+    setZN(registerA);
+}
+
+// ROR - Rotate Right (Memory)
+void SMBEngine::ror(uint16_t address)
+{
+    uint8_t value = readData(address);
+    bool oldCarry = c;
+    c = (value & 0x01) != 0;  // New carry = bit 0
+    value = (value >> 1) | (oldCarry ? 0x80 : 0);
+    writeData(address, value);
+    setZN(value);
+}
+
+// Fix PLA to set flags (replace existing PLA function)
+void SMBEngine::pla()
+{
+    registerS++;
+    registerA = readData(0x100 | (uint16_t)registerS);
+    setZN(registerA);  // PLA sets N and Z flags!
+}
+
+// Add setNZ as alias to setZN (or rename setZN to setNZ)
+void SMBEngine::setNZ(uint8_t value)
+{
+    setZN(value);  // Just call the existing function
+}
+
+
 void SMBEngine::writeData(uint16_t address, uint8_t value)
 {
     // RAM and Mirrors
@@ -259,6 +381,23 @@ void SMBEngine::writeData(uint16_t address, uint8_t value)
             break;
         }
     }
+}
+
+void SMBEngine::inc(uint16_t address)
+{
+    uint8_t value = readData(address);
+    value = (value + 1) & 0xFF;
+    writeData(address, value);
+    setZN(value);
+}
+
+// DEC - Decrement Memory  
+void SMBEngine::dec(uint16_t address)
+{
+    uint8_t value = readData(address);
+    value = (value - 1) & 0xFF;
+    writeData(address, value);
+    setZN(value);
 }
 
 void SMBEngine::writeData(uint16_t address, const uint8_t* data, size_t length)

@@ -182,6 +182,29 @@ private:
      */
     void writeData(uint16_t address, const uint8_t* data, std::size_t length);
 
+void adc(uint8_t value);
+void sbc(uint8_t value);
+
+// Shift operations (accumulator)
+void asl_acc();
+void lsr_acc();
+void rol_acc();
+void ror_acc();
+
+// Shift operations (memory)
+void asl(uint16_t address);
+void lsr(uint16_t address);
+void rol(uint16_t address);
+void ror(uint16_t address);
+
+// Flag setting (add this as alias or rename existing setZN)
+void setNZ(uint8_t value);
+
+void inc(uint16_t address);
+
+// DEC - Decrement Memory  
+void dec(uint16_t address);
+
 };
 
 #endif // SMBENGINE_HPP
