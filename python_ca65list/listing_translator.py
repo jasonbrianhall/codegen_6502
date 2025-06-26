@@ -120,142 +120,176 @@ void SMBEngine::code(int mode)
         self.source_output += f"{TAB}}}\n}}\n"
     
     def _translate_instruction(self, inst: str, operand: str) -> str:
-        if inst == 'lda':
-            return f"a = {self._read_operand(operand)};"
-        elif inst == 'ldx':
-            return f"x = {self._read_operand(operand)};"
-        elif inst == 'ldy':
-            return f"y = {self._read_operand(operand)};"
+            # Load instructions - MUST set flags
+            if inst == 'lda':
+                return f"a = {self._read_operand(operand)}; setZN(a);"
+            elif inst == 'ldx':
+                return f"x = {self._read_operand(operand)}; setZN(x);"
+            elif inst == 'ldy':
+                return f"y = {self._read_operand(operand)}; setZN(y);"
         
-        elif inst == 'sta':
-            return f"writeData({self._write_address(operand)}, a);"
-        elif inst == 'stx':
-            return f"writeData({self._write_address(operand)}, x);"
-        elif inst == 'sty':
-            return f"writeData({self._write_address(operand)}, y);"
+            # Store instructions - no flag changes
+            elif inst == 'sta':
+                return f"writeData({self._write_address(operand)}, a);"
+            elif inst == 'stx':
+                return f"writeData({self._write_address(operand)}, x);"
+            elif inst == 'sty':
+                return f"writeData({self._write_address(operand)}, y);"
         
-        elif inst == 'tax':
-            return "x = a;"
-        elif inst == 'tay':
-            return "y = a;"
-        elif inst == 'txa':
-            return "a = x;"
-        elif inst == 'tya':
-            return "a = y;"
-        elif inst == 'tsx':
-            return "x = s;"
-        elif inst == 'txs':
-            return "s = x;"
+            # Transfer instructions - MUST set flags for destination
+            elif inst == 'tax':
+                return "x = a; setZN(x);"
+            elif inst == 'tay':
+                return "y = a; setZN(y);"
+            elif inst == 'txa':
+                return "a = x; setZN(a);"
+            elif inst == 'tya':
+                return "a = y; setZN(a);"
+            elif inst == 'tsx':
+                return "x = s; setZN(x);"
+            elif inst == 'txs':
+                return "s = x;"  # TXS doesn't affect flags
         
-        elif inst == 'pha':
-            return "pha();"
-        elif inst == 'pla':
-            return "pla();"
-        elif inst == 'php':
-            return "php();"
-        elif inst == 'plp':
-            return "plp();"
+            # Stack instructions
+            elif inst == 'pha':
+                return "pha();"
+            elif inst == 'pla':
+                return "pla();"  # pla() will set flags internally
+            elif inst == 'php':
+                return "php();"
+            elif inst == 'plp':
+                return "plp();"
         
-        elif inst == 'inc':
-            addr = self._write_address(operand)
-            return f"writeData({addr}, M({addr}) + 1);"
-        elif inst == 'dec':
-            addr = self._write_address(operand)
-            return f"writeData({addr}, M({addr}) - 1);"
-        elif inst == 'inx':
-            return "x = (x + 1) & 0xFF;"
-        elif inst == 'iny':
-            return "y = (y + 1) & 0xFF;"
-        elif inst == 'dex':
-            return "x = (x - 1) & 0xFF;"
-        elif inst == 'dey':
-            return "y = (y - 1) & 0xFF;"
+            # Increment/decrement - use proper functions that set flags
+            elif inst == 'inc':
+                return f"inc({self._write_address(operand)});"
+            elif inst == 'dec':
+                return f"dec({self._write_address(operand)});"
+            elif inst == 'inx':
+                return "++x; setZN(x);"
+            elif inst == 'iny':
+                return "++y; setZN(y);"
+            elif inst == 'dex':
+                return "--x; setZN(x);"
+            elif inst == 'dey':    
+                return "--y; setZN(y);"
         
-        elif inst == 'adc':
-            return f"a += {self._read_operand(operand)};"
-        elif inst == 'sbc':
-            return f"a -= {self._read_operand(operand)};"
+            # Arithmetic - use proper functions that handle all flags
+            elif inst == 'adc':    
+                return f"adc({self._read_operand(operand)});"
+            elif inst == 'sbc':
+                return f"sbc({self._read_operand(operand)});"
         
-        elif inst == 'and':
-            return f"a &= {self._read_operand(operand)};"
-        elif inst == 'ora':
-            return f"a |= {self._read_operand(operand)};"
-        elif inst == 'eor':
-            return f"a ^= {self._read_operand(operand)};"
-        elif inst == 'bit':
-            return f"bit({self._read_operand(operand)});"
+            # Logical operations - MUST set N and Z flags
+            elif inst == 'and':
+                return f"a &= {self._read_operand(operand)}; setZN(a);"
+            elif inst == 'ora':
+                return f"a |= {self._read_operand(operand)}; setZN(a);"
+            elif inst == 'eor':
+                return f"a ^= {self._read_operand(operand)}; setZN(a);"
+            elif inst == 'bit':
+                return f"bit({self._read_operand(operand)});"
         
-        elif inst == 'cmp':
-            return f"compare(a, {self._read_operand(operand)});"
-        elif inst == 'cpx':
-            return f"compare(x, {self._read_operand(operand)});"
-        elif inst == 'cpy':
-            return f"compare(y, {self._read_operand(operand)});"
+            # Compare operations - these should already set flags correctly
+            elif inst == 'cmp':
+                return f"compare(a, {self._read_operand(operand)});"
+            elif inst == 'cpx':
+                return f"compare(x, {self._read_operand(operand)});"
+            elif inst == 'cpy':    
+                return f"compare(y, {self._read_operand(operand)});"
         
-        elif inst == 'jmp':
-            if operand.startswith('('):
-                return f"/* indirect jump {operand} */"
-            elif operand.startswith('a:$'):
-                addr = operand[3:]
-                return f"/* jump to absolute address 0x{addr} - label not found */"
+            # Jump and branch instructions
+            elif inst == 'jmp':
+                if operand.startswith('('):
+                    return f"/* indirect jump {operand} */"
+                elif operand.startswith('a:$'):
+                    addr = operand[3:]    
+                    return f"/* jump to absolute address 0x{addr} - label not found */"
+                else:
+                    return f"goto {operand};"
+            elif inst == 'jsr':
+                if 'jump_engine' in operand.lower():
+                    return "/* JumpEngine switch */"
+                else:
+                    ret_label = f"Return_{self.return_label_index}"    
+                    self.return_label_index += 1    
+                    return f"pushReturnIndex({self.return_label_index - 1});\n{TAB}goto {operand};\n{ret_label}:"
+            elif inst == 'rts':
+                return "goto Return;"
+            elif inst == 'rti':
+                return "return;"
+        
+            # Branch instructions - these check flags set by previous operations
+            elif inst == 'bne':
+                return f"if (!z) goto {operand};"
+            elif inst == 'beq':
+                return f"if (z) goto {operand};"
+            elif inst == 'bcc':
+                return f"if (!c) goto {operand};"
+            elif inst == 'bcs':
+                return f"if (c) goto {operand};"
+            elif inst == 'bpl':
+                return f"if (!n) goto {operand};"    
+            elif inst == 'bmi':
+                return f"if (n) goto {operand};"
+            elif inst == 'bvc':
+                return f"if (!v) goto {operand};"
+            elif inst == 'bvs':
+                return f"if (v) goto {operand};"
+        
+            # Flag instructions
+            elif inst == 'clc':
+                return "c = 0;"
+            elif inst == 'sec':
+                return "c = 1;"
+            elif inst == 'cld':
+                return "d = 0;"
+            elif inst == 'sed':
+                return "d = 1;"
+            elif inst == 'cli':
+                return "i = 0;"    
+            elif inst == 'sei':
+                return "i = 1;"
+            elif inst == 'clv':
+                return "v = 0;"  # Actually clear the overflow flag
+        
+            # System instructions
+            elif inst == 'nop':
+                return "; // nop"
+            elif inst == 'brk':
+                return "return;"    
+
+            #Shift instructions        
+            elif inst == 'asl':
+                if operand:
+                    return f"asl({self._write_address(operand)});"
+                else:
+                    return "asl_acc();"
+            elif inst == 'lsr':
+                if operand:
+                    return f"lsr({self._write_address(operand)});"
+                else:
+                    return "lsr_acc();"
+            elif inst == 'rol':
+                if operand:
+                    return f"rol({self._write_address(operand)});"
+                else:
+                    return "rol_acc();"
+            elif inst == 'ror':
+                if operand:
+                    return f"ror({self._write_address(operand)});"
+                else:
+                    return "ror_acc();"
+        
+        
+            # Unofficial opcodes
+            elif inst == 'lax':
+                return f"a = {self._read_operand(operand)}; x = a; setZN(a);"
+            elif inst == 'sax':
+                return f"writeData({self._write_address(operand)}, a & x);"    
+        
             else:
-                return f"goto {operand};"
-        elif inst == 'jsr':
-            if 'jump_engine' in operand.lower():
-                return "/* JumpEngine switch */"
-            else:
-                ret_label = f"Return_{self.return_label_index}"
-                self.return_label_index += 1
-                return f"pushReturnIndex({self.return_label_index - 1});\n{TAB}goto {operand};\n{ret_label}:"
-        elif inst == 'rts':
-            return "goto Return;"
-        elif inst == 'rti':
-            return "return;"
-        
-        elif inst == 'bne':
-            return f"if (!z) goto {operand};"
-        elif inst == 'beq':
-            return f"if (z) goto {operand};"
-        elif inst == 'bcc':
-            return f"if (!c) goto {operand};"
-        elif inst == 'bcs':
-            return f"if (c) goto {operand};"
-        elif inst == 'bpl':
-            return f"if (!n) goto {operand};"
-        elif inst == 'bmi':
-            return f"if (n) goto {operand};"
-        elif inst == 'bvc':
-            return f"if (!v) goto {operand};"
-        elif inst == 'bvs':
-            return f"if (v) goto {operand};"
-        
-        elif inst == 'clc':
-            return "c = 0;"
-        elif inst == 'sec':
-            return "c = 1;"
-        elif inst == 'cld':
-            return "d = 0;"
-        elif inst == 'sed':
-            return "d = 1;"
-        elif inst == 'cli':
-            return "i = 0;"
-        elif inst == 'sei':
-            return "i = 1;"
-        elif inst == 'clv':
-            return "/* clv */;"
-        
-        elif inst == 'nop':
-            return "; // nop"
-        elif inst == 'brk':
-            return "return;"
-        
-        elif inst == 'lax':
-            return f"a = {self._read_operand(operand)}; x = a;"
-        elif inst == 'sax':
-            return f"writeData({self._write_address(operand)}, a & x);"
-        
-        else:
-            return f"/* {inst} {operand} */;"
+                return f"/* {inst} {operand} */;"
     
     def _read_operand(self, operand: str) -> str:
         if not operand:
