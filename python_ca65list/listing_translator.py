@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-Enhanced CA65 Listing to C++ Translator
-Generates all required files and fixes compilation errors
+Final Clean Enhanced CA65 Listing to C++ Translator
 """
 
 import sys
@@ -11,7 +10,7 @@ from pathlib import Path
 
 TAB = "    "
 
-class EnhancedListingTranslator:
+class CleanListingTranslator:
     def __init__(self, listing_file, config_dir=None):
         self.listing_file = listing_file
         self.config_dir = config_dir
@@ -73,77 +72,99 @@ class EnhancedListingTranslator:
         current_label = None
         current_data = []
         
-        with open(self.listing_file, 'r', encoding='utf-8', errors='ignore') as f:
-            for line_num, line in enumerate(f, 1):
-                line = line.rstrip()
-                if not line or line.startswith('ca65') or line.startswith('Main') or line.startswith('Current') or line.startswith('------'):
-                    continue
-                
-                # Parse symbol definitions
-                if '=' in line and '$' in line and 'r 1' in line:
-                    match = re.search(r'r 1\s+([_a-zA-Z][_a-zA-Z0-9]*)\s*=\s*\$([0-9A-Fa-f]+)', line)
-                    if match:
-                        symbol_name = match.group(1)
-                        hex_value = match.group(2).upper()
-                        self.symbols[symbol_name] = f"0x{hex_value}"
-                        print(f"Found symbol: {symbol_name} = {self.symbols[symbol_name]}")
-                
-                # Parse instruction lines
-                if len(line) >= 7 and line[:7].strip().endswith('r'):
-                    rest = line[7:].strip()
-                    if rest:
-                        parts = rest.split(None, 1)
-                        if parts and parts[0].isdigit() and len(parts) > 1:
-                            code_part = parts[1]
-                            
-                            tokens = code_part.split()
-                            source_start = 0
-                            hex_bytes = []
-                            
-                            # Extract hex bytes
-                            for i, token in enumerate(tokens):
-                                if len(token) == 2 and all(c in '0123456789ABCDEFabcdef' for c in token):
-                                    hex_bytes.append(token)
-                                    source_start = i + 1
-                                else:
-                                    break
-                            
-                            if source_start < len(tokens):
-                                source = ' '.join(tokens[source_start:])
-                                if source and not source.startswith(';'):
-                                    # Check if this is a label
-                                    if source.endswith(':'):
-                                        # Save previous label data
-                                        if current_label and current_data:
-                                            self.data_sections[current_label] = current_data.copy()
-                                        
-                                        # Start new label
-                                        current_label = source[:-1].strip()
-                                        current_data = []
-                                        self.labels[current_label] = {
-                                            'line': line_num,
-                                            'source': source,
-                                            'instructions': [],
-                                            'data_bytes': []
-                                        }
+        try:
+            with open(self.listing_file, 'r', encoding='utf-8', errors='ignore') as f:
+                for line_num, line in enumerate(f, 1):
+                    line = line.rstrip()
+                    if not line or line.startswith('ca65') or line.startswith('Main') or line.startswith('Current') or line.startswith('------'):
+                        continue
+                    
+                    # Parse symbol definitions
+                    if '=' in line and '$' in line and 'r 1' in line:
+                        # Simple string matching instead of complex regex
+                        parts = line.split('r 1')
+                        if len(parts) > 1:
+                            rest = parts[1].strip()
+                            if '=' in rest and '$' in rest:
+                                eq_parts = rest.split('=')
+                                if len(eq_parts) == 2:
+                                    symbol_name = eq_parts[0].strip()
+                                    value_part = eq_parts[1].strip()
+                                    if value_part.startswith('$'):
+                                        hex_value = value_part[1:].upper()
+                                        if self.is_valid_hex(hex_value):
+                                            self.symbols[symbol_name] = f"0x{hex_value}"
+                                            print(f"Found symbol: {symbol_name} = {self.symbols[symbol_name]}")
+                    
+                    # Parse instruction lines
+                    if len(line) >= 7 and line[:7].strip().endswith('r'):
+                        rest = line[7:].strip()
+                        if rest:
+                            parts = rest.split(None, 1)
+                            if parts and parts[0].isdigit() and len(parts) > 1:
+                                code_part = parts[1]
+                                
+                                tokens = code_part.split()
+                                source_start = 0
+                                hex_bytes = []
+                                
+                                # Extract hex bytes
+                                for i, token in enumerate(tokens):
+                                    if len(token) == 2 and self.is_valid_hex(token):
+                                        hex_bytes.append(token)
+                                        source_start = i + 1
                                     else:
-                                        # This is an instruction or data
-                                        self.lines.append(source)
-                                        
-                                        # Track data for current label
-                                        if current_label and hex_bytes:
-                                            if any(source.strip().lower().startswith(d) for d in ['.db', '.dw', '.byte', '.word']):
-                                                for hex_byte in hex_bytes:
-                                                    current_data.append(int(hex_byte, 16))
-                                                self.labels[current_label]['data_bytes'].extend(hex_bytes)
-                                            else:
-                                                self.labels[current_label]['instructions'].append(source)
-        
-        # Save final label data
-        if current_label and current_data:
-            self.data_sections[current_label] = current_data.copy()
-        
-        print(f"Parsed {len(self.symbols)} symbols, {len(self.lines)} instructions, {len(self.labels)} labels")
+                                        break
+                                
+                                if source_start < len(tokens):
+                                    source = ' '.join(tokens[source_start:])
+                                    if source and not source.startswith(';'):
+                                        # Check if this is a label
+                                        if source.endswith(':'):
+                                            # Save previous label data
+                                            if current_label and current_data:
+                                                self.data_sections[current_label] = current_data.copy()
+                                            
+                                            # Start new label
+                                            current_label = source[:-1].strip()
+                                            current_data = []
+                                            self.labels[current_label] = {
+                                                'line': line_num,
+                                                'source': source,
+                                                'instructions': [],
+                                                'data_bytes': []
+                                            }
+                                        else:
+                                            # This is an instruction or data
+                                            self.lines.append(source)
+                                            
+                                            # Track data for current label
+                                            if current_label and hex_bytes:
+                                                data_directives = ['.db', '.dw', '.byte', '.word']
+                                                if any(source.strip().lower().startswith(d) for d in data_directives):
+                                                    for hex_byte in hex_bytes:
+                                                        current_data.append(int(hex_byte, 16))
+                                                    self.labels[current_label]['data_bytes'].extend(hex_bytes)
+                                                else:
+                                                    self.labels[current_label]['instructions'].append(source)
+            
+            # Save final label data
+            if current_label and current_data:
+                self.data_sections[current_label] = current_data.copy()
+            
+            print(f"Parsed {len(self.symbols)} symbols, {len(self.lines)} instructions, {len(self.labels)} labels")
+            
+        except Exception as e:
+            print(f"Error parsing listing file: {e}")
+            sys.exit(1)
+    
+    def is_valid_hex(self, text):
+        """Check if text is valid hexadecimal"""
+        try:
+            int(text, 16)
+            return True
+        except ValueError:
+            return False
     
     def classify_labels(self):
         """Classify labels as code or data"""
@@ -199,36 +220,55 @@ class EnhancedListingTranslator:
 // Address constants
 """
         
-        # Collect address patterns from code
+        # Collect address patterns using simple string operations
         hex_addresses = set()
         data_addresses = set()
         func_addresses = set()
         
         for source in self.lines:
-            # Find hex patterns
-            hex_matches = re.findall(r'\$([0-9A-Fa-f]{4})', source)
-            for h in hex_matches:
-                hex_addresses.add(h.upper())
+            # Find $XXXX patterns
+            parts = source.split('$')
+            for part in parts[1:]:  # Skip first part before first $
+                if len(part) >= 4:
+                    hex_candidate = part[:4]
+                    if self.is_valid_hex(hex_candidate):
+                        hex_addresses.add(hex_candidate.upper())
             
-            # Find data patterns
-            data_matches = re.findall(r'_data_([0-9A-Fa-f]{4})', source, re.IGNORECASE)
-            for h in data_matches:
-                data_addresses.add(h.upper())
+            # Find _data_XXXX patterns
+            if '_data_' in source:
+                data_parts = source.split('_data_')
+                for part in data_parts[1:]:
+                    if len(part) >= 4:
+                        hex_candidate = part[:4]
+                        if self.is_valid_hex(hex_candidate):
+                            data_addresses.add(hex_candidate.upper())
             
-            # Find function patterns
-            func_matches = re.findall(r'_func_([0-9A-Fa-f]{4})', source, re.IGNORECASE)
-            for h in func_matches:
-                func_addresses.add(h.upper())
+            # Find _func_XXXX patterns
+            if '_func_' in source:
+                func_parts = source.split('_func_')
+                for part in func_parts[1:]:
+                    if len(part) >= 4:
+                        hex_candidate = part[:4]
+                        if self.is_valid_hex(hex_candidate):
+                            func_addresses.add(hex_candidate.upper())
         
         # Add label patterns
         for label_name in self.labels.keys():
-            data_matches = re.findall(r'_data_([0-9A-Fa-f]{4})', label_name, re.IGNORECASE)
-            for h in data_matches:
-                data_addresses.add(h.upper())
+            if '_data_' in label_name:
+                data_parts = label_name.split('_data_')
+                for part in data_parts[1:]:
+                    if len(part) >= 4:
+                        hex_candidate = part[:4]
+                        if self.is_valid_hex(hex_candidate):
+                            data_addresses.add(hex_candidate.upper())
             
-            func_matches = re.findall(r'_func_([0-9A-Fa-f]{4})', label_name, re.IGNORECASE)
-            for h in func_matches:
-                func_addresses.add(h.upper())
+            if '_func_' in label_name:
+                func_parts = label_name.split('_func_')
+                for part in func_parts[1:]:
+                    if len(part) >= 4:
+                        hex_candidate = part[:4]
+                        if self.is_valid_hex(hex_candidate):
+                            func_addresses.add(hex_candidate.upper())
         
         # Define constants
         for addr in sorted(hex_addresses):
@@ -327,24 +367,27 @@ void SMBEngine::code(int mode)
 
 """
         
-        # Find referenced labels
+        # Find referenced labels using simple string operations
         referenced_labels = set()
         for source in self.lines:
             # Find goto targets
             if 'goto' in source:
-                tokens = source.split()
-                for token in tokens:
-                    label = token.replace('goto', '').strip().rstrip(';')
-                    if re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', label):
-                        referenced_labels.add(label)
+                goto_parts = source.split('goto')
+                for part in goto_parts[1:]:
+                    words = part.strip().split()
+                    if words:
+                        label = words[0].rstrip(';')
+                        if self.is_valid_identifier(label):
+                            referenced_labels.add(label)
             
             # Find branch targets
-            for branch in ['bne', 'beq', 'bcc', 'bcs', 'bpl', 'bmi', 'bvc', 'bvs']:
+            branch_ops = ['bne', 'beq', 'bcc', 'bcs', 'bpl', 'bmi', 'bvc', 'bvs']
+            for branch in branch_ops:
                 if source.strip().startswith(branch):
                     tokens = source.split()
                     if len(tokens) >= 2:
                         target = tokens[1].strip().rstrip(';')
-                        if re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', target):
+                        if self.is_valid_identifier(target):
                             referenced_labels.add(target)
             
             # Find JSR targets
@@ -352,8 +395,33 @@ void SMBEngine::code(int mode)
                 tokens = source.split()
                 if len(tokens) >= 2:
                     target = tokens[1].strip()
-                    if re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', target):
+                    if self.is_valid_identifier(target):
                         referenced_labels.add(target)
+            
+            # Find FUNC_, DATA_, ADDR_ constants used as targets
+            if 'FUNC_' in source:
+                func_parts = source.split('FUNC_')
+                for part in func_parts[1:]:
+                    if len(part) >= 4:
+                        hex_candidate = part[:4]
+                        if self.is_valid_hex(hex_candidate):
+                            referenced_labels.add(f"FUNC_{hex_candidate.upper()}")
+            
+            if 'DATA_' in source and 'goto' in source:
+                data_parts = source.split('DATA_')
+                for part in data_parts[1:]:
+                    if len(part) >= 4:
+                        hex_candidate = part[:4]
+                        if self.is_valid_hex(hex_candidate):
+                            referenced_labels.add(f"DATA_{hex_candidate.upper()}")
+            
+            if 'ADDR_' in source and 'goto' in source:
+                addr_parts = source.split('ADDR_')
+                for part in addr_parts[1:]:
+                    if len(part) >= 4:
+                        hex_candidate = part[:4]
+                        if self.is_valid_hex(hex_candidate):
+                            referenced_labels.add(f"ADDR_{hex_candidate.upper()}")
         
         # Generate code labels
         generated_labels = set()
@@ -385,8 +453,8 @@ void SMBEngine::code(int mode)
                     generated_labels.add(label)
                 continue
             
-            if ('=' in source or source.startswith('.') or 
-                any(x in source.upper() for x in ['APU_', 'PPU_', 'JOYPAD', 'OAM_'])):
+            skip_patterns = ['=', '.', 'APU_', 'PPU_', 'JOYPAD', 'OAM_']
+            if any(pattern in source.upper() for pattern in skip_patterns):
                 continue
             
             if (current_label is None or 
@@ -400,12 +468,28 @@ void SMBEngine::code(int mode)
         # Generate stubs for missing labels
         missing_labels = referenced_labels - generated_labels
         if missing_labels:
-            self.source_output += "\n// Stub labels\n"
+            self.source_output += "\n// Stub labels for undefined references\n"
             for label in sorted(missing_labels):
-                if re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', label):
-                    self.source_output += f"\n{label}:\n"
-                    self.source_output += f"{TAB}// TODO: Implement {label}\n"
-                    self.source_output += f"{TAB}return;\n"
+                if self.is_valid_identifier(label):
+                    if label.startswith('FUNC_'):
+                        hex_addr = label[5:]
+                        self.source_output += f"\n{label}:  // Function at address 0x{hex_addr}\n"
+                        self.source_output += f"{TAB}// TODO: Implement function at 0x{hex_addr}\n"
+                        self.source_output += f"{TAB}return;\n"
+                    elif label.startswith('DATA_'):
+                        hex_addr = label[5:]
+                        self.source_output += f"\n{label}:  // Data at address 0x{hex_addr}\n"
+                        self.source_output += f"{TAB}// TODO: Implement data access at 0x{hex_addr}\n"
+                        self.source_output += f"{TAB}return;\n"
+                    elif label.startswith('ADDR_'):
+                        hex_addr = label[5:]
+                        self.source_output += f"\n{label}:  // Address 0x{hex_addr}\n"
+                        self.source_output += f"{TAB}// TODO: Implement code at 0x{hex_addr}\n"
+                        self.source_output += f"{TAB}return;\n"
+                    else:
+                        self.source_output += f"\n{label}:\n"
+                        self.source_output += f"{TAB}// TODO: Implement {label}\n"
+                        self.source_output += f"{TAB}return;\n"
         
         # Return handler
         self.source_output += "\nReturn:\n"
@@ -413,6 +497,14 @@ void SMBEngine::code(int mode)
         for i in range(self.return_label_index):
             self.source_output += f"{TAB}case {i}: goto Return_{i};\n"
         self.source_output += f"{TAB}}}\n}}\n"
+    
+    def is_valid_identifier(self, text):
+        """Check if text is a valid C++ identifier"""
+        if not text:
+            return False
+        if not (text[0].isalpha() or text[0] == '_'):
+            return False
+        return all(c.isalnum() or c == '_' for c in text)
     
     def translate_instruction_line(self, source):
         """Translate instruction line to C++"""
@@ -435,24 +527,24 @@ void SMBEngine::code(int mode)
         return self.translate_instruction(inst, operand)
     
     def fix_operand_identifiers(self, operand):
-        """Fix invalid C++ identifiers in operands"""
+        """Fix invalid C++ identifiers in operands using simple string operations"""
         if not operand:
             return operand
         
         # Handle immediate addressing with hex values
         if operand.startswith('#$'):
             hex_part = operand[2:]
-            if len(hex_part) == 4 and all(c in '0123456789ABCDEFabcdef' for c in hex_part):
-                return f"#ADDR_{hex_part.upper()}"
-            elif len(hex_part) <= 2 and all(c in '0123456789ABCDEFabcdef' for c in hex_part):
+            if len(hex_part) >= 4 and self.is_valid_hex(hex_part[:4]):
+                return f"#ADDR_{hex_part[:4].upper()}"
+            elif len(hex_part) <= 2 and self.is_valid_hex(hex_part):
                 return f"#0x{hex_part.upper()}"
         
         # Handle direct hex addresses
         if operand.startswith('$'):
             hex_part = operand[1:]
-            if len(hex_part) == 4 and all(c in '0123456789ABCDEFabcdef' for c in hex_part):
-                return f"ADDR_{hex_part.upper()}"
-            elif len(hex_part) <= 2 and all(c in '0123456789ABCDEFabcdef' for c in hex_part):
+            if len(hex_part) >= 4 and self.is_valid_hex(hex_part[:4]):
+                return f"ADDR_{hex_part[:4].upper()}"
+            elif len(hex_part) <= 2 and self.is_valid_hex(hex_part):
                 return f"0x{hex_part.upper()}"
         
         # Handle indexed addressing with hex
@@ -465,9 +557,9 @@ void SMBEngine::code(int mode)
                 # Fix the base part
                 if base.startswith('$'):
                     hex_part = base[1:]
-                    if len(hex_part) == 4 and all(c in '0123456789ABCDEFabcdef' for c in hex_part):
-                        base = f"ADDR_{hex_part.upper()}"
-                    elif len(hex_part) <= 2 and all(c in '0123456789ABCDEFabcdef' for c in hex_part):
+                    if len(hex_part) >= 4 and self.is_valid_hex(hex_part[:4]):
+                        base = f"ADDR_{hex_part[:4].upper()}"
+                    elif len(hex_part) <= 2 and self.is_valid_hex(hex_part):
                         base = f"0x{hex_part.upper()}"
                 
                 return f"{base},{index}"
@@ -477,14 +569,29 @@ void SMBEngine::code(int mode)
             inner = operand[1:-1]
             if inner.startswith('$'):
                 hex_part = inner[1:]
-                if len(hex_part) == 4 and all(c in '0123456789ABCDEFabcdef' for c in hex_part):
-                    return f"(ADDR_{hex_part.upper()})"
-                elif len(hex_part) <= 2 and all(c in '0123456789ABCDEFabcdef' for c in hex_part):
+                if len(hex_part) >= 4 and self.is_valid_hex(hex_part[:4]):
+                    return f"(ADDR_{hex_part[:4].upper()})"
+                elif len(hex_part) <= 2 and self.is_valid_hex(hex_part):
                     return f"(0x{hex_part.upper()})"
         
-        # Handle invalid identifier patterns
-        operand = re.sub(r'_data_([0-9a-fA-F]{4})', r'DATA_\1', operand, flags=re.IGNORECASE)
-        operand = re.sub(r'_func_([0-9a-fA-F]{4})', r'FUNC_\1', operand, flags=re.IGNORECASE)
+        # Handle invalid identifier patterns using simple string replacement
+        if '_data_' in operand:
+            data_parts = operand.split('_data_')
+            if len(data_parts) > 1:
+                for i in range(1, len(data_parts)):
+                    part = data_parts[i]
+                    if len(part) >= 4 and self.is_valid_hex(part[:4]):
+                        hex_val = part[:4].upper()
+                        operand = operand.replace(f"_data_{part[:4]}", f"DATA_{hex_val}")
+        
+        if '_func_' in operand:
+            func_parts = operand.split('_func_')
+            if len(func_parts) > 1:
+                for i in range(1, len(func_parts)):
+                    part = func_parts[i]
+                    if len(part) >= 4 and self.is_valid_hex(part[:4]):
+                        hex_val = part[:4].upper()
+                        operand = operand.replace(f"_func_{part[:4]}", f"FUNC_{hex_val}")
         
         return operand
     
@@ -662,7 +769,7 @@ void SMBEngine::code(int mode)
             if (val.startswith('ADDR_') or val.startswith('DATA_') or 
                 val.startswith('FUNC_') or val.startswith('0x')):
                 return val
-            elif val.startswith('$'):
+            elif val.startswith("\'"):
                 return f"0x{val[1:]}"
             else:
                 try:
@@ -752,7 +859,7 @@ void SMBEngine::code(int mode)
             return self.convert_address(operand)
     
     def convert_address(self, addr):
-        """Convert address to C++ format"""
+        """Convert address to C++ format using simple string operations"""
         addr = addr.strip()
         
         # Remove addressing prefixes
@@ -762,7 +869,7 @@ void SMBEngine::code(int mode)
         # Direct hex
         if addr.startswith("\'"):
             hex_part = addr[1:].upper()
-            if all(c in '0123456789ABCDEF' for c in hex_part):
+            if self.is_valid_hex(hex_part):
                 if len(hex_part) == 4:
                     return f"ADDR_{hex_part}"
                 else:
@@ -784,42 +891,50 @@ void SMBEngine::code(int mode)
         if addr in self.symbols:
             return self.symbols[addr]
         
-        # Invalid identifier patterns
+        # Invalid identifier patterns using simple string operations
         if addr.startswith('_'):
             # data pattern
-            data_match = re.match(r'_data_([0-9a-fA-F]{4})', addr, re.IGNORECASE)
-            if data_match:
-                return f"DATA_{data_match.group(1).upper()}"
+            if '_data_' in addr:
+                data_parts = addr.split('_data_')
+                if len(data_parts) > 1:
+                    hex_candidate = data_parts[1][:4]
+                    if len(hex_candidate) == 4 and self.is_valid_hex(hex_candidate):
+                        return f"DATA_{hex_candidate.upper()}"
             
             # func pattern
-            func_match = re.match(r'_func_([0-9a-fA-F]{4})', addr, re.IGNORECASE)
-            if func_match:
-                return f"FUNC_{func_match.group(1).upper()}"
+            if '_func_' in addr:
+                func_parts = addr.split('_func_')
+                if len(func_parts) > 1:
+                    hex_candidate = func_parts[1][:4]
+                    if len(hex_candidate) == 4 and self.is_valid_hex(hex_candidate):
+                        return f"FUNC_{hex_candidate.upper()}"
             
-            # Generic patterns
-            patterns = [
-                r'_(?:var|data)_([0-9a-fA-F]{4})',
-                r'_([0-9a-fA-F]{4})_',
-                r'_([0-9a-fA-F]{4})$'
-            ]
+            # Generic var pattern
+            if '_var_' in addr or '_data_' in addr:
+                # Find 4-digit hex in the string
+                for i in range(len(addr) - 3):
+                    hex_candidate = addr[i:i+4]
+                    if self.is_valid_hex(hex_candidate):
+                        return f"ADDR_{hex_candidate.upper()}"
             
-            for pattern in patterns:
-                match = re.search(pattern, addr, re.IGNORECASE)
-                if match:
-                    return f"ADDR_{match.group(1).upper()}"
+            # Pattern with hex at end
+            if len(addr) >= 5:
+                last_4 = addr[-4:]
+                if self.is_valid_hex(last_4):
+                    return f"ADDR_{last_4.upper()}"
         
         # Plain hex
-        if len(addr) == 4 and all(c in '0123456789ABCDEFabcdef' for c in addr):
+        if len(addr) == 4 and self.is_valid_hex(addr):
             return f"ADDR_{addr.upper()}"
         
         # Validate identifier
-        if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', addr):
+        if not self.is_valid_identifier(addr):
             # Extract hex from invalid identifier
-            hex_match = re.search(r'([0-9a-fA-F]{4})', addr, re.IGNORECASE)
-            if hex_match:
-                return f"ADDR_{hex_match.group(1).upper()}"
-            else:
-                return "0"
+            for i in range(len(addr) - 3):
+                hex_candidate = addr[i:i+4]
+                if self.is_valid_hex(hex_candidate):
+                    return f"ADDR_{hex_candidate.upper()}"
+            return "0"
         
         return addr
     
@@ -844,7 +959,7 @@ void SMBEngine::code(int mode)
 
 def main():
     if len(sys.argv) < 3:
-        print("Usage: python enhanced_listing_translator.py <listing_file> <output_dir> [config_dir]")
+        print("Usage: python final_clean_translator.py <listing_file> <output_dir> [config_dir]")
         print("")
         print("Arguments:")
         print("  listing_file  - CA65 listing file (.lst)")
@@ -867,7 +982,7 @@ def main():
         sys.exit(1)
     
     try:
-        translator = EnhancedListingTranslator(listing_file, config_dir)
+        translator = CleanListingTranslator(listing_file, config_dir)
         translator.save_output(output_dir)
         print("\nTranslation completed successfully!")
         print(f"Generated files saved to: {output_dir}")
