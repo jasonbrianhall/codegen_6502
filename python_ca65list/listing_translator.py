@@ -31,7 +31,7 @@ class ListingTranslator:
                 # Parse symbol definitions like "_var_00fa_indexed = $00FA"
                 if '=' in line and '$' in line and 'r 1' in line:
                     # Look for pattern: address r 1 spaces symbol = $value
-                    match = re.search(r'r 1\s+(\w+)\s*=\s*\$([0-9A-Fa-f]+)', line)
+                    match = re.search(r'r 1\s+([_a-zA-Z][_a-zA-Z0-9]*)\s*=\s*\$([0-9A-Fa-f]+)', line)
                     if match:
                         symbol_name = match.group(1)
                         hex_value = match.group(2).upper()
@@ -267,18 +267,27 @@ void SMBEngine::code(int mode)
         
         if ',x' in operand.lower():
             base = operand.lower().replace(',x', '').strip()
+            if base.startswith('(') and base.endswith(')'):
+                base = base[1:-1]
             addr = self._convert_address(base)
             return f"M({addr} + x)"
+
         elif ',y' in operand.lower():
             base = operand.lower().replace(',y', '').strip()
+            # Strip parentheses if present
+            if base.startswith('(') and base.endswith(')'):
+                base = base[1:-1]
             addr = self._convert_address(base)
             return f"M({addr} + y)"
-        
+
         if operand.startswith('(') and operand.endswith(')'):
-            addr = self._convert_address(operand[1:-1])
+            # Strip parentheses BEFORE calling _convert_address
+            inner_operand = operand[1:-1]
+            addr = self._convert_address(inner_operand)
             return f"W({addr})"
         
-        return f"M({self._convert_address(operand)})"
+        addr = self._convert_address(operand)
+        return f"M({addr})"
     
     def _write_address(self, operand: str) -> str:
         if not operand:
