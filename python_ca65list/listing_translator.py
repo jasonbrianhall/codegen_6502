@@ -83,8 +83,14 @@ void SMBEngine::code(int mode)
             
             tokens = source.split()
             if tokens:
-                inst = tokens[0].lower()
-                operand = ' '.join(tokens[1:]) if len(tokens) > 1 else ""
+                # Handle "rr rr instruction operand" format from CA65 listings
+                if len(tokens) >= 3 and tokens[0] == 'rr' and tokens[1] == 'rr':
+                    # Skip the "rr rr" and process the actual instruction
+                    inst = tokens[2].lower()
+                    operand = ' '.join(tokens[3:]) if len(tokens) > 3 else ""
+                else:
+                    inst = tokens[0].lower()
+                    operand = ' '.join(tokens[1:]) if len(tokens) > 1 else ""
                 
                 cpp_code = self._translate_instruction(inst, operand)
                 if cpp_code:
@@ -237,13 +243,13 @@ void SMBEngine::code(int mode)
         elif inst == 'sec':
             return "c = 1;"
         elif inst == 'cld':
-            return "/* cld */;"
+            return "d = 0;"
         elif inst == 'sed':
-            return "/* sed */;"
+            return "d = 1;"
         elif inst == 'cli':
-            return "/* cli */;"
+            return "i = 0;"
         elif inst == 'sei':
-            return "/* sei */;"
+            return "i = 1;"
         elif inst == 'clv':
             return "/* clv */;"
         
@@ -251,6 +257,44 @@ void SMBEngine::code(int mode)
             return "; // nop"
         elif inst == 'brk':
             return "return;"
+        
+        # Illegal/Undocumented 6502 opcodes
+        elif inst == 'slo':
+            # SLO = ASL + ORA (Shift Left, then OR with A)
+            if operand:
+                addr = self._write_address(operand)
+                return f"writeData({addr}, (M({addr}) << 1) & 0xFF); a |= M({addr});"
+            else:
+                return "a = (a << 1) & 0xFF; // SLO on accumulator"
+        elif inst == 'rla':
+            # RLA = ROL + AND (Rotate Left, then AND with A)
+            if operand:
+                addr = self._write_address(operand)
+                return f"writeData({addr}, ((M({addr}) << 1) | (c ? 1 : 0)) & 0xFF); c = (M({addr}) & 0x80) ? 1 : 0; a &= M({addr});"
+            else:
+                return "{ uint8_t temp = a; a = ((a << 1) | (c ? 1 : 0)) & 0xFF; c = (temp & 0x80) ? 1 : 0; } // RLA on accumulator"
+        elif inst == 'lax':
+            # LAX = LDA + LDX (Load A and X with same value)
+            return f"a = {self._read_operand(operand)}; x = a;"
+        elif inst == 'sax':
+            # SAX = Store A AND X
+            return f"writeData({self._write_address(operand)}, a & x);"
+        elif inst == 'dcp':
+            # DCP = DEC + CMP (Decrement, then Compare with A)
+            addr = self._write_address(operand)
+            return f"writeData({addr}, M({addr}) - 1); compare(a, M({addr}));"
+        elif inst == 'isc' or inst == 'isb':
+            # ISC/ISB = INC + SBC (Increment, then Subtract with Carry)
+            addr = self._write_address(operand)
+            return f"writeData({addr}, M({addr}) + 1); a -= M({addr});"
+        elif inst == 'rra':
+            # RRA = ROR + ADC (Rotate Right, then Add with Carry)
+            addr = self._write_address(operand)
+            return f"writeData({addr}, (M({addr}) >> 1) | (c ? 0x80 : 0)); c = (M({addr}) & 0x01) ? 1 : 0; a += M({addr});"
+        elif inst == 'sre':
+            # SRE = LSR + EOR (Shift Right, then XOR with A)
+            addr = self._write_address(operand)
+            return f"writeData({addr}, M({addr}) >> 1); a ^= M({addr});"
         
         else:
             return f"/* {inst} {operand} */;"
