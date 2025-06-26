@@ -1,0 +1,6 @@
+# Alias Labels Configuration
+# Labels that are simple aliases to other labels
+# One label per line, lines starting with # are comments
+#
+# Auto-detected 0 alias labels from ca65 listing:
+#

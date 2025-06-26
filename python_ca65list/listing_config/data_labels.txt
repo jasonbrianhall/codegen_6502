@@ -1,0 +1,46 @@
+# Data Labels Configuration
+# Labels that should be treated as DATA (generate data pointers)
+# One label per line, lines starting with # are comments
+#
+# Examples of typical data labels:
+# GameText
+# AreaAddrOffsets
+# MusicData
+# PaletteData
+#
+# Auto-detected 32 data labels from ca65 listing:
+#
+
+# Empty labels classified as DATA based on naming patterns:
+_data_c306_indexed  # pattern-based classification
+_data_cafa  # pattern-based classification
+_data_cc4f  # pattern-based classification
+_data_ce4d  # pattern-based classification
+_data_dabd  # pattern-based classification
+_data_e532_indexed  # pattern-based classification
+_data_e533_indexed  # pattern-based classification
+_data_e5df_indexed  # pattern-based classification
+_data_e5eb_indexed  # pattern-based classification
+_data_eb30_indexed  # pattern-based classification
+_data_eb31_indexed  # pattern-based classification
+_data_ec02_indexed  # pattern-based classification
+_data_ec17_indexed  # pattern-based classification
+_data_ec1f_indexed  # pattern-based classification
+_data_ec38_indexed  # pattern-based classification
+_data_ec39_indexed  # pattern-based classification
+_data_f300_indexed  # pattern-based classification
+_data_f301_indexed  # pattern-based classification
+_data_f350_indexed  # pattern-based classification
+_data_f3e1_indexed  # pattern-based classification
+_data_f6cb_indexed  # pattern-based classification
+_data_f731_indexed  # pattern-based classification
+_data_f761_indexed  # pattern-based classification
+_data_f846_indexed  # pattern-based classification
+_data_f847_indexed  # pattern-based classification
+_data_f849_indexed  # pattern-based classification
+_data_f84b_indexed  # pattern-based classification
+_data_f84d_indexed  # pattern-based classification
+_data_f91b_indexed  # pattern-based classification
+_data_f960_indexed  # pattern-based classification
+_data_f9f7_indexed  # pattern-based classification
+_data_ff18_indexed  # pattern-based classification

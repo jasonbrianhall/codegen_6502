@@ -1,0 +1,36 @@
+CA65 Listing File Analyzer - Usage Guide
+==================================================
+
+OVERVIEW:
+This analyzer parses ca65 listing files instead of raw assembly.
+This is much more accurate because ca65 has already done the parsing!
+
+HOW TO GENERATE LISTING FILE:
+ca65 -l output.lst input.asm
+
+THEN RUN ANALYZER:
+python listing_analyzer.py output.lst [config_directory]
+
+GENERATED FILES:
+  code_labels.txt  - Labels for goto statements
+  data_labels.txt  - Labels for data pointers
+  alias_labels.txt - Simple label aliases
+  listing_analysis_report.txt - Detailed analysis
+
+ADVANTAGES OVER RAW ASSEMBLY PARSING:
+- ca65 has already resolved all addresses and symbols
+- Macro expansions are visible in listing
+- Assembly directives are processed
+- Much more reliable label detection
+- Works with complex 65816 code
+
+CLASSIFICATION LOGIC:
+- DATA: Labels followed by .byte/.word/.res directives
+- ALIAS: Labels with single jmp/jsr instruction
+- CODE: Labels followed by 6502/65816 instructions
+- Empty labels use naming pattern analysis
+
+EDITING THE RESULTS:
+- Add # at start of line to comment out a label
+- Move labels between files to change classification
+- The analyzer is conservative - defaults to CODE when uncertain

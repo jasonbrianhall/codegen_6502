@@ -1,0 +1,2186 @@
+CA65 Listing Analysis Report
+==================================================
+
+Input listing file: /home/jbhall/software_build/nesgodisasm/duckhunt.lst
+Total listing lines: 6924
+Parsed lines: 6922
+Total labels: 361
+
+CODE LABELS (329):
+------------------------------
+
+NMI:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+Reset:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c0b3:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c22b:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c230:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c232:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c23b:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c249:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c263:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c284:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c291:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c2bf:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c303:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c348:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c3b8:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c3c1:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c426:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c4bf:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c4e0:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c502:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c511:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c588:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c5d9:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c5e1:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c5ee:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c5f7:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c607:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c617:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c61e:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c641:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c64b:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c6c4:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c6cc:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c6f5:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c71d:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c793:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c7b3:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c7fb:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c890:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_c902:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_cc94:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_cca9:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_cfba:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_cfc5:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_d131:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_d160:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_d292:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_d2a4:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_d3d2:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_d3df:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_d428:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_d446:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_d464:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_d4d9:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_d4e2:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_d4e6:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_d4fa:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_d4fe:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_d509:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_d50d:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_d5ee:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_d652:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_f35e:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_f362:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_f366:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_f36a:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_f383:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_f3d0:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_f544:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_f564:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_f56c:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_f581:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_f591:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_f621:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_f6cf:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_func_f7cc:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_jump_engine_c35e:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c002:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c01e:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c02c:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c056:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c061:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c06b:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c06e:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c07c:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c0a6:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c0ba:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c0df:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c0e1:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c0ff:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c112:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c11e:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c123:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c14e:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c176:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c189:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c18d:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c190:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c199:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c1a3:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c1a9:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c1b2:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c1b7:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c1bb:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c1c8:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c1ea:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c20b:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c217:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c222:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c23f:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c25b:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c262:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c271:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c277:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c283:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c293:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c2b6:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c2b9:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c2be:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c2db:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c2ea:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c2f4:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c302:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c312:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c328:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c341:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c354:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c35a:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c37c:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c392:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c39e:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c3a1:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c3a4:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c3ce:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c3e5:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c3fc:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c436:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c4ca:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c4d7:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c4db:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c4f3:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c4ff:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c526:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c52f:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c555:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c55a:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c56f:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c57b:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c57c:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c580:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c585:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c59a:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c5aa:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c5dc:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c5e0:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c5e8:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c5fb:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c60b:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c625:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c62d:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c637:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c63a:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c645:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c64f:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c67c:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c68e:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c694:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c695:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c69e:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c6d6:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c6da:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c6e2:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c701:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c70a:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c70c:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c72c:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c739:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c73a:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c73c:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c74c:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c762:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c779:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c795:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c79f:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c7a1:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c7ce:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c7e1:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c7ef:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c7f6:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c818:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c81c:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c81d:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c836:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c839:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c854:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c86e:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c8a2:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c8b4:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c8c4:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c8e5:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c8fb:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c901:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c91b:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_c92f:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_cca8:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_cfd3:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_cff8:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d13c:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d140:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d141:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d153:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d164:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d168:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d169:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d19f:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d1b5:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d1c7:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d1ca:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d1cd:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d1dd:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d1e6:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d1f4:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d207:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d222:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d235:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d246:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d256:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d259:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d25e:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d266:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d268:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d26a:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d270:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d28a:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d2a6:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d2b1:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d2c9:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d3fb:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d409:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d40b:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d413:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d427:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d44c:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d461:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d46c:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d485:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d4a1:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d4ab:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d4bc:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d4c0:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d4cf:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d4d4:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d500:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d505:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d515:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d521:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d523:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d54b:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d56a:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d593:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d5ad:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d5d2:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d600:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d612:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d627:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d640:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d646:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d64b:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d651:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_d66b:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f36c:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f378:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f40f:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f443:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f451:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f46c:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f475:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f477:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f47e:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f4d1:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f501:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f51c:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f52a:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f536:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f541:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f552:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f563:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f58a:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f59a:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f5a2:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f5a8:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f5bf:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f5da:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f5db:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f5fb:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f639:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f641:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f654:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f655:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f669:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f675:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f688:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f68c:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f6a2:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f6b3:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f6b4:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f6e8:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f6fe:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f703:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f730:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f791:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f79c:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f7a8:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f7ba:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f7c0:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f7c6:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f7fa:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f7fd:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f803:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f809:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f80f:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f815:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f81b:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f826:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f82f:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f836:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_label_f840:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+e:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+file:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+DATA LABELS (32):
+------------------------------
+
+_data_c306_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_cafa:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_cc4f:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_ce4d:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_dabd:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_e532_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_e533_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_e5df_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_e5eb_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_eb30_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_eb31_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_ec02_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_ec17_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_ec1f_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_ec38_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_ec39_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_f300_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_f301_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_f350_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_f3e1_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_f6cb_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_f731_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_f761_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_f846_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_f847_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_f849_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_f84b_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_f84d_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_f91b_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_f960_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_f9f7_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+_data_ff18_indexed:
+  Instructions: 0
+  Data directives: 0
+  Content lines: 0
+  Empty label: True
+
+ALIAS LABELS (0):
+------------------------------
+
+UNKNOWN LABELS (0):
+------------------------------
+
