@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-CA65 Listing to C++ Translator
+CA65 Listing to C++ Translator - Fixed Version
 """
 
 import sys
 import os
+import re
 from pathlib import Path
 
 TAB = "    "
@@ -15,6 +16,7 @@ class ListingTranslator:
         self.lines = []
         self.return_label_index = 0
         self.source_output = ""
+        self.symbols = {}  # Store symbol definitions
         
         self._parse_listing()
         self._generate_code()
@@ -26,6 +28,17 @@ class ListingTranslator:
                 if not line or line.startswith('ca65') or line.startswith('Main') or line.startswith('Current') or line.startswith('------'):
                     continue
                 
+                # Parse symbol definitions like "_var_00fa_indexed = $00FA"
+                if '=' in line and '$' in line and 'r 1' in line:
+                    # Look for pattern: address r 1 spaces symbol = $value
+                    match = re.search(r'r 1\s+(\w+)\s*=\s*\$([0-9A-Fa-f]+)', line)
+                    if match:
+                        symbol_name = match.group(1)
+                        hex_value = match.group(2).upper()
+                        self.symbols[symbol_name] = f"0x{hex_value}"
+                        print(f"Found symbol: {symbol_name} = {self.symbols[symbol_name]}")
+                
+                # Parse instruction lines
                 if len(line) >= 7 and line[:7].strip().endswith('r'):
                     rest = line[7:].strip()
                     if rest:
@@ -46,11 +59,15 @@ class ListingTranslator:
                                 if source and not source.startswith(';'):
                                     self.lines.append(source)
         
-        print(f"Parsed {len(self.lines)} instructions")
+        print(f"Parsed {len(self.symbols)} symbols and {len(self.lines)} instructions")
     
     def _generate_code(self):
         self.source_output = """// Auto-generated from CA65 listing
 #include "SMB.hpp"
+
+// Missing processor status flags as global variables
+int d = 0; // decimal flag
+int i = 0; // interrupt disable flag
 
 void SMBEngine::code(int mode)
 {
@@ -83,9 +100,7 @@ void SMBEngine::code(int mode)
             
             tokens = source.split()
             if tokens:
-                # Handle "rr rr instruction operand" format from CA65 listings
                 if len(tokens) >= 3 and tokens[0] == 'rr' and tokens[1] == 'rr':
-                    # Skip the "rr rr" and process the actual instruction
                     inst = tokens[2].lower()
                     operand = ' '.join(tokens[3:]) if len(tokens) > 3 else ""
                 else:
@@ -103,7 +118,6 @@ void SMBEngine::code(int mode)
         self.source_output += f"{TAB}}}\n}}\n"
     
     def _translate_instruction(self, inst: str, operand: str) -> str:
-        
         if inst == 'lda':
             return f"a = {self._read_operand(operand)};"
         elif inst == 'ldx':
@@ -176,31 +190,6 @@ void SMBEngine::code(int mode)
         elif inst == 'cpy':
             return f"compare(y, {self._read_operand(operand)});"
         
-        elif inst == 'asl':
-            if operand:
-                addr = self._write_address(operand)
-                return f"writeData({addr}, (M({addr}) << 1) & 0xFF);"
-            else:
-                return "a = (a << 1) & 0xFF;"
-        elif inst == 'lsr':
-            if operand:
-                addr = self._write_address(operand)
-                return f"writeData({addr}, M({addr}) >> 1);"
-            else:
-                return "a = a >> 1;"
-        elif inst == 'rol':
-            if operand:
-                addr = self._write_address(operand)
-                return f"writeData({addr}, ((M({addr}) << 1) | (c ? 1 : 0)) & 0xFF); c = (M({addr}) & 0x80) ? 1 : 0;"
-            else:
-                return "{ uint8_t temp = a; a = ((a << 1) | (c ? 1 : 0)) & 0xFF; c = (temp & 0x80) ? 1 : 0; }"
-        elif inst == 'ror':
-            if operand:
-                addr = self._write_address(operand)
-                return f"writeData({addr}, (M({addr}) >> 1) | (c ? 0x80 : 0)); c = (M({addr}) & 0x01) ? 1 : 0;"
-            else:
-                return "{ uint8_t temp = a; a = (a >> 1) | (c ? 0x80 : 0); c = (temp & 0x01) ? 1 : 0; }"
-        
         elif inst == 'jmp':
             if operand.startswith('('):
                 return f"/* indirect jump {operand} */"
@@ -258,43 +247,10 @@ void SMBEngine::code(int mode)
         elif inst == 'brk':
             return "return;"
         
-        # Illegal/Undocumented 6502 opcodes
-        elif inst == 'slo':
-            # SLO = ASL + ORA (Shift Left, then OR with A)
-            if operand:
-                addr = self._write_address(operand)
-                return f"writeData({addr}, (M({addr}) << 1) & 0xFF); a |= M({addr});"
-            else:
-                return "a = (a << 1) & 0xFF; // SLO on accumulator"
-        elif inst == 'rla':
-            # RLA = ROL + AND (Rotate Left, then AND with A)
-            if operand:
-                addr = self._write_address(operand)
-                return f"writeData({addr}, ((M({addr}) << 1) | (c ? 1 : 0)) & 0xFF); c = (M({addr}) & 0x80) ? 1 : 0; a &= M({addr});"
-            else:
-                return "{ uint8_t temp = a; a = ((a << 1) | (c ? 1 : 0)) & 0xFF; c = (temp & 0x80) ? 1 : 0; } // RLA on accumulator"
         elif inst == 'lax':
-            # LAX = LDA + LDX (Load A and X with same value)
             return f"a = {self._read_operand(operand)}; x = a;"
         elif inst == 'sax':
-            # SAX = Store A AND X
             return f"writeData({self._write_address(operand)}, a & x);"
-        elif inst == 'dcp':
-            # DCP = DEC + CMP (Decrement, then Compare with A)
-            addr = self._write_address(operand)
-            return f"writeData({addr}, M({addr}) - 1); compare(a, M({addr}));"
-        elif inst == 'isc' or inst == 'isb':
-            # ISC/ISB = INC + SBC (Increment, then Subtract with Carry)
-            addr = self._write_address(operand)
-            return f"writeData({addr}, M({addr}) + 1); a -= M({addr});"
-        elif inst == 'rra':
-            # RRA = ROR + ADC (Rotate Right, then Add with Carry)
-            addr = self._write_address(operand)
-            return f"writeData({addr}, (M({addr}) >> 1) | (c ? 0x80 : 0)); c = (M({addr}) & 0x01) ? 1 : 0; a += M({addr});"
-        elif inst == 'sre':
-            # SRE = LSR + EOR (Shift Right, then XOR with A)
-            addr = self._write_address(operand)
-            return f"writeData({addr}, M({addr}) >> 1); a ^= M({addr});"
         
         else:
             return f"/* {inst} {operand} */;"
@@ -310,11 +266,11 @@ void SMBEngine::code(int mode)
             return f"0x{val[1:]}" if val.startswith('$') else val
         
         if ',x' in operand.lower():
-            base = operand.lower().replace(',x', '')
+            base = operand.lower().replace(',x', '').strip()
             addr = self._convert_address(base)
             return f"M({addr} + x)"
         elif ',y' in operand.lower():
-            base = operand.lower().replace(',y', '')
+            base = operand.lower().replace(',y', '').strip()
             addr = self._convert_address(base)
             return f"M({addr} + y)"
         
@@ -331,11 +287,11 @@ void SMBEngine::code(int mode)
         operand = operand.strip()
         
         if ',x' in operand.lower():
-            base = operand.lower().replace(',x', '')
+            base = operand.lower().replace(',x', '').strip()
             addr = self._convert_address(base)
             return f"{addr} + x"
         elif ',y' in operand.lower():
-            base = operand.lower().replace(',y', '')
+            base = operand.lower().replace(',y', '').strip()
             addr = self._convert_address(base)
             return f"{addr} + y"
         
@@ -344,16 +300,41 @@ void SMBEngine::code(int mode)
     def _convert_address(self, addr: str) -> str:
         addr = addr.strip()
         
+        # Remove addressing mode prefixes
         if addr.startswith('a:') or addr.startswith('z:'):
             addr = addr[2:]
         
+        # Handle direct hex addresses
         if addr.startswith('$'):
             return f"0x{addr[1:]}"
         
+        # Handle known hardware registers
         if addr.upper() in ['PPU_STATUS', 'PPU_CTRL', 'PPU_MASK', 'PPU_SCROLL', 
                           'PPU_ADDR', 'PPU_DATA', 'APU_SND_CHN', 'OAM_ADDR', 
                           'OAM_DMA', 'JOYPAD1', 'JOYPAD2']:
             return addr.upper()
+        
+        # Look up symbols in our symbol table
+        if addr in self.symbols:
+            return self.symbols[addr]
+        
+        # If it's not in our symbol table but looks like a symbol, warn and try to extract hex
+        if addr.startswith('_'):
+            patterns = [
+                r'_(?:var|data)_([0-9a-fA-F]{4})(?:_indexed)?',
+                r'_([0-9a-fA-F]{4})_',
+                r'_([0-9a-fA-F]{4})$'
+            ]
+            
+            for pattern in patterns:
+                match = re.search(pattern, addr, re.IGNORECASE)
+                if match:
+                    hex_addr = match.group(1).lower()
+                    print(f"Warning: Symbol {addr} not in symbol table, using extracted address 0x{hex_addr}")
+                    return f"0x{hex_addr}"
+            
+            print(f"Warning: Unknown symbol {addr}")
+            return f"/* UNKNOWN: {addr} */ 0"
         
         return addr
     
