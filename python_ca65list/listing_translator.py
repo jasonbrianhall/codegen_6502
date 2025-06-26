@@ -291,16 +291,26 @@ void SMBEngine::code(int mode)
             else:
                 return f"/* {inst} {operand} */;"
     
+
     def _read_operand(self, operand: str) -> str:
         if not operand:
             return "0"
-        
+    
         operand = operand.strip()
-        
+    
+        # IMMEDIATE ADDRESSING - return the value directly, don't read from memory
         if operand.startswith('#'):
             val = operand[1:]
-            return f"0x{val[1:]}" if val.startswith('$') else val
-        
+            if val.startswith('$'):
+                return f"0x{val[1:]}"
+            else:
+                try:
+                    # Try to parse as decimal
+                    return str(int(val))
+                except ValueError:
+                    return val
+    
+        # INDEXED ADDRESSING
         if ',x' in operand.lower():
             base = operand.lower().replace(',x', '').strip()
             if base.startswith('(') and base.endswith(')'):
@@ -310,18 +320,18 @@ void SMBEngine::code(int mode)
 
         elif ',y' in operand.lower():
             base = operand.lower().replace(',y', '').strip()
-            # Strip parentheses if present
             if base.startswith('(') and base.endswith(')'):
                 base = base[1:-1]
             addr = self._convert_address(base)
             return f"M({addr} + y)"
 
+        # INDIRECT ADDRESSING
         if operand.startswith('(') and operand.endswith(')'):
-            # Strip parentheses BEFORE calling _convert_address
             inner_operand = operand[1:-1]
             addr = self._convert_address(inner_operand)
             return f"W({addr})"
-        
+    
+        # ABSOLUTE/ZERO PAGE ADDRESSING - read from memory
         addr = self._convert_address(operand)
         return f"M({addr})"
     
