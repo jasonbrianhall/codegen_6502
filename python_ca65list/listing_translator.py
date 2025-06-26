@@ -66,8 +66,10 @@ class ListingTranslator:
 #include "SMB.hpp"
 
 // Missing processor status flags as global variables
-int d = 0; // decimal flag
-int i = 0; // interrupt disable flag
+extern uint8_t i;
+extern uint8_t d;
+extern uint8_t b;
+extern uint8_t v;
 
 void SMBEngine::code(int mode)
 {
@@ -297,10 +299,14 @@ void SMBEngine::code(int mode)
         
         if ',x' in operand.lower():
             base = operand.lower().replace(',x', '').strip()
+            if base.startswith('(') and base.endswith(')'):
+                base = base[1:-1]
             addr = self._convert_address(base)
             return f"{addr} + x"
         elif ',y' in operand.lower():
             base = operand.lower().replace(',y', '').strip()
+            if base.startswith('(') and base.endswith(')'):
+                base = base[1:-1]
             addr = self._convert_address(base)
             return f"{addr} + y"
         
